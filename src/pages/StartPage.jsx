@@ -19,7 +19,7 @@ export default function StartPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4">
       <h1 className="text-3xl font-bold mb-2">K-Stock Merchant 📈</h1>
-      <p className="text-gray-400 mb-8">10분 안에 자산을 불려라!</p>
+      <p className="text-gray-400 mb-8">50라운드, 자산을 불려라!</p>
 
       {/* TODO: 디자인 개선 */}
       <input
