@@ -8,8 +8,8 @@
 
 | 이름 | 역할 | 담당 |
 |------|------|------|
-| 배영환 | 시니어 + Claude Code | 아키텍처, 게임 로직, store, 통합, 배포 |
-| 송원호 | 초급 React + Claude Code | 컴포넌트, 페이지, 상점 모달, 데이터 JSON |
+| 배영환 | 시니어 + Claude Code | 아키텍처, 게임 로직, store, 통합, 배포, 종목 선정, 가격 데이터 하드코딩 |
+| 송원호 | 초급 React + Claude Code | 컴포넌트, 페이지, 상점 모달, 기업·국제 뉴스 콘텐츠 정리 |
 
 ---
 
@@ -106,8 +106,8 @@ PR 올릴 때 "Closes #12" 로 연결
 
 | 이름 | 수정 가능 영역 |
 |------|---------------|
-| 배영환(Claude) | `src/store/`, `src/lib/`, `src/App.jsx`, Supabase 관련 |
-| 송원호(Claude) | `src/pages/`, `src/components/`, `src/data/` |
+| 배영환(Claude) | `src/store/`, `src/lib/`, `src/App.jsx`, `src/data/stockData.json`, Supabase 관련 |
+| 송원호(Claude) | `src/pages/`, `src/components/`, `src/data/newsEvents.json` |
 
 > 다른 사람 영역 파일을 수정해야 한다면 → 카카오톡 먼저 확인
 
