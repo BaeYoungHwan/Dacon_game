@@ -1,0 +1,162 @@
+[
+  {
+    "id": "005930",
+    "name": "삼성전자",
+    "sector": "반도체",
+    "type": "stock",
+    "price": 74800,
+    "description": "세계 최대 메모리 반도체·스마트폰 제조사"
+  },
+  {
+    "id": "000660",
+    "name": "SK하이닉스",
+    "sector": "반도체",
+    "type": "stock",
+    "price": 188000,
+    "description": "HBM 세계 1위, AI 반도체 핵심 수혜주"
+  },
+  {
+    "id": "035720",
+    "name": "카카오",
+    "sector": "IT",
+    "type": "stock",
+    "price": 38500,
+    "description": "국민 메신저 카카오톡 운영사"
+  },
+  {
+    "id": "035420",
+    "name": "NAVER",
+    "sector": "IT",
+    "type": "stock",
+    "price": 192000,
+    "description": "국내 1위 포털·AI 플랫폼 기업"
+  },
+  {
+    "id": "005380",
+    "name": "현대차",
+    "sector": "자동차",
+    "type": "stock",
+    "price": 234000,
+    "description": "글로벌 TOP5 완성차, 전기차 전환 가속"
+  },
+  {
+    "id": "000270",
+    "name": "기아",
+    "sector": "자동차",
+    "type": "stock",
+    "price": 108000,
+    "description": "현대차 그룹 계열, 글로벌 디자인 경쟁력"
+  },
+  {
+    "id": "068270",
+    "name": "셀트리온",
+    "sector": "바이오",
+    "type": "stock",
+    "price": 168000,
+    "description": "바이오시밀러 글로벌 1위, FDA 허가 다수 보유"
+  },
+  {
+    "id": "373220",
+    "name": "LG에너지솔루션",
+    "sector": "2차전지",
+    "type": "stock",
+    "price": 358000,
+    "description": "글로벌 2위 배터리 제조사, GM·스텔란티스 납품"
+  },
+  {
+    "id": "247540",
+    "name": "에코프로비엠",
+    "sector": "2차전지",
+    "type": "stock",
+    "price": 92000,
+    "description": "양극재 국내 1위, 에코프로 그룹 핵심"
+  },
+  {
+    "id": "105560",
+    "name": "KB금융",
+    "sector": "금융",
+    "type": "stock",
+    "price": 77500,
+    "description": "국내 최대 금융지주, 고배당 대표주"
+  },
+  {
+    "id": "051910",
+    "name": "LG화학",
+    "sector": "화학",
+    "type": "stock",
+    "price": 270000,
+    "description": "배터리·석유화학·첨단소재 복합 대기업"
+  },
+  {
+    "id": "005490",
+    "name": "포스코홀딩스",
+    "sector": "소재",
+    "type": "stock",
+    "price": 320000,
+    "description": "국내 최대 철강사, 2차전지 소재 신사업 진출"
+  },
+  {
+    "id": "207940",
+    "name": "삼성바이오로직스",
+    "sector": "바이오",
+    "type": "stock",
+    "price": 780000,
+    "description": "글로벌 CMO 1위, 바이오의약품 위탁 생산"
+  },
+  {
+    "id": "259960",
+    "name": "크래프톤",
+    "sector": "게임",
+    "type": "stock",
+    "price": 280000,
+    "description": "배틀그라운드 글로벌 IP, 인도 시장 독점"
+  },
+  {
+    "id": "069500",
+    "name": "KODEX 200",
+    "sector": "인덱스",
+    "type": "etf",
+    "price": 37000,
+    "description": "코스피200 지수 추종 ETF — 시장 평균 수익"
+  },
+  {
+    "id": "229200",
+    "name": "KODEX KOSDAQ150",
+    "sector": "인덱스",
+    "type": "etf",
+    "price": 8500,
+    "description": "코스닥150 지수 추종 ETF — 성장주 집중"
+  },
+  {
+    "id": "091160",
+    "name": "KODEX 반도체",
+    "sector": "반도체",
+    "type": "etf",
+    "price": 43000,
+    "description": "삼성전자·SK하이닉스 등 반도체 섹터 ETF"
+  },
+  {
+    "id": "305720",
+    "name": "KODEX 2차전지",
+    "sector": "2차전지",
+    "type": "etf",
+    "price": 7000,
+    "description": "LG엔솔·에코프로 등 2차전지 섹터 ETF"
+  },
+  {
+    "id": "091180",
+    "name": "KODEX 자동차",
+    "sector": "자동차",
+    "type": "etf",
+    "price": 20000,
+    "description": "현대차·기아 등 자동차 섹터 ETF"
+  },
+  {
+    "id": "143860",
+    "name": "KODEX 바이오",
+    "sector": "바이오",
+    "type": "etf",
+    "price": 12000,
+    "description": "셀트리온·삼성바이오 등 바이오 섹터 ETF"
+  }
+]
