@@ -57,11 +57,11 @@
 ```jsx
 <TurnControl
   turn={number}           // 현재 턴 (1부터 시작)
-  totalTurns={number}     // 전체 턴 수 (기본 10)
+  totalTurns={number}     // 전체 턴 수 (기본 50)
   onNextTurn={() => void} // 다음 날 진행
 />
 ```
-- **할 일**: 프로그레스 바 디자인, 날짜 형식 표시 (예: "1일차 / 10일")
+- **할 일**: 프로그레스 바 디자인, 날짜 형식 표시 (예: "1일차 / 50일")
 
 ### Portfolio
 ```jsx
