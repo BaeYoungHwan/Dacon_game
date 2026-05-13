@@ -9,6 +9,15 @@
 config/secrets.*
 # .env.example 은 템플릿이므로 커밋 허용
 
+# 인증서 / 개인키 (절대 커밋 금지)
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+
 # ───────────────────────────────
 # Node / Vite / React
 # ───────────────────────────────
@@ -16,7 +25,18 @@ node_modules/
 dist/
 build/
 .next/
-*.local            # vite.config.*.local 등 로컬 오버라이드
+out/
+# vite.config.*.local 등 로컬 오버라이드
+*.local
+
+# 빌드 / 타입 캐시
+.cache/
+.turbo/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.vite/
 
 # ───────────────────────────────
 # 테스트 / 커버리지
@@ -24,6 +44,8 @@ build/
 coverage/
 *.lcov
 .nyc_output/
+test-results/
+playwright-report/
 
 # ───────────────────────────────
 # Python (스크립트 실행 시)
@@ -39,6 +61,10 @@ venv/
 # ───────────────────────────────
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 !logs/.gitkeep
 
 # ───────────────────────────────
@@ -54,16 +80,58 @@ logs/
 .idea/
 *.suo
 *.user
+*.sublime-workspace
+*.sublime-project
+
+# 에디터 임시 / 백업 파일
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.orig
 
 # ───────────────────────────────
 # OS 부산물
 # ───────────────────────────────
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
+ehthumbs.db
 desktop.ini
+$RECYCLE.BIN/
+
+# ───────────────────────────────
+# 임시 / 백업 디렉터리
+# ───────────────────────────────
+tmp/
+temp/
+*.tgz
+*.tar.gz
+*.zip
+# 배포 자산이 있다면 아래 화이트리스트 한 줄을 풀어서 사용
+# !public/**/*.zip
 
 # ───────────────────────────────
 # Claude Code (개인 세션 — 협업 불필요)
 # ───────────────────────────────
 .claude/sessions/
+.claude/settings.local.json
+.claude/.last-session
+# 사용자별 1인칭 AI 컨텍스트 (원문: docs/ref/collaboration-rules.md)
+.claude/collaboration-rules.md
 memory/
+
+# ───────────────────────────────
+# 자동 생성 산출물 (개인 로컬용 — 협업 불필요)
+# ───────────────────────────────
+docs/ref/session-state.md
+docs/ai-readiness-map.html
+docs/ai-readiness-score.json
+
+# ───────────────────────────────
+# WBS / 개인 TODO (송원호 로컬 전용 — 협업 불필요)
+# ───────────────────────────────
+docs/exec-plans/active/WBS-v2.md
+TODO.md
