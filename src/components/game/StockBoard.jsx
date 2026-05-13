@@ -1,0 +1,58 @@
+// TODO(신입): 종목 목록 UI 구현
+// Props:
+//   stocks     - 종목 배열 [{ id, name, sector, price }]
+//   prices     - 현재 주가 { stockId: number }
+//   portfolio  - 보유 주식 { stockId: quantity }
+//   onBuy(stockId, quantity)  - 매수 함수
+//   onSell(stockId, quantity) - 매도 함수
+
+export default function StockBoard({ stocks, prices, portfolio, onBuy, onSell }) {
+  return (
+    <div className="flex-1 bg-gray-800 rounded-lg p-4">
+      <h2 className="text-lg font-bold mb-3">종목 현황</h2>
+
+      {stocks.map((stock) => {
+        const currentPrice = prices[stock.id]
+        const held = portfolio[stock.id] || 0
+        const change = ((currentPrice - stock.price) / stock.price) * 100
+        const isRise = change >= 0
+
+        return (
+          <div key={stock.id} className="flex items-center justify-between py-2 border-b border-gray-700">
+            {/* TODO(신입): 디자인 개선 */}
+            <div>
+              <span className="font-semibold">{stock.name}</span>
+              <span className="text-xs text-gray-400 ml-2">{stock.sector}</span>
+              {held > 0 && <span className="text-xs text-yellow-400 ml-2">{held}주 보유</span>}
+            </div>
+
+            <div className="text-right">
+              <p className={`font-bold ${isRise ? 'text-rise' : 'text-fall'}`}>
+                {currentPrice.toLocaleString()}원
+              </p>
+              <p className={`text-xs ${isRise ? 'text-rise' : 'text-fall'}`}>
+                {isRise ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
+              </p>
+            </div>
+
+            <div className="flex gap-2 ml-4">
+              <button
+                onClick={() => onBuy(stock.id, 1)}
+                className="px-3 py-1 bg-rise hover:opacity-80 rounded text-sm font-bold transition-all duration-150"
+              >
+                매수
+              </button>
+              <button
+                onClick={() => onSell(stock.id, 1)}
+                disabled={held === 0}
+                className="px-3 py-1 bg-fall hover:opacity-80 disabled:opacity-30 rounded text-sm font-bold transition-all duration-150"
+              >
+                매도
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
