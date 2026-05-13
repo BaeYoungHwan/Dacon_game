@@ -1,40 +1,69 @@
+# ───────────────────────────────
 # 환경 변수 & 시크릿
+# ───────────────────────────────
 .env
 .env.local
+.env.*.local
 .env.production
 .env.development
 config/secrets.*
 # .env.example 은 템플릿이므로 커밋 허용
 
-# Python
+# ───────────────────────────────
+# Node / Vite / React
+# ───────────────────────────────
+node_modules/
+dist/
+build/
+.next/
+*.local            # vite.config.*.local 등 로컬 오버라이드
+
+# ───────────────────────────────
+# 테스트 / 커버리지
+# ───────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+
+# ───────────────────────────────
+# Python (스크립트 실행 시)
+# ───────────────────────────────
 __pycache__/
 *.py[cod]
 *.egg-info/
-dist/
-build/
 venv/
 .venv/
 
-# Node
-node_modules/
-.next/
-
-# 로그
+# ───────────────────────────────
+# 로그 (협업 불필요 — 로컬 감사용)
+# ───────────────────────────────
 logs/
 *.log
 !logs/.gitkeep
 
-# 실행 계획 빈 폴더 유지
+# ───────────────────────────────
+# 빈 폴더 유지 앵커
+# ───────────────────────────────
 !docs/exec-plans/active/.gitkeep
 !docs/exec-plans/completed/.gitkeep
 
-# IDE
+# ───────────────────────────────
+# IDE (개인 설정 — 협업 불필요)
+# ───────────────────────────────
 .vscode/
 .idea/
+*.suo
+*.user
 
-# OS
+# ───────────────────────────────
+# OS 부산물
+# ───────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Claude Code
+# ───────────────────────────────
+# Claude Code (개인 세션 — 협업 불필요)
+# ───────────────────────────────
 .claude/sessions/
+memory/

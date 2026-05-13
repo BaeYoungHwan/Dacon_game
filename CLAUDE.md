@@ -48,6 +48,7 @@
 | 새 프로젝트 시작 | [`docs/ref/project-setup.md`](docs/ref/project-setup.md) → `/init-project` |
 | TODO 작업 진행 | [`docs/ref/todo-workflow.md`](docs/ref/todo-workflow.md) |
 | 커밋 작성 | [`docs/ref/commit-convention.md`](docs/ref/commit-convention.md) |
+| 협업 규칙 | [`docs/ref/collaboration-rules.md`](docs/ref/collaboration-rules.md) |
 | 테스트 전략 | [`docs/ref/testing-patterns.md`](docs/ref/testing-patterns.md) |
 | 검증 전략 | [`docs/ref/verification-protocol.md`](docs/ref/verification-protocol.md) |
 | PRD / 설계 문서 | [`docs/ref/PRD-template.md`](docs/ref/PRD-template.md) |
