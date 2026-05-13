@@ -9,8 +9,12 @@ import StockBoard from '../components/game/StockBoard'
 import NewsPanel from '../components/game/NewsPanel'
 import TurnControl from '../components/game/TurnControl'
 import Portfolio from '../components/game/Portfolio'
+import MainPage from './MainPage'  // 🚧 TEMP-PREVIEW: 점검 후 이 import와 아래 return 1줄 제거
 
 export default function GamePage() {
+  // 🚧 TEMP-PREVIEW(2026-05-14, 송원호): MainPage 미리보기. 점검 후 이 return 1줄과 위 import 제거.
+  return <MainPage />
+
   const { turn, totalTurns, cash, portfolio, prices, currentNews, nextTurn, buyStock, sellStock } =
     useGameStore()
 
