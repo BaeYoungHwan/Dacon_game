@@ -11,11 +11,11 @@ import TurnControl from '../components/game/TurnControl'
 import Portfolio from '../components/game/Portfolio'
 
 export default function GamePage() {
-  const { turn, totalTurns, cash, portfolio, prices, currentNews, nextTurn, buyStock, sellStock } =
+  const { turn, totalTurns, cash, portfolio, prices, currentNews, activeStocks, hiddenStocks, nextTurn, buyStock, sellStock } =
     useGameStore()
 
   const handleNextTurn = () => {
-    const result = progressTurn(prices, stocks)
+    const result = progressTurn(turn, [...activeStocks, ...hiddenStocks])
     nextTurn(result)
   }
 

@@ -1,12 +1,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import allStocks from '../data/stocks.json'
+import stockData from '../data/stockData.json'
 
 const INITIAL_CASH = 10_000_000   // 초기 자본금 1천만원
 const TOTAL_TURNS = 50            // 주봉 1년 (50주)
 const ACTIVE_STOCK_COUNT = 10     // 게임마다 랜덤 10종목 선택
 const INITIAL_KOSPI = 2600        // 코스피 기준값
 const INITIAL_EXCHANGE_RATE = 1350 // USD/KRW 기준값
+
+// realTicker → stockData 항목 맵
+const stockDataByTicker = Object.fromEntries(
+  stockData.stocks.map(s => [s.realTicker, s])
+)
 
 // Fisher-Yates 셔플 후 공개 10개 / 비공개 10개로 분리
 function splitStocks(stocks) {
@@ -53,7 +59,10 @@ export const useGameStore = create(
         const { active, hidden } = splitStocks(allStocks)
         // 공개/비공개 모두 가격 초기화 — 비공개도 내부적으로 가격 추적
         const allPrices = Object.fromEntries(
-          [...active, ...hidden].map((s) => [s.id, s.price])
+          [...active, ...hidden].map((s) => [
+            s.id,
+            stockDataByTicker[s.id]?.prices[0]?.close ?? s.price,
+          ])
         )
         set({
           page: 'game',
@@ -73,14 +82,14 @@ export const useGameStore = create(
 
       // gameLogic.progressTurn()이 계산한 결과를 받아 상태에 반영
       nextTurn: ({ newPrices, news, newKospi, newExchangeRate }) => {
-        const { turn, totalTurns } = get()
+        const { turn, totalTurns, exchangeRate } = get()
         const next = turn + 1
         set({
           turn: next,
           prices: newPrices,
           currentNews: news,
           kospi: newKospi,
-          exchangeRate: newExchangeRate,
+          exchangeRate: newExchangeRate ?? exchangeRate,
           page: next > totalTurns ? 'result' : 'game',
         })
       },
