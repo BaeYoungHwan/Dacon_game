@@ -118,7 +118,6 @@ export default function MarketPage() {
               <StockChart
                 stockId={selectedStockId}
                 stockName={selectedStock?.name ?? ''}
-                turn={turn}
                 maPurchased={maPurchased}
                 bollingerPurchased={bollingerPurchased}
                 macdPurchased={macdPurchased}
