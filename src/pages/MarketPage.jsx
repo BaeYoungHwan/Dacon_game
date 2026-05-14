@@ -37,7 +37,7 @@ export default function MarketPage() {
   const [selectedStockId, setSelectedStockId] = useState(null)
   const {
     activeStocks, prices, portfolio, buyStock, sellStock, navigateTo,
-    maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
+    maPurchased, bollingerPurchased, macdPurchased, obvPurchased, cash,
   } = useGameStore()
 
   const closePopup = () => {
@@ -140,13 +140,20 @@ export default function MarketPage() {
             )}
 
             {(activePopup === 'buy' || activePopup === 'sell') && (
-              <StockBoard
-                stocks={activeStocks}
-                prices={prices}
-                portfolio={portfolio}
-                onBuy={activePopup === 'buy' ? buyStock : undefined}
-                onSell={activePopup === 'sell' ? sellStock : undefined}
-              />
+              <>
+                <div className="flex items-center justify-between bg-gray-700 rounded-lg px-3 py-2 text-sm mb-4">
+                  <span className="text-gray-400">보유 현금</span>
+                  <span className="font-bold text-white">{cash.toLocaleString()}원</span>
+                </div>
+                <StockBoard
+                  stocks={activeStocks}
+                  prices={prices}
+                  portfolio={portfolio}
+                  cash={cash}
+                  onBuy={activePopup === 'buy' ? buyStock : undefined}
+                  onSell={activePopup === 'sell' ? sellStock : undefined}
+                />
+              </>
             )}
           </div>
         </div>

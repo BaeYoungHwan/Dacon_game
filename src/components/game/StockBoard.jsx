@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 
-export default function StockBoard({ stocks, prices, portfolio, onBuy, onSell }) {
+export default function StockBoard({ stocks, prices, portfolio, cash, onBuy, onSell }) {
   const [quantities, setQuantities] = useState({})
 
   const getQty = (stockId) => quantities[stockId] ?? 1
@@ -54,14 +54,18 @@ export default function StockBoard({ stocks, prices, portfolio, onBuy, onSell })
                 onChange={(e) => setQty(stock.id, e.target.value)}
                 className="w-14 px-1 py-1 bg-gray-600 border border-gray-500 rounded text-sm text-center"
               />
-              {onBuy && (
-                <button
-                  onClick={() => onBuy(stock.id, qty)}
-                  className="px-3 py-1 bg-rise hover:opacity-80 rounded text-sm font-bold transition-all duration-150"
-                >
-                  매수
-                </button>
-              )}
+              {onBuy && (() => {
+                const cannotAfford = cash !== undefined && cash < currentPrice * qty
+                return (
+                  <button
+                    onClick={() => onBuy(stock.id, qty)}
+                    disabled={cannotAfford}
+                    className="px-3 py-1 bg-rise hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed rounded text-sm font-bold transition-all duration-150"
+                  >
+                    {cannotAfford ? '잔액부족' : '매수'}
+                  </button>
+                )
+              })()}
               {onSell && (
                 <button
                   onClick={() => onSell(stock.id, qty)}

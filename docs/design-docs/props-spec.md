@@ -102,6 +102,7 @@ GamePage는 거래소/정보상/기술상/라운드결과 모달의 열림/닫�
 | stocks | Stock[] | O | 이번 게임 공개 10종목 |
 | prices | Record(string, number) | O | stockId to 현재 종가 |
 | portfolio | Record(string, number) | O | stockId to 보유 수량 |
+| cash | number | O | 현금 잔액 — 매수 버튼 비활성화 기준 |
 | onBuy | (id, qty) => boolean | O | false = 잔액 부족 |
 | onSell | (id, qty) => boolean | O | false = 보유 부족 |
 | indicatorsPurchased | boolean | O | true면 차트 지표 탭 표시 |
