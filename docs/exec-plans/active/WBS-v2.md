@@ -32,11 +32,11 @@
 | 1.1 분석/기획 | 3 | 3 | 100% |
 | 1.2 설계 | 3 | 3 | 100% |
 | 1.3 P0 기반 구축 | 7 | 7 | 100% |
-| 1.4 P1 핵심 기능 | 16 | 11 | 68.8% (2개 진행중) |
+| 1.4 P1 핵심 기능 | 16 | 12 | 75.0% (1개 진행중) |
 | 1.5 P1 통합 | 7 | 7 | 100% |
 | 1.6 P2 QA + 배포 | 6 | 2 | 33.3% |
 | 1.7 버퍼 | 2 | 0 | 0% |
-| **전체** | **44** | **33** | **75.0%** |
+| **전체** | **44** | **34** | **77.3%** |
 
 ---
 
@@ -110,7 +110,7 @@
 | 1.4.12 | [Front] InfoMerchantModal 구현 (정보상 — 국제뉴스·기업뉴스·추천종목, 라운드별 가격 변동) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/InfoMerchantModal.jsx | P1 |
 | 1.4.13 | [Front] TechMerchantModal 구현 (기술상 — 제외된 10종목 중 일부 유료 공개) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/TechMerchantModal.jsx | P1 |
 | 1.4.14 | [Front] RoundResultModal 구현 (라운드 종료 — 수익/손실 요약, 다음 라운드 버튼) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/game/RoundResultModal.jsx | P1 |
-| 1.4.15 | [공용] stockData.json pregame 13주 차트 배경 데이터 스크립트 추가 (collect-stock-data.py) | 배영환 | 진행중 | 50% | 05/14 | 05/14 | 0.5 | scripts/collect-stock-data.py (재실행 필요) | P1 |
+| 1.4.15 | [공용] stockData.json pregame 13주 차트 배경 데이터 완료 (collect-stock-data.py 버그 수정 포함) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 0.5 | scripts/collect-stock-data.py, src/data/stockData.json | P1 |
 | 1.4.16 | [Front] StockChart 컴포넌트 초안 (캔들차트 + pregame 데이터 연동) | 송원호 | 진행중 | 30% | 05/14 | 05/15 | 1 | src/components/game/StockChart.jsx, chartUtils.js | P1 |
 
 ---
