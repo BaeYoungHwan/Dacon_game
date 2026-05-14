@@ -39,18 +39,14 @@
 | close | number | 58000 | 종가 (거래에 사용) |
 | volume | number | 12500000 | 거래량 (차트 지표 계산용) |
 
-### CompanyNews (기업 뉴스, stocks[].news[] 배열)
+### NewsItem (news-events.json 형식)
 | 필드 | 타입 | 예시 | 설명 |
 |------|------|------|------|
-| round | number | 3 | 적용 라운드 번호 |
-| title | string | HBM 수출 호조 | 뉴스 제목 |
-| type | 호재 또는 악재 | 호재 | 방향 힌트 (수치 미공개) |
-
-### GlobalNews (국제 뉴스, globalNews[] 배열)
-| 필드 | 타입 | 예시 | 설명 |
-|------|------|------|------|
-| round | number | 1 | 적용 라운드 번호 |
-| title | string | 미 연준 금리 동결 | 뉴스 제목 |
+| id | string | n01 | 뉴스 고유 ID |
+| date | string | 2025-07-10 | 해당 라운드 날짜 (YYYY-MM-DD) |
+| sector | string | 반도체 | 섹터 분류 (전체 = 국제뉴스) |
+| headline | string | HBM 수출 호조 | 뉴스 헤드라인 |
+| detail | string | ... | 상세 내용 (유료 구매 후 공개) |
 
 ### Ranking (Supabase rankings 테이블)
 | 필드 | 타입 | 설명 |
@@ -63,8 +59,10 @@
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | newPrices | Record(string, number) | 업데이트된 종가 맵 (stockId to 종가) |
-| news | CompanyNews or null | 이번 라운드 공개 기업 뉴스 |
-| globalNews | GlobalNews or null | 이번 라운드 국제 뉴스 |
+| news | NewsItem[] or null | 이번 라운드 기업 뉴스 목록 (sector != 전체) |
+| globalNews | NewsItem or null | 이번 라운드 국제 뉴스 1건 (sector == 전체) |
+| newKospi | number | 업데이트된 코스피 지수 |
+| newExchangeRate | number or null | 환율 (현재 null 고정) |
 
 ---
 
@@ -238,8 +236,8 @@ Zustand + localStorage persist
 | hiddenStocks | Stock[] | [] | 이번 게임 비공개 10종목 |
 | unlockedStockIds | string[] | [] | 기술상으로 공개한 종목 IDs |
 | prices | Record(string, number) | {} | 전체 20종목 현재 종가 맵 |
-| currentNews | CompanyNews or null | null | 이번 라운드 공개 기업 뉴스 |
-| currentGlobalNews | GlobalNews or null | null | 이번 라운드 국제 뉴스 |
+| currentNews | NewsItem[] or null | null | 이번 라운드 기업 뉴스 목록 (sector != 전체) |
+| currentGlobalNews | NewsItem or null | null | 이번 라운드 국제 뉴스 1건 (sector == 전체) |
 | indicatorsPurchased | boolean | false | 차트 지표 영구 구매 여부 |
 | kospi | number | 2600 | 코스피 지수 현재값 |
 

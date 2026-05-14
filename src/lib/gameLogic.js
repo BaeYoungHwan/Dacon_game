@@ -29,9 +29,16 @@ export function progressTurn(turn, allStocks) {
   const kospiChangePct = stockData.kospi[idx] ?? 0
   const newKospi = Math.round(KOSPI_BASE * (1 + kospiChangePct / 100))
 
-  // 뉴스 — 실제 데이터 없으므로 news-events.json 랜덤 사용
-  const news = newsEvents[Math.floor(Math.random() * newsEvents.length)]
+  // 뉴스 — 날짜 기준 매칭 후 기업뉴스(배열)/국제뉴스(단일)로 분리
+  const currentDate = stockData.meta.dates[idx]
+  const matched = newsEvents.filter(n => n.date === currentDate)
+  const companyMatched = matched.filter(n => n.sector !== '전체')
+  const globalMatched  = matched.filter(n => n.sector === '전체')
+  const news       = companyMatched.length > 0 ? companyMatched : null
+  const globalNews = globalMatched.length > 0
+    ? globalMatched[Math.floor(Math.random() * globalMatched.length)]
+    : null
 
   // 환율 — 실제 데이터 없으므로 null 반환 (gameStore에서 현재값 유지)
-  return { newPrices, news, newKospi, newExchangeRate: null }
+  return { newPrices, news, globalNews, newKospi, newExchangeRate: null }
 }

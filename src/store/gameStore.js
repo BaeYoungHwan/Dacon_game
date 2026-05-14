@@ -79,19 +79,21 @@ export const useGameStore = create(
           indicatorsPurchased: false,
           prices: allPrices,
           currentNews: null,
+          currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
         })
       },
 
       // gameLogic.progressTurn()이 계산한 결과를 받아 상태에 반영
-      nextTurn: ({ newPrices, news, newKospi, newExchangeRate }) => {
+      nextTurn: ({ newPrices, news, globalNews, newKospi, newExchangeRate }) => {
         const { turn, totalTurns, exchangeRate } = get()
         const next = turn + 1
         set({
           turn: next,
           prices: newPrices,
           currentNews: news,
+          currentGlobalNews: globalNews,
           kospi: newKospi,
           exchangeRate: newExchangeRate ?? exchangeRate,
           page: next > totalTurns ? 'result' : 'main',
@@ -173,6 +175,7 @@ export const useGameStore = create(
           indicatorsPurchased: false,
           prices: {},
           currentNews: null,
+          currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
         })
