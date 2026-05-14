@@ -11,6 +11,7 @@ import Portfolio from '../components/game/Portfolio'
 import TipBox from '../components/game/TipBox'
 import HelpModal from '../components/game/HelpModal'
 import SettingsModal from '../components/game/SettingsModal'
+import KospiChart from '../components/game/KospiChart'
 
 // 기술상 접근 가능 최소 턴
 const TECH_MERCHANT_UNLOCK_TURN = 10
@@ -55,6 +56,8 @@ export default function GamePage() {
         totalTurns={totalTurns}
         onNextTurn={handleNextTurn}
       />
+
+      <KospiChart />
 
       {/* TODO(신입): 장소 이동 버튼 3개 — 이미지 카드 형태로 교체 */}
       <div className="flex gap-3 my-6">
