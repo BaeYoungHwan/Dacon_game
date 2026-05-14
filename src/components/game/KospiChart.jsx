@@ -1,6 +1,7 @@
 // 메인 화면용 KOSPI 지수 라인 차트 위젯
 // pregame 13주(회색) + 현재 턴까지 실제 KOSPI 종가 표시
 
+import { useId } from "react"
 import stockData from "../../data/stockData.json"
 import { useGameStore } from "../../store/gameStore"
 import AnimatedNumber from "../ui/AnimatedNumber"
@@ -23,6 +24,12 @@ function toY(val, minV, maxV) {
 
 export default function KospiChart() {
   const { turn } = useGameStore()
+  // SVG defs id 충돌 방지 — KospiChart가 동시에 여러 곳에서 마운트되어도 unique
+  // (예: 본문 작은 차트 + ChartExpandModal 확대 차트가 동시 마운트되면 같은 'kospiLineGlow' 두 개라 url(#...)이 모호)
+  const uid = useId()
+  const glowId  = `kospi-glow-${uid}`
+  const upId    = `kospi-up-${uid}`
+  const downId  = `kospi-down-${uid}`
 
   // pregame(회색) + game(컬러) 둘 다 같은 X 시간축에 표시
   const pregameCloses = stockData.pregame_kospi_closes ?? []
@@ -127,7 +134,7 @@ export default function KospiChart() {
       >
         <defs>
           {/* 게임 라인 글로우 필터 */}
-          <filter id="kospiLineGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="1.8" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -135,12 +142,12 @@ export default function KospiChart() {
             </feMerge>
           </filter>
           {/* 상승 영역 그라데이션 */}
-          <linearGradient id="kospiUpGrad" x1="0" x2="0" y1="0" y2="1">
+          <linearGradient id={upId} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor={upColor} stopOpacity="0.35" />
             <stop offset="100%" stopColor={upColor} stopOpacity="0" />
           </linearGradient>
           {/* 하락 영역 그라데이션 */}
-          <linearGradient id="kospiDownGrad" x1="0" x2="0" y1="0" y2="1">
+          <linearGradient id={downId} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor={downColor} stopOpacity="0.35" />
             <stop offset="100%" stopColor={downColor} stopOpacity="0" />
           </linearGradient>
@@ -196,7 +203,7 @@ export default function KospiChart() {
         {gameAreaPoints && (
           <polygon
             points={gameAreaPoints}
-            fill={isUp ? 'url(#kospiUpGrad)' : 'url(#kospiDownGrad)'}
+            fill={isUp ? `url(#${upId})` : `url(#${downId})`}
           />
         )}
 
@@ -220,7 +227,7 @@ export default function KospiChart() {
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
-            filter="url(#kospiLineGlow)"
+            filter={`url(#${glowId})`}
           />
         )}
 
