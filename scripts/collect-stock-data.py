@@ -82,7 +82,7 @@ def fetch_ohlcv(ticker):
         return {}
     df.index = df.index.strftime("%Y%m%d")
     result = {}
-    for date_str in DATES:
+    for date_str in DATES + PREGAME_DATES:
         row, used = _get_row(df, date_str)
         if row is None:
             print(f"  [경고] {ticker} {date_str}: 없음, 0으로 채움")
