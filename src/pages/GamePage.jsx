@@ -11,7 +11,8 @@ import Portfolio from '../components/game/Portfolio'
 
 export default function GamePage() {
   const {
-    turn, totalTurns, cash, portfolio, prices, currentNews,
+    turn, totalTurns, cash, portfolio, prices,
+    currentNews, currentGlobalNews,
     activeStocks, hiddenStocks, nextTurn, navigateTo,
   } = useGameStore()
 
@@ -57,7 +58,7 @@ export default function GamePage() {
         cash={cash}
       />
 
-      <NewsPanel news={currentNews} />
+      <NewsPanel companyNews={currentNews} globalNews={currentGlobalNews} />
     </div>
   )
 }

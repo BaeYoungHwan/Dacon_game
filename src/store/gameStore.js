@@ -1,20 +1,19 @@
 import { create } from 'zustand'
+import { useLeaderboardStore } from './leaderboardStore'
 import { persist } from 'zustand/middleware'
 import allStocks from '../data/stocks.json'
 import stockData from '../data/stockData.json'
 
-const INITIAL_CASH = 10_000_000   // 초기 자본금 1천만원
-const TOTAL_TURNS = 50            // 주봉 1년 (50주)
-const ACTIVE_STOCK_COUNT = 10     // 게임마다 랜덤 10종목 선택
-const INITIAL_KOSPI = 2600        // 코스피 기준값
-const INITIAL_EXCHANGE_RATE = 1350 // USD/KRW 기준값
+const INITIAL_CASH = 10_000_000
+const TOTAL_TURNS = 50
+const ACTIVE_STOCK_COUNT = 10
+const INITIAL_KOSPI = 2600
+const INITIAL_EXCHANGE_RATE = 1350
 
-// realTicker → stockData 항목 맵
 const stockDataByTicker = Object.fromEntries(
   stockData.stocks.map(s => [s.realTicker, s])
 )
 
-// Fisher-Yates 셔플 후 공개 10개 / 비공개 10개로 분리
 function splitStocks(stocks) {
   const shuffled = [...stocks]
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -30,34 +29,30 @@ function splitStocks(stocks) {
 export const useGameStore = create(
   persist(
     (set, get) => ({
-      // 화면 전환 상태
-      page: 'start',  // 'start' | 'game' | 'result'
-
-      // 플레이어
+      page: 'start',
       nickname: '',
-
-      // 게임 상태
       turn: 0,
       totalTurns: TOTAL_TURNS,
       cash: INITIAL_CASH,
-      portfolio: {},             // { stockId: quantity }
-      activeStocks: [],          // 이번 게임 공개 10종목
-      hiddenStocks: [],          // 이번 게임 비공개 10종목 (기술상에서 유료 공개)
-      unlockedStockIds: [],      // 기술상으로 공개한 종목 ID 목록
-      indicatorsPurchased: false, // 차트 지표(MA/볼린저/MACD/OBV) 영구 구매 여부
-      prices: {},                // { stockId: currentPrice } — 전체 20종목 포함
-
-      // 시장 지표 (시뮬레이션)
+      portfolio: {},
+      activeStocks: [],
+      hiddenStocks: [],
+      unlockedStockIds: [],
+      maPurchased: false,
+      bollingerPurchased: false,
+      macdPurchased: false,
+      obvPurchased: false,
+      prices: {},
       kospi: INITIAL_KOSPI,
       exchangeRate: INITIAL_EXCHANGE_RATE,
-
-      // --- 액션 ---
+      currentNews: null,
+      currentGlobalNews: null,
 
       setNickname: (name) => set({ nickname: name }),
+      navigateTo: (page) => set({ page }),
 
       startGame: () => {
         const { active, hidden } = splitStocks(allStocks)
-        // 공개/비공개 모두 가격 초기화 — 비공개도 내부적으로 가격 추적
         const allPrices = Object.fromEntries(
           [...active, ...hidden].map((s) => [
             s.id,
@@ -65,36 +60,39 @@ export const useGameStore = create(
           ])
         )
         set({
-          page: 'game',
+          page: 'main',
           turn: 1,
           cash: INITIAL_CASH,
           portfolio: {},
           activeStocks: active,
           hiddenStocks: hidden,
           unlockedStockIds: [],
-          indicatorsPurchased: false,
+          maPurchased: false,
+          bollingerPurchased: false,
+          macdPurchased: false,
+          obvPurchased: false,
           prices: allPrices,
           currentNews: null,
+          currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
         })
       },
 
-      // gameLogic.progressTurn()이 계산한 결과를 받아 상태에 반영
-      nextTurn: ({ newPrices, news, newKospi, newExchangeRate }) => {
+      nextTurn: ({ newPrices, news, globalNews, newKospi, newExchangeRate }) => {
         const { turn, totalTurns, exchangeRate } = get()
         const next = turn + 1
         set({
           turn: next,
           prices: newPrices,
           currentNews: news,
+          currentGlobalNews: globalNews,
           kospi: newKospi,
           exchangeRate: newExchangeRate ?? exchangeRate,
-          page: next > totalTurns ? 'result' : 'game',
+          page: next > totalTurns ? 'result' : 'main',
         })
       },
 
-      // 매수: 잔액 부족 시 false 반환
       buyStock: (stockId, quantity) => {
         const { cash, portfolio, prices } = get()
         const cost = prices[stockId] * quantity
@@ -106,7 +104,6 @@ export const useGameStore = create(
         return true
       },
 
-      // 매도: 보유 부족 시 false 반환
       sellStock: (stockId, quantity) => {
         const { cash, portfolio, prices } = get()
         const held = portfolio[stockId] || 0
@@ -117,26 +114,28 @@ export const useGameStore = create(
         return true
       },
 
-      // 기술상: 비공개 종목 유료 공개 (잔액 부족 시 false)
       unlockStock: (stockId, cost) => {
-        const { cash, unlockedStockIds } = get()
+        const { cash, unlockedStockIds, hiddenStocks, activeStocks } = get()
         if (cost > cash) return false
+        const target = hiddenStocks.find((s) => s.id === stockId)
         set({
           cash: cash - cost,
           unlockedStockIds: [...unlockedStockIds, stockId],
+          hiddenStocks: hiddenStocks.filter((s) => s.id !== stockId),
+          activeStocks: target ? [...activeStocks, target] : activeStocks,
         })
         return true
       },
 
-      // 정보상: 차트 지표 영구 구매 (잔액 부족 시 false)
-      buyIndicators: (cost) => {
+      // key: "ma" | "bollinger" | "macd" | "obv"
+      buyIndicator: (key, cost) => {
         const { cash } = get()
         if (cost > cash) return false
-        set({ cash: cash - cost, indicatorsPurchased: true })
+        const field = key + "Purchased"
+        set({ cash: cash - cost, [field]: true })
         return true
       },
 
-      // 최종 자산 = 현금 + 보유 주식 평가액
       getFinalAssets: () => {
         const { cash, portfolio, prices } = get()
         const stockValue = Object.entries(portfolio).reduce(
@@ -146,12 +145,12 @@ export const useGameStore = create(
         return cash + stockValue
       },
 
-      // 수익률 배수 (최종자산 / 초기자본)
       getReturnMultiple: () => {
         return get().getFinalAssets() / INITIAL_CASH
       },
 
-      resetGame: () =>
+      resetGame: () => {
+        useLeaderboardStore.getState().resetSubmitted()
         set({
           page: 'start',
           turn: 0,
@@ -160,14 +159,41 @@ export const useGameStore = create(
           activeStocks: [],
           hiddenStocks: [],
           unlockedStockIds: [],
-          indicatorsPurchased: false,
+          maPurchased: false,
+          bollingerPurchased: false,
+          macdPurchased: false,
+          obvPurchased: false,
           prices: {},
           currentNews: null,
+          currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
-        }),
+        })
+      },
     }),
-    { name: 'k-stock-merchant' },
+    {
+      name: 'k-stock-merchant',
+      partialize: (state) => ({
+        page: state.page,
+        nickname: state.nickname,
+        turn: state.turn,
+        totalTurns: state.totalTurns,
+        cash: state.cash,
+        portfolio: state.portfolio,
+        activeStocks: state.activeStocks,
+        hiddenStocks: state.hiddenStocks,
+        unlockedStockIds: state.unlockedStockIds,
+        maPurchased: state.maPurchased,
+        bollingerPurchased: state.bollingerPurchased,
+        macdPurchased: state.macdPurchased,
+        obvPurchased: state.obvPurchased,
+        prices: state.prices,
+        kospi: state.kospi,
+        exchangeRate: state.exchangeRate,
+        currentNews: state.currentNews,
+        currentGlobalNews: state.currentGlobalNews,
+      }),
+    },
   ),
 )
 
