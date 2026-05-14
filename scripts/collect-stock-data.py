@@ -26,6 +26,14 @@ DATES = [
     "20260507",
 ]
 
+# 13개 pregame 날짜 — 목요일 기준, 차트 배경 전용 (게임 로직 미사용)
+PREGAME_DATES = [
+    "20250227", "20250306", "20250313", "20250320", "20250327",
+    "20250403", "20250410", "20250417", "20250424",
+    "20250501",  # 근로자의날(공휴일) → _get_row fallback으로 전일 자동 처리
+    "20250508", "20250515", "20250522",
+]
+
 TICKERS = {
     "005930": ("삼성전자",           "반도체",        "stock_01"),
     "006400": ("삼성SDI",            "2차전지",       "stock_02"),
@@ -101,7 +109,7 @@ def _returns_from_closes(closes):
     return returns
 
 
-def fetch_kospi_returns(fallback_ohlcv=None):
+def fetch_kospi_returns(dates, fallback_ohlcv=None):
     # KOSPI 지수 직접 수집 시도 (3회)
     for attempt in range(3):
         try:
@@ -109,7 +117,7 @@ def fetch_kospi_returns(fallback_ohlcv=None):
             if not df.empty:
                 df.index = df.index.strftime("%Y%m%d")
                 closes = []
-                for d in DATES:
+                for d in dates:
                     row, _ = _get_row(df, d)
                     closes.append(float(row["종가"]) if row is not None else 0.0)
                 print("  -> KOSPI 지수 API 성공")
@@ -122,33 +130,36 @@ def fetch_kospi_returns(fallback_ohlcv=None):
     print("  [대체] KOSPI API 실패 -> KODEX 200 ETF(069500) 사용")
     if fallback_ohlcv and KOSPI200_ETF in fallback_ohlcv:
         omap = fallback_ohlcv[KOSPI200_ETF]
-        closes = [float(omap.get(d, {}).get("close", 0)) for d in DATES]
+        closes = [float(omap.get(d, {}).get("close", 0)) for d in dates]
         print("  -> KODEX 200 대체 완료 (KOSPI 직접 수집 아님)")
         return _returns_from_closes(closes)
 
     print("  [경고] KOSPI 0.0으로 채움 - 수동 보정 필요")
-    return [0.0] * len(DATES)
+    return [0.0] * len(dates)
 
 
-def build_json(all_ohlcv, kospi_returns):
+def build_json(all_ohlcv, kospi_returns, pregame_kospi_returns):
     meta_dates = [f"{d[:4]}-{d[4:6]}-{d[6:]}" for d in DATES]
+    meta_pregame_dates = [f"{d[:4]}-{d[4:6]}-{d[6:]}" for d in PREGAME_DATES]
     empty = {"open": 0, "high": 0, "low": 0, "close": 0, "volume": 0}
     stocks_list = []
     for ticker, (name, sector, sid) in TICKERS.items():
         omap = all_ohlcv.get(ticker, {})
         stocks_list.append({
-            "id":         sid,
-            "realTicker": ticker,
-            "name":       name,
-            "sector":     sector,
-            "prices":     [omap.get(d, empty) for d in DATES],
-            "news":       [],
+            "id":             sid,
+            "realTicker":     ticker,
+            "name":           name,
+            "sector":         sector,
+            "pregame_prices": [omap.get(d, empty) for d in PREGAME_DATES],
+            "prices":         [omap.get(d, empty) for d in DATES],
+            "news":           [],
         })
     return {
-        "meta":       {"rounds": 50, "dates": meta_dates},
-        "kospi":      kospi_returns,
-        "stocks":     stocks_list,
-        "globalNews": [],
+        "meta":         {"rounds": 50, "dates": meta_dates, "pregame_dates": meta_pregame_dates},
+        "kospi":         kospi_returns,
+        "pregame_kospi": pregame_kospi_returns,
+        "stocks":        stocks_list,
+        "globalNews":    [],
     }
 
 
@@ -161,6 +172,8 @@ def verify(data):
     for s in data["stocks"]:
         if len(s["prices"]) != 50:
             errors.append(f"{s['name']}: prices={len(s['prices'])}")
+        if len(s["pregame_prices"]) != 13:
+            errors.append(f"{s['name']}: pregame_prices={len(s['pregame_prices'])} (13 필요)")
         zeros = [i + 1 for i, p in enumerate(s["prices"]) if p["close"] == 0]
         if zeros:
             errors.append(f"{s['name']}: close=0 라운드 {zeros}")
@@ -184,10 +197,14 @@ def main():
         time.sleep(0.3)
 
     print("\n[KOSPI] 수집 중...")
-    kospi_returns = fetch_kospi_returns(fallback_ohlcv=all_ohlcv)
+    kospi_returns = fetch_kospi_returns(DATES, fallback_ohlcv=all_ohlcv)
     print(f"  -> {len(kospi_returns)}개 완료")
 
-    data = build_json(all_ohlcv, kospi_returns)
+
+    print("[PREGAME KOSPI] 수집 중...")
+    pregame_kospi = fetch_kospi_returns(PREGAME_DATES, fallback_ohlcv=all_ohlcv)
+    print(f"  -> {len(pregame_kospi)}개 완료")
+    data = build_json(all_ohlcv, kospi_returns, pregame_kospi)
 
     out_path = Path(__file__).parent.parent / "src" / "data" / "stockData.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)

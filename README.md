@@ -6,6 +6,8 @@
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)](https://vitejs.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwindcss)](https://tailwindcss.com)
 
+**배포 URL: https://dacongame.vercel.app/**
+
 ---
 
 ## 게임 소개
@@ -27,8 +29,8 @@
 ## 화면 구성 (Legend of Merchant 스타일)
 
 ```
-StartPage  →  GamePage  →  ResultPage
-(닉네임/설정)  (캐릭터·장소 기반 매매)  (결과 + 랭킹)
+StartPage  →  GamePage  ↔  MarketPage  →  ResultPage
+(닉네임/설정)  (현황·뉴스·턴 진행)  (거래소 매매)   (결과 + 랭킹)
 ```
 
 캐릭터가 거래소, 뉴스룸, 포트폴리오 화면 등 **장소를 이동하며** 매매를 진행하는 RPG 상인 게임 형식. 각 장소에서 서로 다른 정보와 액션이 제공된다.
@@ -111,7 +113,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 create table rankings (
   id           bigint generated always as identity primary key,
   nickname     text not null,
-  final_assets bigint not null,
+  final_asset  bigint not null,
   created_at   timestamptz default now()
 );
 
@@ -134,7 +136,8 @@ npm run dev
 src/
 ├── pages/
 │   ├── StartPage.jsx
-│   ├── GamePage.jsx
+│   ├── GamePage.jsx        # 현황·뉴스·턴 진행
+│   ├── MarketPage.jsx      # 거래소 (10종목 매수/매도)
 │   └── ResultPage.jsx
 ├── components/
 │   ├── game/
@@ -145,6 +148,9 @@ src/
 │   ├── ui/
 │   │   ├── Button.jsx
 │   │   └── Modal.jsx
+│   ├── merchant/
+│   │   ├── InfoMerchantModal.jsx  # 정보상 (예정)
+│   │   └── TechMerchantModal.jsx  # 기술상 (예정)
 │   └── leaderboard/
 │       └── Leaderboard.jsx
 ├── store/
@@ -152,6 +158,7 @@ src/
 │   └── leaderboardStore.js
 ├── data/
 │   ├── stocks.json          # 20종목 (개별주 14 + Kodex ETF 6)
+│   ├── stockData.json       # 실제 주봉 OHLCV 50주치 (pykrx 수집)
 │   └── news-events.json     # 호재/악재 이벤트 30개
 ├── lib/
 │   ├── supabase.js
@@ -167,36 +174,29 @@ src/
 
 ```
 매주(1턴)마다:
-1. 뉴스 이벤트 풀(30개)에서 무작위 선택
-2. 이번 주 시장 전체 등락 시뮬레이션 (-3% ~ +3%)
-3. 환율 변화 시뮬레이션 (-1% ~ +1%)
-   └─ 환율 상승(원화 약세) → 반도체·자동차·소재 수출주 추가 수혜
-4. 뉴스 섹터와 일치하는 종목에 event.effect 적용
-5. 개별주: 시장 연동 30% + 개별 랜덤 ±5%
-   Kodex ETF: 시장 연동 90% + 개별 랜덤 ±2%
-6. 변동 상한 ±15% (주봉 기준)
-7. 100원 단위 반올림
+1. stockData.json에서 해당 주(turn) 실제 종가(close) 적용
+2. 코스피 지수 누적 등락률 반영 (실제 데이터)
+3. 뉴스 이벤트 풀(30개)에서 무작위 선택 → 화면 표시용
+4. 가격은 실제 OHLCV 데이터를 그대로 재생 (랜덤 없음)
+   └─ 2025-05-29 ~ 2026-05-07 기간의 실제 시장 데이터
 ```
 
-### 시장 지표 (시뮬레이션)
+### 데이터 출처
 
-| 지표 | 기준값 | 주간 변동폭 | 영향 |
-|------|--------|-------------|------|
-| 코스피 지수 | 2,600 | ±3% | 인덱스 ETF 연동 |
-| USD/KRW 환율 | 1,350원 | ±1% | 수출주 섹터 영향 |
+- 실제 주봉 OHLCV: pykrx로 수집 (2025-05-29 ~ 2026-05-07, 50주)
+- 종목 초기가격: 2025-05-29 기준 종가
 
 ---
 
 ## 결과 등급 (수익률 배수 기준)
 
-| 등급 | 배수 | 조건 | 설명 |
-|------|------|------|------|
-| S — 전설의 투자자 | 3.0x+ | 3,000만원+ | 1년에 자본 3배 달성 |
-| A — 주식 고수 | 2.0x+ | 2,000만원+ | 100% 수익, 워런 버핏 수준 |
-| B — 꾸준한 수익 | 1.5x+ | 1,500만원+ | 50% 수익, 시장 대비 초과 |
-| C — 시장 평균 수준 | 1.2x+ | 1,200만원+ | 20% 수익, KOSPI 평균 수준 |
-| D — 원금 보존 | 0.9x+ | 900만원+ | 손실 최소화 |
-| F — 손실 투자자 | ~0.9x | 900만원 미만 | 원금 10% 이상 손실 |
+| 등급 | 배수 기준 | 최종 자산 | 설명 |
+|------|-----------|-----------|------|
+| 🏆 전설의 투자자 | 2.0x+ | 2,000만원+ | 100% 수익 달성 |
+| 💎 고수 | 1.5x+ | 1,500만원+ | 50% 수익, 시장 대비 초과 |
+| 📈 수익 실현 | 1.2x+ | 1,200만원+ | 20% 수익, KOSPI 평균 수준 |
+| 😮 본전 | 1.0x+ | 1,000만원+ | 원금 보존 |
+| 📉 손실 | ~1.0x | 1,000만원 미만 | 원금 손실 발생 |
 
 ---
 
