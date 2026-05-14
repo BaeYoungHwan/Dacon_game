@@ -33,7 +33,7 @@ export default function Leaderboard() {
               </td>
               <td className="py-2">{r.nickname}</td>
               <td className="py-2 text-right text-yellow-400 font-bold">
-                {r.final_assets.toLocaleString()}원
+                {(r.final_asset ?? 0).toLocaleString()}원
               </td>
             </tr>
           ))}
