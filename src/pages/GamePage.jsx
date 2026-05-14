@@ -103,15 +103,15 @@ export default function GamePage() {
           <button
             onClick={handleNextTurn}
             style={{ outline: 'none' }}
-            className="absolute bottom-3 right-3 px-6 py-3 bg-gradient-to-b from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-slate-100 border-2 border-cyan-500/60 rounded shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-all duration-150 z-10 focus:outline-none"
+            className="absolute bottom-4 right-4 px-10 py-5 bg-gradient-to-b from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-slate-100 border-2 border-cyan-500/60 rounded-lg shadow-[0_0_25px_rgba(34,211,238,0.3)] transition-all duration-150 z-10 focus:outline-none"
           >
-            <p className="text-base font-bold tracking-widest">다음 주 ▶</p>
+            <p className="text-2xl font-bold tracking-widest">다음 주 ▶</p>
           </button>
 
-          {/* NPC 클릭 영역 */}
+          {/* NPC 클릭 영역 — 정보상·기술상은 라벨 풍선만 우측으로 이동 */}
           <NPCHotspot left="35%" label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} />
-          <NPCHotspot left="48%" label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} />
-          <NPCHotspot left="62%" label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} />
+          <NPCHotspot left="48%" label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} bubbleOffsetX={35} />
+          <NPCHotspot left="62%" label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} bubbleOffsetX={100} />
         </div>
       </div>
 
@@ -149,11 +149,11 @@ function IconButton({ icon, label, onClick }) {
     <button
       onClick={onClick}
       style={{ outline: 'none' }}
-      className="relative group flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 backdrop-blur rounded-lg w-12 h-12 border border-cyan-500/60 text-cyan-300 hover:text-cyan-200 transition-all duration-150 focus:outline-none focus:ring-0"
+      className="relative group flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 backdrop-blur rounded-lg w-16 h-16 border-2 border-cyan-500/60 text-cyan-300 hover:text-cyan-200 transition-all duration-150 focus:outline-none focus:ring-0 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
       aria-label={label}
     >
       {icon}
-      <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-cyan-200 text-xs px-2 py-1 rounded border border-cyan-500/60 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none shadow-lg">
+      <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-cyan-200 text-sm px-3 py-1 rounded border border-cyan-500/60 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none shadow-lg">
         {label}
       </span>
     </button>
@@ -161,14 +161,21 @@ function IconButton({ icon, label, onClick }) {
 }
 
 // NPC 클릭 영역 — 시안 광채 + 머리 위 라벨 풍선
-function NPCHotspot({ left, label, subLabel, onClick }) {
+// bubbleOffsetX: 라벨 풍선만 가로로 추가 이동 (px) — 캐릭터별 미세 조정용
+function NPCHotspot({ left, label, subLabel, onClick, bubbleOffsetX = 0 }) {
   return (
     <button
       onClick={onClick}
       style={{ left, width: '14%', top: '42%', height: '55%', outline: 'none' }}
       className="absolute group rounded transition-all duration-150 focus:outline-none focus:ring-0 hover:bg-[radial-gradient(ellipse_at_center,_rgba(34,211,238,0.3)_0%,_transparent_65%)]"
     >
-      <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none">
+      <span
+        style={{
+          left: `calc(50% + ${bubbleOffsetX}px)`,
+          transform: 'translate(-50%, -100%)',
+        }}
+        className="absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
+      >
         <span className="block whitespace-nowrap bg-cyan-500 text-slate-900 font-bold text-xs px-3 py-1 rounded shadow-lg border-2 border-cyan-700">
           {label}
           <span className="text-slate-700 font-normal ml-1">· {subLabel}</span>
@@ -185,7 +192,7 @@ function NPCHotspot({ left, label, subLabel, onClick }) {
 
 function HelpIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17.25h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   )
@@ -193,7 +200,7 @@ function HelpIcon() {
 
 function SettingsIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.108 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
@@ -203,7 +210,7 @@ function SettingsIcon() {
 function ExitIcon() {
   // 문 바깥으로 화살표 (logout 아이콘)
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
     </svg>
   )
