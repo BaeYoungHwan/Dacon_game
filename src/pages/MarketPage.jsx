@@ -37,8 +37,11 @@ export default function MarketPage() {
   const [selectedStockId, setSelectedStockId] = useState(null)
   const {
     activeStocks, prices, portfolio, buyStock, sellStock, navigateTo,
-    maPurchased, bollingerPurchased, macdPurchased, obvPurchased, cash,
+    maPurchased, bollingerPurchased, macdPurchased, obvPurchased, cash, turn,
   } = useGameStore()
+
+  const TECH_MERCHANT_UNLOCK_TURN = 10
+  const techLocked = turn < TECH_MERCHANT_UNLOCK_TURN
 
   const closePopup = () => {
     setActivePopup(null)
@@ -65,10 +68,12 @@ export default function MarketPage() {
             정보상
           </button>
           <button
-            onClick={() => navigateTo('techMerchant')}
-            className="px-3 py-1 bg-purple-700 hover:bg-purple-600 rounded text-sm transition-all duration-150"
+            onClick={() => !techLocked && navigateTo('techMerchant')}
+            disabled={techLocked}
+            className="px-3 py-1 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-600 disabled:cursor-not-allowed rounded text-sm transition-all duration-150"
+            title={techLocked ? TECH_MERCHANT_UNLOCK_TURN + '턴 이후 접근 가능' : undefined}
           >
-            기술상
+            기술상{techLocked ? ' (' + TECH_MERCHANT_UNLOCK_TURN + '턴~)' : ''}
           </button>
         </div>
       </div>

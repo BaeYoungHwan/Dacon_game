@@ -7,7 +7,10 @@ import { useGameStore } from '../store/gameStore'
 
 export default function InfoMerchantPage() {
   const [activePopup, setActivePopup] = useState(null)
-  const { navigateTo, currentNews, currentGlobalNews, activeStocks, prices } = useGameStore()
+  const { navigateTo, currentNews, currentGlobalNews, activeStocks, prices, turn } = useGameStore()
+
+  const TECH_MERCHANT_UNLOCK_TURN = 10
+  const techLocked = turn < TECH_MERCHANT_UNLOCK_TURN
 
   // activeStocks에서 중복 없는 섹터 목록 추출
   const sectors = [...new Set((activeStocks || []).map(s => s.sector))]
@@ -30,10 +33,12 @@ export default function InfoMerchantPage() {
             거래소
           </button>
           <button
-            onClick={() => navigateTo('techMerchant')}
-            className="px-3 py-1 bg-purple-700 hover:bg-purple-600 rounded text-sm transition-all duration-150"
+            onClick={() => !techLocked && navigateTo('techMerchant')}
+            disabled={techLocked}
+            className="px-3 py-1 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-600 disabled:cursor-not-allowed rounded text-sm transition-all duration-150"
+            title={techLocked ? TECH_MERCHANT_UNLOCK_TURN + '턴 이후 접근 가능' : undefined}
           >
-            기술상
+            기술상{techLocked ? ' (' + TECH_MERCHANT_UNLOCK_TURN + '턴~)' : ''}
           </button>
         </div>
       </div>
