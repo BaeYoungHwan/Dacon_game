@@ -25,8 +25,8 @@ export default function ResultPage() {
   const rank = getRank(finalAssets)
 
   const handleSubmit = async () => {
-    await submitScore(nickname, finalAssets)
-    await fetchRankings()
+    // submitScore 내부에서 fetchRankings + myRank 계산까지 처리
+    await submitScore(nickname, finalAssets, rank.label)
   }
 
   return (

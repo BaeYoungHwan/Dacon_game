@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useLeaderboardStore } from './leaderboardStore'
 import { persist } from 'zustand/middleware'
 import allStocks from '../data/stocks.json'
 import stockData from '../data/stockData.json'
@@ -31,7 +32,7 @@ export const useGameStore = create(
   persist(
     (set, get) => ({
       // 화면 전환 상태
-      page: 'start',  // 'start' | 'game' | 'result'
+      page: 'start',  // 'start' | 'main' | 'market' | 'infoMerchant' | 'techMerchant' | 'result'
 
       // 플레이어
       nickname: '',
@@ -55,6 +56,9 @@ export const useGameStore = create(
 
       setNickname: (name) => set({ nickname: name }),
 
+      // 게임 중 페이지 이동 (main ↔ market)
+      navigateTo: (page) => set({ page }),
+
       startGame: () => {
         const { active, hidden } = splitStocks(allStocks)
         // 공개/비공개 모두 가격 초기화 — 비공개도 내부적으로 가격 추적
@@ -65,7 +69,7 @@ export const useGameStore = create(
           ])
         )
         set({
-          page: 'game',
+          page: 'main',
           turn: 1,
           cash: INITIAL_CASH,
           portfolio: {},
@@ -75,22 +79,24 @@ export const useGameStore = create(
           indicatorsPurchased: false,
           prices: allPrices,
           currentNews: null,
+          currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
         })
       },
 
       // gameLogic.progressTurn()이 계산한 결과를 받아 상태에 반영
-      nextTurn: ({ newPrices, news, newKospi, newExchangeRate }) => {
+      nextTurn: ({ newPrices, news, globalNews, newKospi, newExchangeRate }) => {
         const { turn, totalTurns, exchangeRate } = get()
         const next = turn + 1
         set({
           turn: next,
           prices: newPrices,
           currentNews: news,
+          currentGlobalNews: globalNews,
           kospi: newKospi,
           exchangeRate: newExchangeRate ?? exchangeRate,
-          page: next > totalTurns ? 'result' : 'game',
+          page: next > totalTurns ? 'result' : 'main',
         })
       },
 
@@ -117,13 +123,16 @@ export const useGameStore = create(
         return true
       },
 
-      // 기술상: 비공개 종목 유료 공개 (잔액 부족 시 false)
+      // 기술상: 비공개 종목 유료 공개 — activeStocks로 이동해 거래소에서 거래 가능하게 함 (잔액 부족 시 false)
       unlockStock: (stockId, cost) => {
-        const { cash, unlockedStockIds } = get()
+        const { cash, unlockedStockIds, hiddenStocks, activeStocks } = get()
         if (cost > cash) return false
+        const target = hiddenStocks.find((s) => s.id === stockId)
         set({
           cash: cash - cost,
           unlockedStockIds: [...unlockedStockIds, stockId],
+          hiddenStocks: hiddenStocks.filter((s) => s.id !== stockId),
+          activeStocks: target ? [...activeStocks, target] : activeStocks,
         })
         return true
       },
@@ -151,9 +160,12 @@ export const useGameStore = create(
         return get().getFinalAssets() / INITIAL_CASH
       },
 
-      resetGame: () =>
+      resetGame: () => {
+        // 다시 하기 시 랭킹 등록 상태 초기화 (submitted 잔존 버그 방지)
+        useLeaderboardStore.getState().resetSubmitted()
         set({
           page: 'start',
+
           turn: 0,
           cash: INITIAL_CASH,
           portfolio: {},
@@ -163,9 +175,11 @@ export const useGameStore = create(
           indicatorsPurchased: false,
           prices: {},
           currentNews: null,
+          currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
-        }),
+        })
+      },
     }),
     { name: 'k-stock-merchant' },
   ),
