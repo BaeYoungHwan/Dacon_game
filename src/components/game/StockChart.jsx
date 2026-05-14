@@ -2,6 +2,7 @@
 // indicatorsPurchased 시 MA5, MA20, 볼린저, MACD, OBV 추가
 
 import stockData from "../../data/stockData.json"
+import { useGameStore } from "../../store/gameStore"
 import { calcMA, calcBollinger, calcMACD, calcOBV } from "./chartUtils"
 
 const SVG_W = 700
@@ -89,10 +90,13 @@ function PanelLabel({ label }) {
   )
 }
 
-export default function StockChart({ stockId, stockName, turn, maPurchased, bollingerPurchased, macdPurchased, obvPurchased }) {
+export default function StockChart({ stockId, stockName, maPurchased, bollingerPurchased, macdPurchased, obvPurchased }) {
+  const { turn } = useGameStore()
   const entry = stockData.stocks.find(s => s.realTicker === stockId)
-  const ohlcv = entry?.prices.slice(0, turn) ?? []
-  const dates = stockData.meta.dates.slice(0, turn)
+  const pregameOhlcv = entry?.pregame_prices ?? []
+  const gameOhlcv = entry?.prices.slice(0, turn) ?? []
+  const ohlcv = [...pregameOhlcv, ...gameOhlcv]
+  const dates = [...stockData.meta.pregame_dates, ...stockData.meta.dates.slice(0, turn)]
   const total = ohlcv.length
 
   if (total === 0) {

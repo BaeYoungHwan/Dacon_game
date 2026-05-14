@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // 떡상러쉬 게임 메인 화면 — NPC 3명 클릭으로 거래소·정보상·기술상 페이지 이동
 // 화면 구조: 상단 이미지 영역(메인 비주얼 + NPC 클릭) | 하단 NewsPanel
 //
@@ -12,19 +13,41 @@
 // ⚠️ 배영환 영역 의존:
 //   - store.prices, store.navigateTo(target), store.resetGame() 액션
 //   - progressTurn 시그니처 잠정
+=======
+// 게임 허브 화면 — 잔고/보유종목 확인 + 장소 이동 + 라운드 진행
+// 배치: 아이콘(우상단) | TurnControl(상단) | 장소이동버튼(중앙) | Portfolio(하단) | TipBox
+// 참고: docs/design-docs/props-spec.md
+>>>>>>> a30fc0e9d89ac8ddbda9f2051f2d4bee47ae975f
 
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { progressTurn } from '../lib/gameLogic'
 import stocks from '../data/stocks.json'
+<<<<<<< HEAD
 import NewsPanel from '../components/game/NewsPanel'
+=======
+import TurnControl from '../components/game/TurnControl'
+import Portfolio from '../components/game/Portfolio'
+import TipBox from '../components/game/TipBox'
+import HelpModal from '../components/game/HelpModal'
+import SettingsModal from '../components/game/SettingsModal'
+
+// 기술상 접근 가능 최소 턴
+const TECH_MERCHANT_UNLOCK_TURN = 10
+>>>>>>> a30fc0e9d89ac8ddbda9f2051f2d4bee47ae975f
 
 export default function GamePage() {
+  const [showHelp, setShowHelp] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const {
     turn, totalTurns, cash, portfolio, prices,
+<<<<<<< HEAD
     activeStocks, hiddenStocks,
     currentNews, currentGlobalNews,
     nextTurn, navigateTo, resetGame,
+=======
+    activeStocks, hiddenStocks, nextTurn, navigateTo,
+>>>>>>> a30fc0e9d89ac8ddbda9f2051f2d4bee47ae975f
   } = useGameStore()
 
   const [openHelp,     setOpenHelp]     = useState(false)
@@ -35,11 +58,41 @@ export default function GamePage() {
     nextTurn(result)
   }
 
+<<<<<<< HEAD
   const handleExit = () => {
     if (window.confirm('게임을 종료하고 초기 화면으로 돌아가시겠습니까?')) {
       resetGame()
     }
   }
+=======
+  const techLocked = turn < TECH_MERCHANT_UNLOCK_TURN
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-4">
+      {/* 헤더 — 도움말/설정 아이콘 */}
+      <div className="flex justify-end gap-2 mb-2">
+        <button
+          onClick={() => setShowHelp(true)}
+          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center font-bold transition-all duration-150"
+          title="게임 방법"
+        >
+          ?
+        </button>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-all duration-150"
+          title="설정"
+        >
+          ⚙
+        </button>
+      </div>
+
+      <TurnControl
+        turn={turn}
+        totalTurns={totalTurns}
+        onNextTurn={handleNextTurn}
+      />
+>>>>>>> a30fc0e9d89ac8ddbda9f2051f2d4bee47ae975f
 
   // 보유 종목 리스트 + 평가액 + 총자산 계산
   const holdings = stocks.filter((s) => (portfolio[s.id] || 0) > 0)
@@ -62,6 +115,7 @@ export default function GamePage() {
             backgroundPosition: 'center',
           }}
         >
+<<<<<<< HEAD
           {/* 좌측(수직 중앙): ROUND + 자산 + HOLDINGS */}
           <div className="absolute top-1/2 left-4 -translate-y-1/2 bg-slate-900/85 backdrop-blur rounded-xl px-10 py-8 text-slate-100 z-10 border-2 border-cyan-500/60 shadow-[0_0_25px_rgba(34,211,238,0.15)] w-80">
             <p className="text-sm text-cyan-300/80 tracking-wider">ROUND</p>
@@ -113,6 +167,27 @@ export default function GamePage() {
           <NPCHotspot left="48%" label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} />
           <NPCHotspot left="62%" label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} />
         </div>
+=======
+          거래소
+        </button>
+        <button
+          onClick={() => navigateTo('infoMerchant')}
+          className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-lg font-bold transition-all duration-150"
+        >
+          정보상
+        </button>
+        <button
+          onClick={() => !techLocked && navigateTo('techMerchant')}
+          disabled={techLocked}
+          className={`flex-1 py-3 rounded-lg font-bold transition-all duration-150 ${
+            techLocked
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-purple-600 hover:bg-purple-500'
+          }`}
+        >
+          {techLocked ? `기술상 (${TECH_MERCHANT_UNLOCK_TURN}턴~)` : '기술상'}
+        </button>
+>>>>>>> a30fc0e9d89ac8ddbda9f2051f2d4bee47ae975f
       </div>
 
       {/* 하단: 뉴스 패널 (명세 v2 §3 companyNews + globalNews 분리) */}
@@ -120,6 +195,7 @@ export default function GamePage() {
         <NewsPanel companyNews={currentNews} globalNews={currentGlobalNews} />
       </div>
 
+<<<<<<< HEAD
       {/* 모달 */}
       {openHelp     && <HelpModal     onClose={() => setOpenHelp(false)} />}
       {openSettings && <SettingsModal onClose={() => setOpenSettings(false)} />}
@@ -279,6 +355,12 @@ function ToggleRow({ label, value, onChange }) {
           className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all duration-150 ${value ? 'left-6' : 'left-0.5'}`}
         />
       </button>
+=======
+      <TipBox />
+
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+>>>>>>> a30fc0e9d89ac8ddbda9f2051f2d4bee47ae975f
     </div>
   )
 }

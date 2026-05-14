@@ -5,12 +5,12 @@
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 
-// 지표별 구매 비용 — 추후 gameLogic에서 계산해서 주입 가능
+// 지표별 구매 비용 (GamePage TECH_MERCHANT_UNLOCK_TURN=10 이후 접근 가능)
 const INDICATOR_COSTS = {
-  ma: 200_000,
-  bollinger: 300_000,
-  macd: 400_000,
-  obv: 200_000,
+  ma: 600_000,
+  bollinger: 900_000,
+  macd: 1_200_000,
+  obv: 600_000,
 }
 const INDICATOR_LABELS = {
   ma: 'MA5 + MA20',
@@ -18,9 +18,9 @@ const INDICATOR_LABELS = {
   macd: 'MACD',
   obv: 'OBV',
 }
-// 구매 가능 최소 턴 (0이면 제한 없음)
-const INDICATOR_UNLOCK_TURN = { ma: 0, bollinger: 20, macd: 30, obv: 0 }
-const UNLOCK_COST = 300_000
+// 지표별 구매 가능 최소 턴 (각 지표마다 차등 설정)
+const INDICATOR_UNLOCK_TURN = { ma: 10, bollinger: 20, macd: 30, obv: 15 }
+const UNLOCK_COST = 900_000
 
 export default function TechMerchantPage() {
   const [activePopup, setActivePopup] = useState(null)
@@ -43,6 +43,20 @@ export default function TechMerchantPage() {
           ← 메인으로
         </button>
         <h1 className="text-xl font-bold">기술상</h1>
+        <div className="flex gap-2 ml-auto">
+          <button
+            onClick={() => navigateTo('market')}
+            className="px-3 py-1 bg-blue-700 hover:bg-blue-600 rounded text-sm transition-all duration-150"
+          >
+            거래소
+          </button>
+          <button
+            onClick={() => navigateTo('infoMerchant')}
+            className="px-3 py-1 bg-yellow-700 hover:bg-yellow-600 rounded text-sm transition-all duration-150"
+          >
+            정보상
+          </button>
+        </div>
       </div>
 
       {/* TODO(신입): 이미지 버튼 2개 — 실제 이미지로 교체 */}
@@ -76,6 +90,10 @@ export default function TechMerchantPage() {
               >
                 ✕
               </button>
+            </div>
+            <div className="flex items-center justify-between bg-gray-700 rounded-lg px-3 py-2 text-sm mb-4">
+              <span className="text-gray-400">보유 현금</span>
+              <span className="font-bold text-white">{cash.toLocaleString()}원</span>
             </div>
 
             {/* TODO(신입): 팝업별 전용 UI로 교체 */}
