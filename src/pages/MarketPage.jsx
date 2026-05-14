@@ -57,6 +57,20 @@ export default function MarketPage() {
           ← 메인으로
         </button>
         <h1 className="text-xl font-bold">월스트리트 거래소</h1>
+        <div className="flex gap-2 ml-auto">
+          <button
+            onClick={() => navigateTo('infoMerchant')}
+            className="px-3 py-1 bg-yellow-700 hover:bg-yellow-600 rounded text-sm transition-all duration-150"
+          >
+            정보상
+          </button>
+          <button
+            onClick={() => navigateTo('techMerchant')}
+            className="px-3 py-1 bg-purple-700 hover:bg-purple-600 rounded text-sm transition-all duration-150"
+          >
+            기술상
+          </button>
+        </div>
       </div>
 
       {/* TODO(신입): 이미지 버튼 3개 - 실제 이미지로 교체 */}
