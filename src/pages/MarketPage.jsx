@@ -37,8 +37,11 @@ export default function MarketPage() {
   const [selectedStockId, setSelectedStockId] = useState(null)
   const {
     activeStocks, prices, portfolio, buyStock, sellStock, navigateTo,
-    maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
+    maPurchased, bollingerPurchased, macdPurchased, obvPurchased, cash, turn,
   } = useGameStore()
+
+  const TECH_MERCHANT_UNLOCK_TURN = 10
+  const techLocked = turn < TECH_MERCHANT_UNLOCK_TURN
 
   const closePopup = () => {
     setActivePopup(null)
@@ -57,6 +60,22 @@ export default function MarketPage() {
           ← 메인으로
         </button>
         <h1 className="text-xl font-bold">월스트리트 거래소</h1>
+        <div className="flex gap-2 ml-auto">
+          <button
+            onClick={() => navigateTo('infoMerchant')}
+            className="px-3 py-1 bg-yellow-700 hover:bg-yellow-600 rounded text-sm transition-all duration-150"
+          >
+            정보상
+          </button>
+          <button
+            onClick={() => !techLocked && navigateTo('techMerchant')}
+            disabled={techLocked}
+            className="px-3 py-1 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-600 disabled:cursor-not-allowed rounded text-sm transition-all duration-150"
+            title={techLocked ? TECH_MERCHANT_UNLOCK_TURN + '턴 이후 접근 가능' : undefined}
+          >
+            기술상{techLocked ? ' (' + TECH_MERCHANT_UNLOCK_TURN + '턴~)' : ''}
+          </button>
+        </div>
       </div>
 
       {/* TODO(신입): 이미지 버튼 3개 - 실제 이미지로 교체 */}
@@ -126,13 +145,20 @@ export default function MarketPage() {
             )}
 
             {(activePopup === 'buy' || activePopup === 'sell') && (
-              <StockBoard
-                stocks={activeStocks}
-                prices={prices}
-                portfolio={portfolio}
-                onBuy={activePopup === 'buy' ? buyStock : undefined}
-                onSell={activePopup === 'sell' ? sellStock : undefined}
-              />
+              <>
+                <div className="flex items-center justify-between bg-gray-700 rounded-lg px-3 py-2 text-sm mb-4">
+                  <span className="text-gray-400">보유 현금</span>
+                  <span className="font-bold text-white">{cash.toLocaleString()}원</span>
+                </div>
+                <StockBoard
+                  stocks={activeStocks}
+                  prices={prices}
+                  portfolio={portfolio}
+                  cash={cash}
+                  onBuy={activePopup === 'buy' ? buyStock : undefined}
+                  onSell={activePopup === 'sell' ? sellStock : undefined}
+                />
+              </>
             )}
           </div>
         </div>
