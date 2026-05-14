@@ -8,22 +8,24 @@ export const useLeaderboardStore = create((set) => ({
   submitted: false,
 
   // 랭킹 등록
-  submitScore: async (nickname, finalAssets) => {
+  submitScore: async (nickname, finalAsset, grade) => {
+    if (!supabase) return
     set({ loading: true, error: null })
     const { error } = await supabase
       .from('rankings')
-      .insert({ nickname, final_assets: finalAssets })
+      .insert({ nickname, final_asset: finalAsset, grade })
     if (error) set({ error: error.message, loading: false })
     else set({ loading: false, submitted: true })
   },
 
   // 상위 20위 조회
   fetchRankings: async () => {
+    if (!supabase) return
     set({ loading: true, error: null })
     const { data, error } = await supabase
       .from('rankings')
       .select('*')
-      .order('final_assets', { ascending: false })
+      .order('final_asset', { ascending: false })
       .limit(20)
     if (error) set({ error: error.message, loading: false })
     else set({ rankings: data ?? [], loading: false })
