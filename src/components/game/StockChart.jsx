@@ -89,7 +89,7 @@ function PanelLabel({ label }) {
   )
 }
 
-export default function StockChart({ stockId, stockName, turn, indicatorsPurchased }) {
+export default function StockChart({ stockId, stockName, turn, maPurchased, bollingerPurchased, macdPurchased, obvPurchased }) {
   const entry = stockData.stocks.find(s => s.realTicker === stockId)
   const ohlcv = entry?.prices.slice(0, turn) ?? []
   const dates = stockData.meta.dates.slice(0, turn)
@@ -113,11 +113,11 @@ export default function StockChart({ stockId, stockName, turn, indicatorsPurchas
   const maxVol = Math.max(...ohlcv.map(c => c.volume))
   const VOL_H = 90
 
-  const ma5 = indicatorsPurchased ? calcMA(closes, 5) : []
-  const ma20 = indicatorsPurchased ? calcMA(closes, 20) : []
-  const bollinger = indicatorsPurchased ? calcBollinger(closes, 20) : []
-  const macdData = indicatorsPurchased ? calcMACD(closes) : []
-  const obvData = indicatorsPurchased ? calcOBV(ohlcv) : []
+  const ma5 = maPurchased ? calcMA(closes, 5) : []
+  const ma20 = maPurchased ? calcMA(closes, 20) : []
+  const bollinger = bollingerPurchased ? calcBollinger(closes, 20) : []
+  const macdData = macdPurchased ? calcMACD(closes) : []
+  const obvData = obvPurchased ? calcOBV(ohlcv) : []
 
   const allMacdVals = macdData.flatMap(d => [d.macd, d.signal, d.histogram]).filter(v => v !== null)
   const macdMin = allMacdVals.length ? Math.min(...allMacdVals) : -1
@@ -149,7 +149,7 @@ export default function StockChart({ stockId, stockName, turn, indicatorsPurchas
         <YAxis minV={priceMin} maxV={priceMax} svgH={PRICE_H} />
         <XAxisLabels dates={dates} total={total} svgH={PRICE_H} />
 
-        {indicatorsPurchased && bollingerFill && (
+        {bollingerPurchased && bollingerFill && (
           <>
             <path d={bollingerFill} fill="rgba(168,85,247,0.1)" />
             <polyline points={upperPts.join(" ")} fill="none" stroke="#a855f7" strokeWidth={1} strokeDasharray="4 2" opacity={0.7} />
@@ -174,10 +174,10 @@ export default function StockChart({ stockId, stockName, turn, indicatorsPurchas
           )
         })}
 
-        {indicatorsPurchased && (
+        {maPurchased && (
           <polyline points={buildPolylinePoints(ma5, total, priceMin, priceMax, PRICE_H)} fill="none" stroke="#f59e0b" strokeWidth={1.5} opacity={0.9} />
         )}
-        {indicatorsPurchased && (
+        {maPurchased && (
           <polyline points={buildPolylinePoints(ma20, total, priceMin, priceMax, PRICE_H)} fill="none" stroke="#a855f7" strokeWidth={1.5} opacity={0.9} />
         )}
       </svg>
@@ -198,7 +198,7 @@ export default function StockChart({ stockId, stockName, turn, indicatorsPurchas
         })}
       </svg>
 
-      {indicatorsPurchased && (
+      {macdPurchased && (
         <svg width="100%" height={MACD_H} viewBox={"0 0 " + SVG_W + " " + MACD_H} className="block">
           <PanelLabel label="MACD" />
           <line x1={PAD.left} x2={SVG_W - PAD.right}
@@ -221,30 +221,53 @@ export default function StockChart({ stockId, stockName, turn, indicatorsPurchas
         </svg>
       )}
 
-      {indicatorsPurchased && (
+      {obvPurchased && (
         <svg width="100%" height={OBV_H} viewBox={"0 0 " + SVG_W + " " + OBV_H} className="block">
           <PanelLabel label="OBV" />
           <polyline points={buildPolylinePoints(obvData, total, obvMin, obvMax, OBV_H)} fill="none" stroke="#4ade80" strokeWidth={1.5} />
         </svg>
       )}
 
-      {indicatorsPurchased && (
+      {(maPurchased || bollingerPurchased || macdPurchased || obvPurchased) && (
         <div className="flex gap-4 flex-wrap px-1 pt-1">
-          {[
-            { color: "#f59e0b", label: "MA5" },
-            { color: "#a855f7", label: "MA20" },
-            { color: "#a855f7", label: "볼린저", dashed: true },
-            { color: "#38bdf8", label: "MACD" },
-            { color: "#fb923c", label: "시그널" },
-            { color: "#4ade80", label: "OBV" },
-          ].map(({ color, label, dashed }) => (
-            <div key={label} className="flex items-center gap-1.5">
+          {maPurchased && ["MA5-#f59e0b", "MA20-#a855f7"].map(item => {
+            const [label, color] = item.split("-")
+            return (
+              <div key={label} className="flex items-center gap-1.5">
+                <svg width={16} height={10} viewBox="0 0 16 10">
+                  <line x1={0} x2={16} y1={5} y2={5} stroke={color} strokeWidth={2} />
+                </svg>
+                <span className="text-xs text-gray-400">{label}</span>
+              </div>
+            )
+          })}
+          {bollingerPurchased && (
+            <div className="flex items-center gap-1.5">
               <svg width={16} height={10} viewBox="0 0 16 10">
-                <line x1={0} x2={16} y1={5} y2={5} stroke={color} strokeWidth={2} strokeDasharray={dashed ? "3 2" : "0"} />
+                <line x1={0} x2={16} y1={5} y2={5} stroke="#a855f7" strokeWidth={2} strokeDasharray="3 2" />
               </svg>
-              <span className="text-xs text-gray-400">{label}</span>
+              <span className="text-xs text-gray-400">볼린저</span>
             </div>
-          ))}
+          )}
+          {macdPurchased && ["MACD-#38bdf8", "시그널-#fb923c"].map(item => {
+            const [label, color] = item.split("-")
+            return (
+              <div key={label} className="flex items-center gap-1.5">
+                <svg width={16} height={10} viewBox="0 0 16 10">
+                  <line x1={0} x2={16} y1={5} y2={5} stroke={color} strokeWidth={2} />
+                </svg>
+                <span className="text-xs text-gray-400">{label}</span>
+              </div>
+            )
+          })}
+          {obvPurchased && (
+            <div className="flex items-center gap-1.5">
+              <svg width={16} height={10} viewBox="0 0 16 10">
+                <line x1={0} x2={16} y1={5} y2={5} stroke="#4ade80" strokeWidth={2} />
+              </svg>
+              <span className="text-xs text-gray-400">OBV</span>
+            </div>
+          )}
         </div>
       )}
     </div>

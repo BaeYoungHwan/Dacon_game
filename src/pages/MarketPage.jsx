@@ -35,7 +35,10 @@ function StockCardGrid({ stocks, prices, onSelect }) {
 export default function MarketPage() {
   const [activePopup, setActivePopup] = useState(null)
   const [selectedStockId, setSelectedStockId] = useState(null)
-  const { activeStocks, prices, portfolio, buyStock, sellStock, navigateTo, turn, indicatorsPurchased } = useGameStore()
+  const {
+    activeStocks, prices, portfolio, buyStock, sellStock, navigateTo,
+    maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
+  } = useGameStore()
 
   const closePopup = () => {
     setActivePopup(null)
@@ -116,7 +119,10 @@ export default function MarketPage() {
                 stockId={selectedStockId}
                 stockName={selectedStock?.name ?? ''}
                 turn={turn}
-                indicatorsPurchased={indicatorsPurchased}
+                maPurchased={maPurchased}
+                bollingerPurchased={bollingerPurchased}
+                macdPurchased={macdPurchased}
+                obvPurchased={obvPurchased}
               />
             )}
 

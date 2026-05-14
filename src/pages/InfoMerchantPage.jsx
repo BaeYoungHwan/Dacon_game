@@ -7,7 +7,7 @@ import { useGameStore } from '../store/gameStore'
 
 export default function InfoMerchantPage() {
   const [activePopup, setActivePopup] = useState(null)
-  const { navigateTo, currentNews, activeStocks, prices } = useGameStore()
+  const { navigateTo, currentNews, currentGlobalNews, activeStocks, prices } = useGameStore()
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -63,12 +63,27 @@ export default function InfoMerchantPage() {
             {/* TODO(신입): 팝업별 전용 UI 구현 */}
             {activePopup === 'globalNews' && (
               <div className="text-gray-300">
-                {currentNews?.global ?? '이번 라운드 국제 뉴스가 없습니다.'}
+                {currentGlobalNews
+                  ? (
+                    <div>
+                      <p className="font-bold mb-1">📰 {currentGlobalNews.headline}</p>
+                      <p className="text-xs text-gray-400">{currentGlobalNews.detail}</p>
+                    </div>
+                  )
+                  : '이번 라운드 국제 뉴스가 없습니다.'}
               </div>
             )}
             {activePopup === 'companyNews' && (
-              <div className="text-gray-300">
-                {currentNews?.company ?? '이번 라운드 기업 뉴스가 없습니다.'}
+              <div className="space-y-3 text-gray-300">
+                {currentNews && currentNews.length > 0
+                  ? currentNews.map((n) => (
+                    <div key={n.id} className="border-b border-gray-700 pb-2">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-gray-700 mr-2">{n.sector}</span>
+                      <p className="font-bold mt-1 text-sm">📰 {n.headline}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{n.detail}</p>
+                    </div>
+                  ))
+                  : '이번 라운드 기업 뉴스가 없습니다.'}
               </div>
             )}
             {activePopup === 'recommendation' && (
