@@ -5,17 +5,33 @@
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 
-// 라운드별 비용 — 추후 gameLogic에서 계산해서 주입 가능
-const INDICATOR_COST = 500_000
+// 지표별 구매 비용 — 추후 gameLogic에서 계산해서 주입 가능
+const INDICATOR_COSTS = {
+  ma: 200_000,
+  bollinger: 300_000,
+  macd: 400_000,
+  obv: 200_000,
+}
+const INDICATOR_LABELS = {
+  ma: 'MA5 + MA20',
+  bollinger: '볼린저 밴드',
+  macd: 'MACD',
+  obv: 'OBV',
+}
+// 구매 가능 최소 턴 (0이면 제한 없음)
+const INDICATOR_UNLOCK_TURN = { ma: 0, bollinger: 20, macd: 30, obv: 0 }
 const UNLOCK_COST = 300_000
 
 export default function TechMerchantPage() {
   const [activePopup, setActivePopup] = useState(null)
   const {
-    navigateTo, cash,
-    hiddenStocks, unlockedStockIds, prices,
-    unlockStock, buyIndicators, indicatorsPurchased,
+    navigateTo, cash, turn,
+    hiddenStocks, unlockedStockIds,
+    unlockStock, buyIndicator,
+    maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
   } = useGameStore()
+
+  const purchasedMap = { ma: maPurchased, bollinger: bollingerPurchased, macd: macdPurchased, obv: obvPurchased }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -65,21 +81,36 @@ export default function TechMerchantPage() {
             {/* TODO(신입): 팝업별 전용 UI로 교체 */}
             {activePopup === 'indicators' && (
               <div className="space-y-3">
-                <p className="text-gray-300 text-sm">MA · 볼린저 · MACD · OBV 지표를 게임 끝까지 사용할 수 있습니다.</p>
-                <p className="text-yellow-400 font-bold">비용: {INDICATOR_COST.toLocaleString()}원</p>
-                {indicatorsPurchased ? (
-                  <p className="text-green-400">이미 구매했습니다.</p>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (buyIndicators(INDICATOR_COST)) setActivePopup(null)
-                    }}
-                    disabled={cash < INDICATOR_COST}
-                    className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 rounded font-bold transition-all duration-150"
-                  >
-                    {cash < INDICATOR_COST ? '잔액 부족' : '구매하기'}
-                  </button>
-                )}
+                <p className="text-gray-400 text-xs mb-4">지표를 구매하면 거래소 차트에 영구 표시됩니다.</p>
+                {Object.entries(INDICATOR_COSTS).map(([key, cost]) => {
+                  const minTurn = INDICATOR_UNLOCK_TURN[key]
+                  const locked = turn < minTurn
+                  return (
+                    <div key={key} className="flex items-center justify-between bg-gray-700 rounded p-3">
+                      <div>
+                        <p className="font-bold text-sm">{INDICATOR_LABELS[key]}</p>
+                        <p className="text-xs text-gray-400">
+                          {locked
+                            ? minTurn + "턴 이후 구매 가능 (현재 " + turn + "턴)"
+                            : cost.toLocaleString() + "원"}
+                        </p>
+                      </div>
+                      {purchasedMap[key] ? (
+                        <span className="text-green-400 text-sm font-bold">구매완료</span>
+                      ) : locked ? (
+                        <span className="text-gray-500 text-sm">잠김</span>
+                      ) : (
+                        <button
+                          onClick={() => buyIndicator(key, cost)}
+                          disabled={cash < cost}
+                          className="px-3 py-1 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 rounded text-sm font-bold transition-all duration-150"
+                        >
+                          {cash < cost ? "잔액부족" : "구매"}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
 
