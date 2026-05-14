@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-14
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-14 (차트 초안 + pregame 데이터)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -32,11 +32,11 @@
 | 1.1 분석/기획 | 3 | 3 | 100% |
 | 1.2 설계 | 3 | 3 | 100% |
 | 1.3 P0 기반 구축 | 7 | 7 | 100% |
-| 1.4 P1 핵심 기능 | 14 | 10 | 71.4% (1개 진행중) |
+| 1.4 P1 핵심 기능 | 16 | 11 | 68.8% (2개 진행중) |
 | 1.5 P1 통합 | 7 | 7 | 100% |
 | 1.6 P2 QA + 배포 | 6 | 2 | 33.3% |
 | 1.7 버퍼 | 2 | 0 | 0% |
-| **전체** | **42** | **32** | **76.2%** |
+| **전체** | **44** | **33** | **75.0%** |
 
 ---
 
@@ -97,7 +97,7 @@
 | WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
 |-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
 | 1.4.1 | [공용] gameStore 구현 (Zustand — 턴, 현금, 포트폴리오, 주가, persist) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 1 | src/store/gameStore.js | P0 |
-| 1.4.2 | [공용] gameLogic.js — 실제 주봉 OHLCV 재생 방식 완료, CompanyNews/GlobalNews 연동 미완 | 배영환 | 진행중 | 50% | 05/14 | 05/14 | 1 | src/lib/gameLogic.js | P0 |
+| 1.4.2 | [공용] gameLogic.js — 주봉 재생 + CompanyNews/GlobalNews 분리 반환 완료 | 배영환 | 완료 | 100% | 05/14 | 05/14 | 1 | src/lib/gameLogic.js | P0 |
 | 1.4.3 | [공용] 매수/매도 로직 구현 (buyStock, sellStock) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 1 | gameStore.js 업데이트 | P0 |
 | 1.4.4 | [공용] 로직 동작 검증 — UI 없이 콘솔 테스트 (이 시점에 게임이 돌아가야 함) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 1 | 콘솔 출력 확인 | P0 |
 | 1.4.5 | [Front] StartPage 구현 (닉네임 입력 + 새 게임 / 이어하기 버튼, localStorage 연동) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 1 | src/pages/StartPage.jsx | P0 |
@@ -110,6 +110,8 @@
 | 1.4.12 | [Front] InfoMerchantModal 구현 (정보상 — 국제뉴스·기업뉴스·추천종목, 라운드별 가격 변동) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/InfoMerchantModal.jsx | P1 |
 | 1.4.13 | [Front] TechMerchantModal 구현 (기술상 — 제외된 10종목 중 일부 유료 공개) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/TechMerchantModal.jsx | P1 |
 | 1.4.14 | [Front] RoundResultModal 구현 (라운드 종료 — 수익/손실 요약, 다음 라운드 버튼) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/game/RoundResultModal.jsx | P1 |
+| 1.4.15 | [공용] stockData.json pregame 13주 차트 배경 데이터 스크립트 추가 (collect-stock-data.py) | 배영환 | 진행중 | 50% | 05/14 | 05/14 | 0.5 | scripts/collect-stock-data.py (재실행 필요) | P1 |
+| 1.4.16 | [Front] StockChart 컴포넌트 초안 (캔들차트 + pregame 데이터 연동) | 송원호 | 진행중 | 30% | 05/14 | 05/15 | 1 | src/components/game/StockChart.jsx, chartUtils.js | P1 |
 
 ---
 
