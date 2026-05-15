@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-15 (TechMerchantPage 16:9 배경 리뉴얼 + ObjectGlow 2종(차트지표/깜짝종목) + 코너 핫스팟 4종 + 10턴 잠금 안내 팝업 + 1680·945 기준 좌표 미세조정 / PR 리뷰 후속 — 3개 페이지 HMR 구독 누수 정리(`import.meta.hot.dispose()`) + Hotspot·HelpBubble dead code 제거)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-15 (GamePage 전반 폴리싱 7종 — 디자인 톤 통일(자산카드/IconButton/ExitConfirmModal/NPC라벨/KospiChart+Marquee outer) / KospiChart compact 모드 + SVG 디테일 보강(글로우·area fill·펄스 ring·pregame↔game 연결·Y축 좌측 정렬) / 총자산 전주 대비 증감률·증감액 표시 / ResizeObserver + transform:scale wrapper로 viewport 반응형 / 도움말 KOSPI 박스 추가 + 8개 풍선 입문자용 리라이팅 + arrow="up" 지원 / 페이지 진입 애니메이션(opacity+scale+blur) 4개 페이지 적용 / 새 게임 첫 라운드 trend·delta 초기화(useRef→useState + sessionStorage 클리어))
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -32,11 +32,11 @@
 | 1.1 분석/기획 | 3 | 3 | 100% |
 | 1.2 설계 | 3 | 3 | 100% |
 | 1.3 P0 기반 구축 | 7 | 7 | 100% |
-| 1.4 P1 핵심 기능 | 29 | 26 | 89.7% (1개 진행중 · 3개 대체됨) |
+| 1.4 P1 핵심 기능 | 36 | 33 | 91.7% (3개 대체됨) |
 | 1.5 P1 통합 | 8 | 8 | 100% |
-| 1.6 P2 QA + 배포 | 6 | 2 | 33.3% (1개 진행중) |
+| 1.6 P2 QA + 배포 | 6 | 4 | 66.7% |
 | 1.7 버퍼 | 2 | 0 | 0% |
-| **전체** | **58** | **49** | **84.5%** |
+| **전체** | **65** | **58** | **89.2%** |
 
 ---
 
@@ -125,6 +125,13 @@
 | 1.4.27 | [Front] 설정 모달 audioStore 연결 — 볼륨 슬라이더 (0=음소거, mute 토글 제거) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.3 | GamePage.jsx 내부 (useAudioStore) | P1 |
 | 1.4.28 | [Front] MarketPage KRX 거래소 리뉴얼 — 거래소.webp 배경 + 16:9 viewport 클램프 + 핫스팟 오버레이 5종(종목분석/주식구매/주식판매/도움말/메인/정보상/기술상) + 호버 글로우(cyan·emerald·red) + 1920×1080 기준 비례 % 좌표(창 크기 무관 정렬 유지) + HelpOverlay 풍선 5개 + 새 게임당 도움말 1회 자동 노출(`sessionStorage` + `useGameStore.subscribe` page 전환 감지) + 기술상 진입 제한 해제(페이지 내부 기능 잠금은 TechMerchantPage 책임) | 송원호 | 완료 | 100% | 05/15 | 05/15 | 1 | src/pages/MarketPage.jsx, public/images/market-bg.webp | P1 |
 | 1.4.29 | [Front] PR 리뷰 후속 — HMR 구독 누수 정리 + 핫스팟·도움말 풍선 dead code 제거 (3개 페이지 모듈 레벨 `useGameStore.subscribe`에 `import.meta.hot.dispose()` 추가하여 HMR 시 좀비 구독 누적 방지 / `Hotspot` `disabled` prop 제거(호출부 미사용) / `HelpBubble` 도달 불가능한 arrow 분기 제거(MarketPage `down`, TechMerchant·InfoMerchant `up`) / `eslint-disable-next-line react-hooks/exhaustive-deps` 주석 제거(ESLint 미설치 + `setOpenHelp`는 stable reference라 어차피 안 떴음) — 모든 변경 사항 Vite HMR 9건 무에러 통과·기능 동작 변화 0) | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.3 | src/pages/MarketPage.jsx, src/pages/TechMerchantPage.jsx, src/pages/InfoMerchantPage.jsx | P2 |
+| 1.4.30 | [Front] GamePage 디자인 톤 통일 — 좌측 자산 카드(ROUND/HOLDINGS 헤더에 LED 인디케이터 + `bg-slate-800/70 border-cyan-500/30` 카드로 자산row·보유종목 감쌈) / IconButton(hover 시 inset+outer cyan 글로우, 라벨 풍선을 HelpBubble 톤으로) / ExitConfirmModal(PopupOverlay 패턴: `font-mono tracking-wider` 헤더 + ✕ + slate-800/70 카드) / NPC 라벨 풍선(`bg-slate-900/95 + cyan-400 border + glow + font-mono`) / KospiChart·Marquee outer(`bg-gradient-to-b from-slate-900 to-slate-950 + rounded-xl + shadow-[0_0_40px]`) — 다른 3개 페이지(Info/Market/Tech) PopupOverlay 패턴과 일관성 확보 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.5 | src/pages/GamePage.jsx, src/components/game/KospiChart.jsx, src/components/ui/Marquee.jsx | P1 |
+| 1.4.31 | [Front] KospiChart compact 모드 + SVG 디테일 보강 — `compact` prop 도입(GamePage 미니 차트 vs ChartExpandModal 풀 차트), compact 시 격자/X·Y 라벨/경계 점선/현재가 기준선/푸터 숨김 + PAD 좁게(8px) / 풀 모드 글로우 강화(stdDeviation 1.8→3.0) + Area fill 3-stop 그라데이션(0.55/0.2/0) + 게임 라인 strokeWidth 2.5 + 현재가 펄스 ring(SVG `<animate>` 2s 주기 r 4↔14, opacity 0.7↔0) / pregame↔game 라인 연결(game 첫 점에 pregame 마지막 점 prepend) — turn=1 첫 라운드부터도 라인 표시 / Y축 라벨 textAnchor="start" + x=7로 좌측 정렬, PAD.left 54→34 / 헤더 폰트 사이즈 조정(KOSPI text-sm/INDEX·LIVE text-[10px]/수치 text-xl/증감률 text-sm) / 푸터 OPEN·W{turn}/50 폰트 키움(text-[9px]→text-sm + font-bold) | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.5 | src/components/game/KospiChart.jsx | P1 |
+| 1.4.32 | [Front] 좌측 자산 카드 총자산 전주 대비 표시 — `AssetRow`에 `deltaPct`/`deltaAmount` prop 확장, 직전 라운드 totalAssets sessionStorage 캐시(`game-total-assets-prev`) + trend/증감률/증감액 계산. 총자산 라인 하단에 `▲ X.XX% (+27,000원)` 우측 정렬 + 변동 없음(±0.005% 미만) 시 두 번째 줄 숨김. 색상: 상승 red-400/300(韓 표준) / 하락 blue-400/300 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.3 | src/pages/GamePage.jsx | P1 |
+| 1.4.33 | [Front] GamePage 반응형 (ResizeObserver + transform:scale wrapper) — 외곽 구조를 다른 페이지와 동일 패턴(`h-screen w-screen` + `width: min(100vw, calc(100vh * 1695 / 928))`)으로 통일. 1695×928 고정 좌표 wrapper에 `transform: scale(${scale})` + `transform-origin: top-left` 적용, ResizeObserver로 컨테이너 너비 변화 감지해 scale 갱신. 모든 absolute 요소(자산 카드/TIPS/차트/NPC/우상단 아이콘/다음 주 버튼)가 viewport 크기에 따라 비례 축소. 모달은 wrapper 밖 fixed라 정상 표시 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.3 | src/pages/GamePage.jsx | P1 |
+| 1.4.34 | [Front] 도움말 보강 — KOSPI 차트 박스 추가(arrow="down", 차트 위쪽 위치) + `HelpBubble` arrow="up" 분기 추가(다른 페이지와 통일) + 8개 풍선 문구 입문자용 리라이팅(전문 용어 풀어쓰기, "매수/매도"→"사고팔기", "퀀트"→생략, 정보상에 "뉴스→주가 변동" 인과 설명 추가). TIPS는 원래 "떡상 꿀팁이 흐릅니다 ✨"로 롤백 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.3 | src/pages/GamePage.jsx | P1 |
+| 1.4.35 | [Front] 페이지 진입 애니메이션 — index.css `@keyframes page-enter`(450ms, opacity 0→1 + scale 0.96→1 + blur 4px→0, cubic-bezier(0.16,1,0.3,1) easeOutExpo 풍) + GamePage/MarketPage/InfoMerchantPage/TechMerchantPage 최상위 div에 `animate-page-enter` class 적용. 페이지 전환 시 부드러운 fade-in + 줌인 + 블러 풀림 효과 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.2 | src/index.css, 4개 페이지 .jsx | P1 |
+| 1.4.36 | [Front] 새 게임 첫 라운드 trend/delta 초기화 — `prev*Ref(useRef)`를 `useState`로 마이그레이션. 초기값 함수에서 `turn === 1` 시 sessionStorage 캐시(`game-stock-value-prev`, `game-total-assets-prev`) `removeItem` + null 반환. 게임 종료 후 재시작 시 첫 라운드에 ▲/▼ 아이콘 및 증감률·증감액이 이전 게임 마지막 값과 비교되어 잘못 표시되던 버그 수정. `confirmNextTurn`에서 `setPrev*`로 baseline 저장 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.2 | src/pages/GamePage.jsx | P1 |
 
 ---
 
@@ -152,8 +159,8 @@
 | WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
 |-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
 | 1.6.1 | [QA] 게임 밸런스 플레이테스트 (15~20분 확인, 초기 자본·턴수 조정) | 공통 | 대기 | 0% | 05/16 | 05/16 | 1 | 수치 조정 커밋 | P0 |
-| 1.6.2 | [Front] 조건부 스타일링 — ▲ 빨강 / ▼ 파랑 (한국 표준) 적용 완료, HTS 슬레이트+시안 톤 + LED 글로우 + 모서리 deco 통일 진행 중 | 송원호 | 진행중 | 70% | 05/14 | 05/16 | 2 | GamePage·KospiChart·Marquee·Popover 스타일 통일 | P1 |
-| 1.6.3 | [Front] 반응형 UI 최종 적용 (모바일 375px 기준) | 송원호 | 대기 | 0% | 05/16 | 05/16 | 1 | 반응형 확인 | P1 |
+| 1.6.2 | [Front] 조건부 스타일링 — ▲ 빨강 / ▼ 파랑 (한국 표준) + HTS 슬레이트+시안 톤 + LED 글로우 + 모서리 deco 통일 (GamePage·KospiChart·Marquee·Popover·NPC라벨·IconButton·ExitConfirmModal 전체 PopupOverlay 패턴 통일 — 1.4.30, 1.4.31에서 완료) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 2 | GamePage·KospiChart·Marquee·Popover 스타일 통일 | P1 |
+| 1.6.3 | [Front] 반응형 UI 최종 적용 — 1695×928 wrapper에 ResizeObserver + transform:scale로 viewport 크기에 따라 모든 absolute 요소 비례 축소 (1.4.33). 다른 페이지(Info/Market/Tech)는 16:9 viewport 클램프로 이미 대응 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 1 | 반응형 확인 | P1 |
 | 1.6.4 | [배포] Vercel 환경변수 등록 + 프로덕션 배포 (https://dacongame.vercel.app/) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 1 | 프로덕션 URL | P0 |
 | 1.6.5 | [QA] Lighthouse 성능 점수 확인 (목표: 90+) | 배영환 | 대기 | 0% | 05/16 | 05/16 | 1 | Lighthouse 리포트 | P2 |
 | 1.6.6 | [QA] Supabase RLS 동작 최종 확인 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 1 | 보안 체크리스트 | P1 |
