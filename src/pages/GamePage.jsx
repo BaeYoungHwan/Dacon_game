@@ -13,9 +13,8 @@
 //   - store.prices, store.navigateTo(target), store.resetGame() 액션
 //   - progressTurn 시그니처 잠정
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
-import { useAudioStore } from '../store/audioStore'
 import { progressTurn } from '../lib/gameLogic'
 import stocks from '../data/stocks.json'
 import stockData from '../data/stockData.json'
@@ -74,12 +73,18 @@ export default function GamePage() {
 
   // 반응형 스케일 — 1695×928 기준 wrapper를 컨테이너 너비에 맞춰 transform: scale
   // viewport가 작아지면 모든 absolute 요소가 비례 축소되어 레이아웃이 깨지지 않음
+  // clientWidth=0(마운트 직후·display:none) 가드 — scale=0이 되면 화면 사라지는 버그 방지
+  // useLayoutEffect: paint 전에 동기적으로 첫 measure 수행 → 첫 paint부터 정확한 scale로 표시
+  //  (useEffect로 처리하면 scale=1로 한 번 paint 후 줄어드는 깜빡임 발생)
   const containerRef = useRef(null)
   const [scale, setScale] = useState(1)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const update = () => setScale(el.clientWidth / 1695)
+    const update = () => {
+      const w = el.clientWidth
+      if (w > 0) setScale(w / 1695)
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(el)
@@ -612,12 +617,13 @@ function AssetRow({ label, value, highlight, trend, deltaPct, deltaAmount, cache
 }
 
 // 우상단 아이콘 버튼 — SVG 아이콘 + hover 시 inset+outer 글로우 (다른 페이지 Hotspot cyan 패턴)
+// group class는 라벨 풍선의 group-hover:opacity-100용. shadow는 자기 hover에 직접 적용.
 function IconButton({ icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
       style={{ outline: 'none' }}
-      className="relative group flex items-center justify-center bg-gradient-to-b from-slate-900 to-slate-950 hover:from-slate-800 hover:to-slate-900 backdrop-blur rounded-lg w-16 h-16 border-2 border-cyan-500/60 hover:border-cyan-300 text-cyan-300 hover:text-cyan-100 transition-all duration-150 focus:outline-none focus:ring-0 group-hover:shadow-[inset_0_0_25px_rgba(34,211,238,0.35),0_0_25px_rgba(34,211,238,0.35)]"
+      className="relative group flex items-center justify-center bg-gradient-to-b from-slate-900 to-slate-950 hover:from-slate-800 hover:to-slate-900 backdrop-blur rounded-lg w-16 h-16 border-2 border-cyan-500/60 hover:border-cyan-300 text-cyan-300 hover:text-cyan-100 transition-all duration-150 focus:outline-none focus:ring-0 hover:shadow-[inset_0_0_25px_rgba(34,211,238,0.35),0_0_25px_rgba(34,211,238,0.35)]"
       aria-label={label}
     >
       {icon}

@@ -31,7 +31,7 @@ export default function KospiChart({ compact = false }) {
     return PAD.top + (1 - (val - minV) / (maxV - minV)) * drawH
   }
 
-  const { turn } = useGameStore()
+  const { turn, totalTurns } = useGameStore()
   // SVG defs id 충돌 방지 — KospiChart가 동시에 여러 곳에서 마운트되어도 unique
   // (예: 본문 작은 차트 + ChartExpandModal 확대 차트가 동시 마운트되면 같은 'kospiLineGlow' 두 개라 url(#...)이 모호)
   const uid = useId()
@@ -291,7 +291,7 @@ export default function KospiChart({ compact = false }) {
       {!compact && (
         <div className="flex items-center justify-between text-sm mt-1.5 text-cyan-400/80 font-mono tracking-wider">
           <span>OPEN <span className="text-cyan-200 font-bold">{Math.round(startClose).toLocaleString()}</span></span>
-          <span className="text-cyan-200 font-bold">W{turn}/{50}</span>
+          <span className="text-cyan-200 font-bold">W{turn}/{totalTurns}</span>
         </div>
       )}
     </div>
