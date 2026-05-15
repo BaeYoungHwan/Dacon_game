@@ -12,7 +12,7 @@ const FADE_MS    = 1000
 
 let currentAudio = null
 let currentTrack = null
-let targetVolume = 0.5
+let targetVolume = 0.3
 let isMuted      = false
 let fadeTimer    = null
 
