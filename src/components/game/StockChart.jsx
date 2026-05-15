@@ -189,7 +189,7 @@ export default function StockChart({ stockId, stockName, maPurchased, bollingerP
   const obv  = obvPurchased       ? calcOBV(closes, volumes)  : []
 
   const maSignal   = maPurchased        ? getMaSignal(ma5, ma20)           : null
-  const bollSignal = bollingerPurchased ? getBollingerSignal(closes, boll) : null
+  const bollSignal = bollingerPurchased ? getBollingerSignal(boll, closes) : null
   const macdSignal = macdPurchased      ? getMacdSignal(macd)              : null
   const obvSignal  = obvPurchased       ? getObvSignal(obv)                : null
 
@@ -322,7 +322,7 @@ export default function StockChart({ stockId, stockName, maPurchased, bollingerP
           )
         })()}
 
-        {activeTab === "obv" && obvPurchased && (() => {
+        {activeTab === "obv" && obvPurchased && obv.length > 0 && (() => {
           const minO = Math.min(...obv)
           const maxO = Math.max(...obv, minO + 1)
           return (

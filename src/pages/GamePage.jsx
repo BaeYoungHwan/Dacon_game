@@ -63,6 +63,7 @@ export default function GamePage() {
   const [chartStartRect, setChartStartRect] = useState(null)
 
   // 첫 진입 시 도움말 자동 오픈 (인트로 완료 후 조작법 안내)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isFirstPlay) {
       setOpenHelp(true)

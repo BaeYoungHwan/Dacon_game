@@ -58,7 +58,6 @@ export default function SettingsModal({ onClose }) {
           </div>
         </div>
 
-
         {/* 효과음 제어 */}
         <div className="mb-4 space-y-3">
           <div className="flex items-center gap-3">

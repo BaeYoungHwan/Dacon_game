@@ -106,7 +106,7 @@ function getSfxCtx() {
   return sfxContext
 }
 
-// 볼륨 설정에 비례한 기준 게인 (targetVolume 0.5 기준 = 0.1)
+// sfxVolume 에 비례한 게인 (기본 0.5 → 0.1)
 function sfxGain() { return 0.2 * sfxVolume }
 
 export function setSfxVolume(vol) { sfxVolume = vol }

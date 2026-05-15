@@ -30,9 +30,10 @@ export default function IntroScene() {
     )
 
     const holdMs = cardIdx === CARDS.length - 1 ? LAST_HOLD_MS : HOLD_MS
+    let innerTimer = null
     const fadeOutTimer = setTimeout(() => {
       setShow(false)
-      setTimeout(() => {
+      innerTimer = setTimeout(() => {
         const next = cardIdx + 1
         if (next >= CARDS.length) {
           finishIntro()
@@ -45,6 +46,7 @@ export default function IntroScene() {
     return () => {
       cancelAnimationFrame(rafId)
       clearTimeout(fadeOutTimer)
+      clearTimeout(innerTimer)
     }
   }, [cardIdx, finishIntro])
 
