@@ -6,7 +6,7 @@ import { useGameStore } from '../../store/gameStore'
 
 const CARDS = [
   { getText: ()     => '2025년 봄, KOSPI가 요동치고 있다.',                      color: '#fde68a' }, // amber-200
-  { getText: (name) => `신흥 투자자 '${name}', 한국 증시에 입성했다.`,            color: '#fcd34d' }, // amber-300
+  { getText: (name) => `신흥 투자자 '${name}', 여의도에 입성했다.`,            color: '#fcd34d' }, // amber-300
   { getText: ()     => '50주 안에 코스피 지수 수익률을 이겨라.',                   color: '#67e8f9' }, // cyan-300
 ]
 
@@ -66,7 +66,7 @@ export default function IntroScene() {
         }}
         className="text-center px-8 max-w-2xl"
       >
-        <p className="text-2xl md:text-3xl font-bold leading-relaxed tracking-wide">
+        <p className="text-2xl md:text-3xl font-bold leading-relaxed tracking-wide break-words">
           {text}
         </p>
       </div>
