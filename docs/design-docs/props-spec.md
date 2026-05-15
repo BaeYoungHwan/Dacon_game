@@ -138,23 +138,21 @@ type이 호재이면 빨강, 악재이면 파랑 테두리로 표시합니다.
 화면 설계 3~5번 화면. GamePage에서 isOpen 상태를 제어합니다.
 
 ### InfoMerchantModal (정보상 모달)
-기업 뉴스, 국제 뉴스, 추천 종목 구매 + 차트 지표 영구 구매
+국제/기업 뉴스 무료 조회 + 추천 종목 유료 구매
 
 | prop | 타입 | 필수 | 설명 |
 |------|------|:----:|------|
 | isOpen | boolean | O | 모달 표시 여부 |
 | onClose | () => void | O | 닫기 핸들러 |
 | cash | number | O | 현재 현금 잔액 |
-| round | number | O | 현재 라운드 (비용 계산용) |
-| indicatorsPurchased | boolean | O | 이미 구매했으면 구매 버튼 비활성 |
-| onBuyNews | (type, cost) => boolean | O | type: company / global / recommend |
-| onBuyIndicators | (cost) => boolean | O | 차트 지표 영구 구매 |
-| availableNews | { company, global, recommended } | O | 미구매 시 blur 처리할 내용 |
+| round | number | O | 현재 라운드 (표시용) |
+| currentNews | CompanyNews or null | O | 이번 라운드 기업 뉴스 (자동 공개) |
+| currentGlobalNews | GlobalNews or null | O | 이번 라운드 국제 뉴스 (자동 공개) |
+| onBuyNews | (cost) => boolean | O | 추천 종목 유료 구매 전용 |
+| availableNews | { recommended } | O | 추천 종목 미구매 시 blur 처리할 내용 |
 
 availableNews 구조:
-  company     : CompanyNews or null
-  global      : GlobalNews or null
-  recommended : string[] (추천 종목 ID 배열)
+  recommended : string[] (추천 종목 ID 배열, 미구매 시 blur)
 
 ---
 

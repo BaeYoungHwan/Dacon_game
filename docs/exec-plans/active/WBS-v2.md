@@ -16,7 +16,7 @@
 | 0 | StartPage | `src/pages/StartPage.jsx` | 닉네임 입력, 새 게임 / 이어하기 (localStorage) |
 | 1 | MainPage | `src/pages/MainPage.jsx` | 잔고, 보유종목 전주 대비 등락률, 라운드, 등급 목표, 장소 이동 버튼 |
 | 2 | MarketPage | `src/pages/MarketPage.jsx` | 월스트리트 거래소 — 랜덤 선택된 10종목 분석·매수·매도 |
-| 3 | InfoMerchantModal | `src/components/merchant/InfoMerchantModal.jsx` | 정보상 — 국제뉴스, 기업뉴스, 추천종목 (가격 라운드마다 변동) |
+| 3 | InfoMerchantModal | `src/components/merchant/InfoMerchantModal.jsx` | 정보상 — 국제/기업뉴스 무료 조회 + 추천종목 유료 구매 |
 | 4 | TechMerchantModal | `src/components/merchant/TechMerchantModal.jsx` | 기술상 — 제외된 10종목 중 일부 유료 공개 (보너스 투자처) |
 | 5 | RoundResultModal | `src/components/game/RoundResultModal.jsx` | 라운드 종료 — 수익/손실 요약, 다음 라운드 진행 |
 | 6 | EndPage | `src/pages/EndPage.jsx` | 최종 등급 + 랭킹 등록 (Supabase) |
@@ -107,7 +107,7 @@
 | 1.4.9 | [Front] TurnControl 컴포넌트 (다음 날 버튼 + 날짜/턴 카운터) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/components/game/TurnControl.jsx | P0 |
 | 1.4.10 | [Front] Portfolio 컴포넌트 (보유 주식 목록 + 현금 잔액) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/components/game/Portfolio.jsx | P0 |
 | 1.4.11 | [Front] MarketPage 구현 (월스트리트 거래소 — 10종목 분석·매수·매도) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/MarketPage.jsx | P0 |
-| 1.4.12 | [Front] InfoMerchantModal 구현 (정보상 — 국제뉴스·기업뉴스·추천종목, 라운드별 가격 변동) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/InfoMerchantModal.jsx | P1 |
+| 1.4.12 | [Front] InfoMerchantModal 구현 (정보상 — 국제/기업뉴스 무료 조회 + 추천종목 유료 구매) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/InfoMerchantModal.jsx | P1 |
 | 1.4.13 | [Front] TechMerchantModal 구현 (기술상 — 제외된 10종목 중 일부 유료 공개) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/TechMerchantModal.jsx | P1 |
 | 1.4.14 | [Front] RoundResultModal 구현 (라운드 종료 — 수익/손실 요약, 다음 라운드 버튼) | 송원호 | **제외** | — | 05/14 | 05/15 | — | — | — |
 | 1.4.15 | [공용] stockData.json pregame 13주 차트 배경 데이터 완료 (2025-02-27~2025-05-22) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 0.5 | scripts/collect-stock-data.py + stockData.json | P1 |
