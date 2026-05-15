@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-15 (MarketPage KRX 거래소 리뉴얼 + 핫스팟 오버레이 + 도움말 자동 노출)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-15 (TechMerchantPage 16:9 배경 리뉴얼 + ObjectGlow 2종(차트지표/깜짝종목) + 코너 핫스팟 4종 + 10턴 잠금 안내 팝업 + 1680·945 기준 좌표 미세조정 / PR 리뷰 후속 — 3개 페이지 HMR 구독 누수 정리(`import.meta.hot.dispose()`) + Hotspot·HelpBubble dead code 제거)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -32,11 +32,11 @@
 | 1.1 분석/기획 | 3 | 3 | 100% |
 | 1.2 설계 | 3 | 3 | 100% |
 | 1.3 P0 기반 구축 | 7 | 7 | 100% |
-| 1.4 P1 핵심 기능 | 28 | 25 | 89.3% (1개 진행중 · 3개 대체됨) |
+| 1.4 P1 핵심 기능 | 29 | 26 | 89.7% (1개 진행중 · 3개 대체됨) |
 | 1.5 P1 통합 | 8 | 8 | 100% |
 | 1.6 P2 QA + 배포 | 6 | 2 | 33.3% (1개 진행중) |
 | 1.7 버퍼 | 2 | 0 | 0% |
-| **전체** | **57** | **48** | **84.2%** |
+| **전체** | **58** | **49** | **84.5%** |
 
 ---
 
@@ -107,8 +107,8 @@
 | 1.4.9 | [Front] TurnControl — GamePage 우하단 "다음 주" 버튼으로 통합 | 송원호 | 대체됨 | — | 05/14 | 05/15 | 1 | GamePage.jsx 내부 | P0 |
 | 1.4.10 | [Front] Portfolio — GamePage 좌측 자산 카드 HOLDINGS 영역으로 통합 | 송원호 | 대체됨 | — | 05/14 | 05/15 | 1 | GamePage.jsx 내부 | P0 |
 | 1.4.11 | [Front] MarketPage 구현 (한국거래소 — 10종목 분석·매수·매도) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/MarketPage.jsx | P0 |
-| 1.4.12 | [Front] InfoMerchantPage — 정보상 (모달 → 페이지 라우팅으로 변경, master 통합) | 공통 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/InfoMerchantPage.jsx | P1 |
-| 1.4.13 | [Front] TechMerchantPage — 기술상 (모달 → 페이지 라우팅, master 통합) | 공통 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/TechMerchantPage.jsx | P1 |
+| 1.4.12 | [Front] InfoMerchantPage — 정보상 (모달 → 페이지 라우팅 + 정보상.webp 배경 리뉴얼 + 16:9 viewport 클램프 + 핫스팟 4종(도움말/메인/거래소/기술상) + ObjectGlow 3종(국제뉴스 지구본 cyan/기업뉴스 서류가방 amber/추천종목 태블릿 emerald — 보이는 마커 없이 radial-gradient + blur 호버 글로우만) + HelpOverlay 풍선 3개(arrow="down") + 새 게임당 도움말 1회 자동 노출(sessionStorage info-merchant-help-seen) + 추천종목 자동 매칭(currentNews 섹터→활성 종목→가격 변동률 기반 ▲매수/▼매도 권유) + HTS 슬레이트+시안 톤 팝업 3종 + 기술상 진입 잠금 해제(TECH_MERCHANT_UNLOCK_TURN 제거) + 1680×945 기준 calc % 좌표로 책상 위 오브젝트와 정렬) | 공통 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/InfoMerchantPage.jsx, public/images/info-merchant-bg.webp | P1 |
+| 1.4.13 | [Front] TechMerchantPage — 기술상 (모달 → 페이지 라우팅 + 기술상.webp 배경 리뉴얼 + 16:9 viewport 클램프 + 핫스팟 4종(도움말/메인/거래소/정보상) + ObjectGlow 2종(차트지표 cyan / 깜짝종목 blue — 보이는 마커 없이 radial-gradient + blur 호버 글로우만) + HelpOverlay 풍선 2개(arrow="down") + 새 게임당 도움말 1회 자동 노출(sessionStorage tech-merchant-help-seen) + 10턴 잠금 안내 팝업(turn < TECH_MERCHANT_UNLOCK_TURN=10 클릭 시 '10턴 이후 사용 가능' 안내, 실제 구매 UI 비활성) + 차트 지표 구매(MA/볼린저/MACD/OBV) + 깜짝 종목 판매상(비공개 종목 유료 공개) + HTS 슬레이트+시안 톤 팝업 3종(indicators/hiddenStocks/locked) + 1680×945 기준 calc % 좌표로 코너 버튼·풍선 미세조정) | 공통 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/TechMerchantPage.jsx, public/images/tech-merchant-bg.webp | P1 |
 | 1.4.14 | [Front] RoundResultModal — 별도 모달 대신 1000ms WEEK 화면 전환 애니메이션으로 대체 (1.4.23) | 송원호 | 대체됨 | — | 05/14 | 05/15 | 1 | 1.4.23으로 대체 | P1 |
 | 1.4.15 | [공용] stockData.json pregame 13주 차트 배경 데이터 완료 (2025-02-27~2025-05-22) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 0.5 | scripts/collect-stock-data.py + stockData.json | P1 |
 | 1.4.16 | [Front] KospiChart — master에서 통합 + HTS 디지털 보드 톤 재스타일링 (slate+cyan, LED 가격, LIVE 인디케이터, 모서리 deco, 라인 글로우, area gradient, useId로 SVG ID 충돌 방지) | 공통 | 완료 | 100% | 05/14 | 05/14 | 1 | src/components/game/KospiChart.jsx | P1 |
@@ -124,6 +124,7 @@
 | 1.4.26 | [Front] 게임 종료 확인 모달 (ExitConfirmModal) — 화면 중앙, 확인/취소 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.2 | GamePage.jsx 내부 | P1 |
 | 1.4.27 | [Front] 설정 모달 audioStore 연결 — 볼륨 슬라이더 (0=음소거, mute 토글 제거) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.3 | GamePage.jsx 내부 (useAudioStore) | P1 |
 | 1.4.28 | [Front] MarketPage KRX 거래소 리뉴얼 — 거래소.webp 배경 + 16:9 viewport 클램프 + 핫스팟 오버레이 5종(종목분석/주식구매/주식판매/도움말/메인/정보상/기술상) + 호버 글로우(cyan·emerald·red) + 1920×1080 기준 비례 % 좌표(창 크기 무관 정렬 유지) + HelpOverlay 풍선 5개 + 새 게임당 도움말 1회 자동 노출(`sessionStorage` + `useGameStore.subscribe` page 전환 감지) + 기술상 진입 제한 해제(페이지 내부 기능 잠금은 TechMerchantPage 책임) | 송원호 | 완료 | 100% | 05/15 | 05/15 | 1 | src/pages/MarketPage.jsx, public/images/market-bg.webp | P1 |
+| 1.4.29 | [Front] PR 리뷰 후속 — HMR 구독 누수 정리 + 핫스팟·도움말 풍선 dead code 제거 (3개 페이지 모듈 레벨 `useGameStore.subscribe`에 `import.meta.hot.dispose()` 추가하여 HMR 시 좀비 구독 누적 방지 / `Hotspot` `disabled` prop 제거(호출부 미사용) / `HelpBubble` 도달 불가능한 arrow 분기 제거(MarketPage `down`, TechMerchant·InfoMerchant `up`) / `eslint-disable-next-line react-hooks/exhaustive-deps` 주석 제거(ESLint 미설치 + `setOpenHelp`는 stable reference라 어차피 안 떴음) — 모든 변경 사항 Vite HMR 9건 무에러 통과·기능 동작 변화 0) | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.3 | src/pages/MarketPage.jsx, src/pages/TechMerchantPage.jsx, src/pages/InfoMerchantPage.jsx | P2 |
 
 ---
 

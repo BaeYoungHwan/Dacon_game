@@ -26,12 +26,16 @@ const MARKET_HELP_SEEN_KEY = 'market-help-seen'
 
 // 모듈 로드 시점에 1회 구독 — 새 게임 시작(page: 'start' → 다른 페이지) 신호 감지 시 플래그 초기화
 // → 게임을 새로 시작할 때마다 거래소 첫 진입에서 도움말이 다시 자동 노출됨
+// HMR 시 모듈이 재평가되면 이전 구독이 좀비로 남으므로 dispose에서 정리
 if (typeof window !== 'undefined') {
-  useGameStore.subscribe((state, prevState) => {
+  const unsubscribeMarketHelp = useGameStore.subscribe((state, prevState) => {
     if (prevState && prevState.page === 'start' && state.page !== 'start') {
       sessionStorage.removeItem(MARKET_HELP_SEEN_KEY)
     }
   })
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => unsubscribeMarketHelp())
+  }
 }
 
 export default function MarketPage() {
@@ -46,7 +50,6 @@ export default function MarketPage() {
   const [openHelp, setOpenHelp] = useState(false)
 
   // 거래소 첫 진입 시 도움말 자동 오픈 — 이후 진입엔 노출 안 함
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (typeof sessionStorage === 'undefined') return
     if (sessionStorage.getItem(MARKET_HELP_SEEN_KEY)) return
@@ -182,28 +185,34 @@ export default function MarketPage() {
 // ─────────────────────────────────────────────────────────
 // 핫스팟 — 배경 이미지 위 투명 클릭 영역 + hover 글로우/라벨
 // ─────────────────────────────────────────────────────────
-function Hotspot({ className, style, label, onClick, disabled, glowColor = 'cyan' }) {
-  const glow = {
-    cyan: 'group-hover:shadow-[inset_0_0_25px_rgba(34,211,238,0.35),0_0_25px_rgba(34,211,238,0.35)] group-hover:border-cyan-300',
-    emerald: 'group-hover:shadow-[inset_0_0_25px_rgba(52,211,153,0.35),0_0_25px_rgba(52,211,153,0.35)] group-hover:border-emerald-300',
-    red: 'group-hover:shadow-[inset_0_0_25px_rgba(248,113,113,0.35),0_0_25px_rgba(248,113,113,0.35)] group-hover:border-red-300',
-  }[glowColor]
+function Hotspot({ className, style, label, onClick, glowColor = 'cyan' }) {
+  // cyan: 박스 강조(inset+outer+border) — 분석/도움말/메인/정보상/기술상에 사용
+  // emerald/red: 박스 형태 없음. 컨테이너보다 큰 radial-gradient halo가 떠올랐다 사라짐 (GamePage NPC 호버 패턴)
+  const isSoftGlow = glowColor === 'emerald' || glowColor === 'red'
+
+  const boxGlow = 'group-hover:shadow-[inset_0_0_25px_rgba(34,211,238,0.35),0_0_25px_rgba(34,211,238,0.35)] group-hover:border-cyan-300'
+  const radialBg = glowColor === 'emerald'
+    ? 'radial-gradient(ellipse at center, rgba(52,211,153,0.45) 0%, rgba(52,211,153,0.15) 35%, transparent 70%)'
+    : 'radial-gradient(ellipse at center, rgba(248,113,113,0.45) 0%, rgba(248,113,113,0.15) 35%, transparent 70%)'
 
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
       aria-label={label}
       style={{ outline: 'none', ...style }}
-      className={`${className} group focus:outline-none transition-all duration-150 ${
-        disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-      }`}
+      className={`${className} group focus:outline-none transition-all duration-150 cursor-pointer`}
     >
-      <span
-        className={`absolute inset-0 rounded-[inherit] border-2 border-transparent transition-all duration-150 pointer-events-none ${
-          disabled ? '' : glow
-        }`}
-      />
+      {isSoftGlow ? (
+        <span
+          aria-hidden="true"
+          style={{ background: radialBg }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[160%] h-[140%] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+        />
+      ) : (
+        <span
+          className={`absolute inset-0 rounded-[inherit] border-2 border-transparent transition-all duration-150 pointer-events-none ${boxGlow}`}
+        />
+      )}
     </button>
   )
 }
@@ -360,9 +369,6 @@ function HelpBubble({ style, arrow, children }) {
       className="absolute bg-slate-900/95 text-cyan-100 border-2 border-cyan-400 rounded-lg px-4 py-3 shadow-[0_0_25px_rgba(34,211,238,0.5)] max-w-[14rem] pointer-events-none"
     >
       {children}
-      {arrow === 'down' && (
-        <span className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-cyan-400" />
-      )}
       {arrow === 'up' && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-b-[10px] border-l-transparent border-r-transparent border-b-cyan-400" />
       )}
