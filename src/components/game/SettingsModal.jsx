@@ -1,7 +1,7 @@
 import { useAudioStore } from '../../store/audioStore'
 
 export default function SettingsModal({ onClose }) {
-  const { muted, volume, toggleMuted, setVolume } = useAudioStore()
+  const { muted, volume, toggleMuted, setVolume, sfxVolume, setSfxVolume } = useAudioStore()
 
   const handleReset = () => {
     if (window.confirm('게임을 초기화하시겠습니까? 모든 진행 상황이 삭제됩니다.')) {
@@ -54,6 +54,29 @@ export default function SettingsModal({ onClose }) {
             />
             <span className="text-xs text-gray-400 w-8 text-right">
               {Math.round(volume * 100)}%
+            </span>
+          </div>
+        </div>
+
+        {/* 효과음 제어 */}
+        <div className="mb-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-300 w-14">효과음</span>
+            <span className="text-sm text-gray-400 w-8 text-center">
+              {sfxVolume === 0 ? '🔇' : sfxVolume > 0.5 ? '🔊' : '🔉'}
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={sfxVolume}
+              onChange={(e) => setSfxVolume(Number(e.target.value))}
+              disabled={muted}
+              className="flex-1 accent-blue-500 disabled:opacity-40"
+            />
+            <span className="text-xs text-gray-400 w-8 text-right">
+              {Math.round(sfxVolume * 100)}%
             </span>
           </div>
         </div>

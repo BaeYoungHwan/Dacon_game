@@ -48,6 +48,7 @@ export default function GamePage() {
     activeStocks, hiddenStocks,
     currentNews, currentGlobalNews,
     nextTurn, navigateTo, resetGame,
+    isFirstPlay, clearFirstPlay,
   } = useGameStore()
 
   const [openHelp,     setOpenHelp]     = useState(false)
@@ -60,6 +61,15 @@ export default function GamePage() {
   const [transitioningWeek, setTransitioningWeek] = useState(1)
   const chartButtonRef = useRef(null)
   const [chartStartRect, setChartStartRect] = useState(null)
+
+  // 첫 진입 시 도움말 자동 오픈 (인트로 완료 후 조작법 안내)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isFirstPlay) {
+      setOpenHelp(true)
+      clearFirstPlay()
+    }
+  }, [])
 
   // 차트 클릭 — 작은 차트의 화면 좌표/사이즈 측정 후 모달 열기 (확대 애니메이션 시작점)
   const handleChartOpen = () => {

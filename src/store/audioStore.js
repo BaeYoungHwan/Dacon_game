@@ -7,8 +7,10 @@ export const useAudioStore = create(
     (set) => ({
       muted: false,
       volume: 0.3,
+      sfxVolume: 0.5,
       setMuted: (muted) => set({ muted }),
       setVolume: (volume) => set({ volume }),
+      setSfxVolume: (sfxVolume) => set({ sfxVolume }),
       toggleMuted: () => set((s) => ({ muted: !s.muted })),
     }),
     { name: 'audio-settings' }
