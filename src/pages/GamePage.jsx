@@ -22,6 +22,7 @@ import stockData from '../data/stockData.json'
 import KospiChart from '../components/game/KospiChart'
 import AnimatedNumber from '../components/ui/AnimatedNumber'
 import Marquee from '../components/ui/Marquee'
+import SettingsModal from '../components/game/SettingsModal'
 
 // 전광판에 흘러갈 게임플레이 팁 — 정적 (라운드 무관)
 // Marquee가 한 팁씩 우→좌로 흐르고 끝나면 다음 팁으로 자동 순환
@@ -699,44 +700,3 @@ function HelpBubble({ style, arrow, children }) {
   )
 }
 
-// 설정 모달 — audioStore와 연결된 볼륨 슬라이더
-// 볼륨 0으로 내리면 자동 음소거 (별도 on/off 토글 없음)
-function SettingsModal({ onClose }) {
-  const { volume, setVolume, muted, setMuted } = useAudioStore()
-
-  // 슬라이더 변경 — volume 설정 + 혹시 muted=true로 남아있던 상태 해제
-  const handleVolumeChange = (v) => {
-    setVolume(v)
-    if (muted) setMuted(false)
-  }
-
-  // 볼륨에 따른 아이콘
-  const volumeIcon = volume === 0 ? '🔇' : volume > 0.5 ? '🔊' : '🔉'
-
-  return (
-    <ModalContainer title="설정" onClose={onClose}>
-      <div className="space-y-4">
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">배경음악 볼륨</span>
-            <span className="text-sm text-cyan-400 font-mono tabular-nums">{Math.round(volume * 100)}%</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xl w-7 text-center">{volumeIcon}</span>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={volume}
-              onChange={(e) => handleVolumeChange(Number(e.target.value))}
-              className="flex-1 accent-cyan-500 cursor-pointer"
-              style={{ outline: 'none' }}
-            />
-          </div>
-          <p className="text-[10px] text-cyan-300/60 mt-2">볼륨을 0으로 내리면 음소거됩니다</p>
-        </div>
-      </div>
-    </ModalContainer>
-  )
-}
