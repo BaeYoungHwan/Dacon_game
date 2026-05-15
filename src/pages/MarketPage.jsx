@@ -1,4 +1,4 @@
-// 월스트리트 거래소 - 종목분석/주식구매/주식판매 팝업
+// 한국거래소 - 종목분석/주식구매/주식판매 팝업
 // 참고: docs/design-docs/props-spec.md
 
 import { useState } from 'react'
@@ -59,7 +59,7 @@ export default function MarketPage() {
         >
           ← 메인으로
         </button>
-        <h1 className="text-xl font-bold">월스트리트 거래소</h1>
+        <h1 className="text-xl font-bold">한국거래소</h1>
         <div className="flex gap-2 ml-auto">
           <button
             onClick={() => navigateTo('infoMerchant')}

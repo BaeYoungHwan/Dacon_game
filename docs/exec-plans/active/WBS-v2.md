@@ -15,7 +15,7 @@
 |---|------|------|-----------|
 | 0 | StartPage | `src/pages/StartPage.jsx` | 닉네임 입력, 새 게임 / 이어하기 (localStorage) |
 | 1 | MainPage | `src/pages/MainPage.jsx` | 잔고, 보유종목 전주 대비 등락률, 라운드, 등급 목표, 장소 이동 버튼 |
-| 2 | MarketPage | `src/pages/MarketPage.jsx` | 월스트리트 거래소 — 랜덤 선택된 10종목 분석·매수·매도 |
+| 2 | MarketPage | `src/pages/MarketPage.jsx` | 한국거래소 — 랜덤 선택된 10종목 분석·매수·매도 |
 | 3 | InfoMerchantModal | `src/components/merchant/InfoMerchantModal.jsx` | 정보상 — 국제/기업뉴스 무료 조회 + 추천종목 유료 구매 |
 | 4 | TechMerchantModal | `src/components/merchant/TechMerchantModal.jsx` | 기술상 — 제외된 10종목 중 일부 유료 공개 (보너스 투자처) |
 | 5 | RoundResultModal | `src/components/game/RoundResultModal.jsx` | 라운드 종료 — 수익/손실 요약, 다음 라운드 진행 |
@@ -101,25 +101,25 @@
 | 1.4.3 | [공용] 매수/매도 로직 구현 (buyStock, sellStock) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 1 | gameStore.js 업데이트 | P0 |
 | 1.4.4 | [공용] 로직 동작 검증 — UI 없이 콘솔 테스트 (이 시점에 게임이 돌아가야 함) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 1 | 콘솔 출력 확인 | P0 |
 | 1.4.5 | [Front] StartPage 구현 (닉네임 입력 + 새 게임 / 이어하기 버튼, localStorage 연동) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 1 | src/pages/StartPage.jsx | P0 |
-| 1.4.6 | [Front] GamePage 전면 리뉴얼 — NYSE 거래소 배경 + NPC 3 클릭(navigateTo) + 좌측 자산 카드 + 우상단 IconButton + 라운드 전환 애니메이션 통합 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 1 | src/pages/GamePage.jsx | P1 |
+| 1.4.6 | [Front] GamePage 전면 리뉴얼 — 한국거래소 배경 + NPC 3 클릭(navigateTo) + 좌측 자산 카드 + 우상단 IconButton + 라운드 전환 애니메이션 통합 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 1 | src/pages/GamePage.jsx | P1 |
 | 1.4.7 | [Front] StockBoard 컴포넌트 (종목 목록 + 가격 + 등락률 표시) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/components/game/StockBoard.jsx | P0 |
 | 1.4.8 | [Front] NewsPanel — Marquee 전광판으로 통합·대체 (별도 UI 제거) | 송원호 | 대체됨 | — | 05/14 | 05/15 | 1 | 1.4.18로 대체 | P1 |
 | 1.4.9 | [Front] TurnControl — GamePage 우하단 "다음 주" 버튼으로 통합 | 송원호 | 대체됨 | — | 05/14 | 05/15 | 1 | GamePage.jsx 내부 | P0 |
 | 1.4.10 | [Front] Portfolio — GamePage 좌측 자산 카드 HOLDINGS 영역으로 통합 | 송원호 | 대체됨 | — | 05/14 | 05/15 | 1 | GamePage.jsx 내부 | P0 |
-| 1.4.11 | [Front] MarketPage 구현 (월스트리트 거래소 — 10종목 분석·매수·매도) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/MarketPage.jsx | P0 |
+| 1.4.11 | [Front] MarketPage 구현 (한국거래소 — 10종목 분석·매수·매도) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/MarketPage.jsx | P0 |
 | 1.4.12 | [Front] InfoMerchantPage — 정보상 (모달 → 페이지 라우팅으로 변경, master 통합) | 공통 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/InfoMerchantPage.jsx | P1 |
 | 1.4.13 | [Front] TechMerchantPage — 기술상 (모달 → 페이지 라우팅, master 통합) | 공통 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/TechMerchantPage.jsx | P1 |
 | 1.4.14 | [Front] RoundResultModal — 별도 모달 대신 1000ms WEEK 화면 전환 애니메이션으로 대체 (1.4.23) | 송원호 | 대체됨 | — | 05/14 | 05/15 | 1 | 1.4.23으로 대체 | P1 |
 | 1.4.15 | [공용] stockData.json pregame 13주 차트 배경 데이터 완료 (2025-02-27~2025-05-22) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 0.5 | scripts/collect-stock-data.py + stockData.json | P1 |
-| 1.4.16 | [Front] KospiChart — master에서 통합 + NYSE 디지털 보드 톤 재스타일링 (slate+cyan, LED 가격, LIVE 인디케이터, 모서리 deco, 라인 글로우, area gradient, useId로 SVG ID 충돌 방지) | 공통 | 완료 | 100% | 05/14 | 05/14 | 1 | src/components/game/KospiChart.jsx | P1 |
-| 1.4.17 | [Front] StartPage 빈티지 월스트리트 배경 통합 (`public/images/start-bg.png`) + 닉네임 입력 + 게임 시작 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | StartPage.jsx, public/images/ | P1 |
+| 1.4.16 | [Front] KospiChart — master에서 통합 + HTS 디지털 보드 톤 재스타일링 (slate+cyan, LED 가격, LIVE 인디케이터, 모서리 deco, 라인 글로우, area gradient, useId로 SVG ID 충돌 방지) | 공통 | 완료 | 100% | 05/14 | 05/14 | 1 | src/components/game/KospiChart.jsx | P1 |
+| 1.4.17 | [Front] StartPage 한국거래소 배경 통합 (`public/images/start-bg.png`) + 닉네임 입력 + 게임 시작 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | StartPage.jsx, public/images/ | P1 |
 | 1.4.18 | [Front] AnimatedNumber 컴포넌트 — 200ms ease-out 카운트업/다운 + sessionStorage 캐싱 (페이지 이동 후 복귀해도 직전 값 유지) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | src/components/ui/AnimatedNumber.jsx | P1 |
 | 1.4.19 | [Front] Marquee 전광판 — 한 팁씩 우→좌 순환 (hover 일시정지) + GAMEPLAY_TIPS 9개 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | src/components/ui/Marquee.jsx, index.css(@keyframes marquee-single) | P1 |
 | 1.4.20 | [Front] 좌측 자산 카드 — 라운드/현금/평가액(▲▼trend)/총자산/HOLDINGS(종목별 현재가+전날 대비 등락률) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | GamePage.jsx 내부 | P1 |
 | 1.4.21 | [Front] 우상단 IconButton 3개 (도움말/설정/종료) + Heroicons outline SVG + hover 라벨 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | GamePage.jsx 내부 | P1 |
 | 1.4.22 | [Front] 도움말 오버레이 (HelpOverlay + HelpBubble) — 6개 UI 위치에 풍선 설명 + 배경 클릭 시 닫힘 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | GamePage.jsx 내부 | P1 |
 | 1.4.23 | [Front] 라운드 전환 애니메이션 — 1000ms (시계 회전 + WEEK N 텍스트 + 어두운 오버레이) / 50주 도달 시 GAME OVER + index.css keyframes 3종 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | GamePage.jsx + index.css | P1 |
-| 1.4.24 | [Front] "다음 주" 확인 popover — NYSE 디지털 보드 톤 + 화살표 노치 + LED 인디케이터 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.3 | GamePage.jsx 내부 | P1 |
+| 1.4.24 | [Front] "다음 주" 확인 popover — HTS 디지털 보드 톤 + 화살표 노치 + LED 인디케이터 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.3 | GamePage.jsx 내부 | P1 |
 | 1.4.25 | [Front] 차트 확대 모달 (ChartExpandModal) — 작은 차트 좌표/사이즈에서 출발하는 스케일 애니메이션 (getBoundingClientRect) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.5 | GamePage.jsx 내부 | P2 |
 | 1.4.26 | [Front] 게임 종료 확인 모달 (ExitConfirmModal) — 화면 중앙, 확인/취소 | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.2 | GamePage.jsx 내부 | P1 |
 | 1.4.27 | [Front] 설정 모달 audioStore 연결 — 볼륨 슬라이더 (0=음소거, mute 토글 제거) | 송원호 | 완료 | 100% | 05/14 | 05/14 | 0.3 | GamePage.jsx 내부 (useAudioStore) | P1 |
@@ -150,7 +150,7 @@
 | WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
 |-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
 | 1.6.1 | [QA] 게임 밸런스 플레이테스트 (15~20분 확인, 초기 자본·턴수 조정) | 공통 | 대기 | 0% | 05/16 | 05/16 | 1 | 수치 조정 커밋 | P0 |
-| 1.6.2 | [Front] 조건부 스타일링 — ▲ 빨강 / ▼ 파랑 (한국 표준) 적용 완료, NYSE 슬레이트+시안 톤 + LED 글로우 + 모서리 deco 통일 진행 중 | 송원호 | 진행중 | 70% | 05/14 | 05/16 | 2 | GamePage·KospiChart·Marquee·Popover 스타일 통일 | P1 |
+| 1.6.2 | [Front] 조건부 스타일링 — ▲ 빨강 / ▼ 파랑 (한국 표준) 적용 완료, HTS 슬레이트+시안 톤 + LED 글로우 + 모서리 deco 통일 진행 중 | 송원호 | 진행중 | 70% | 05/14 | 05/16 | 2 | GamePage·KospiChart·Marquee·Popover 스타일 통일 | P1 |
 | 1.6.3 | [Front] 반응형 UI 최종 적용 (모바일 375px 기준) | 송원호 | 대기 | 0% | 05/16 | 05/16 | 1 | 반응형 확인 | P1 |
 | 1.6.4 | [배포] Vercel 환경변수 등록 + 프로덕션 배포 (https://dacongame.vercel.app/) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 1 | 프로덕션 URL | P0 |
 | 1.6.5 | [QA] Lighthouse 성능 점수 확인 (목표: 90+) | 배영환 | 대기 | 0% | 05/16 | 05/16 | 1 | Lighthouse 리포트 | P2 |
