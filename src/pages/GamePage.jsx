@@ -1,7 +1,7 @@
 // 떡상러쉬 게임 메인 화면 — NPC 3명 클릭으로 거래소·정보상·기술상 페이지 이동
 // 화면 구조: 상단 이미지 영역(메인 비주얼 + NPC 클릭) | 하단 NewsPanel
 //
-// UI 톤: NYSE 거래소 배경에 맞춘 슬레이트(slate) + 시안(cyan) 디지털 보드 톤
+// UI 톤: 한국거래소·HTS 배경에 맞춘 슬레이트(slate) + 시안(cyan) 디지털 보드 톤
 //   - 좌측(수직 중앙): ROUND + 자산 정보(현금·주식 평가액·총 자산) + HOLDINGS 보유 종목 리스트
 //   - 우상단: 도움말 / 설정 / 종료 SVG 아이콘 3개 (hover 시 라벨 풍선)
 //   - 우하단: ▶ 다음 주 버튼
@@ -269,7 +269,7 @@ export default function GamePage() {
             <IconButton icon={<ExitIcon />}     label="종료"   onClick={handleExit} />
           </div>
 
-          {/* 우하단: 다음 주 버튼 — NYSE 디지털 보드 톤 (슬레이트 + 시안 글로우 + 모서리 deco) */}
+          {/* 우하단: 다음 주 버튼 — HTS 디지털 보드 톤 (슬레이트 + 시안 글로우 + 모서리 deco) */}
           <button
             onClick={handleNextTurn}
             disabled={isTurnTransition}
@@ -293,7 +293,7 @@ export default function GamePage() {
             </p>
           </button>
 
-          {/* 다음 주 확인 popover — NYSE 디지털 보드 톤 (모서리 deco + LIVE 인디케이터 + 시안 글로우) */}
+          {/* 다음 주 확인 popover — HTS 디지털 보드 톤 (모서리 deco + LIVE 인디케이터 + 시안 글로우) */}
           {openNextTurn && !isTurnTransition && (
             <div className="absolute bottom-[8.5rem] right-4 z-20">
               <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur border-2 border-cyan-400 rounded-xl p-6 shadow-[0_0_40px_rgba(34,211,238,0.4)] w-96">
@@ -385,7 +385,7 @@ export default function GamePage() {
   )
 }
 
-// 게임 종료 확인 모달 — 화면 중앙, NYSE 톤, 확인/취소 버튼
+// 게임 종료 확인 모달 — 화면 중앙, HTS 톤, 확인/취소 버튼
 function ExitConfirmModal({ onConfirm, onCancel }) {
   return (
     <div
