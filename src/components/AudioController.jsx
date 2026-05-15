@@ -15,7 +15,7 @@ const PAGE_TRACK = {
 export default function AudioController() {
   const page             = useGameStore((s) => s.page)
   const getReturnMultiple = useGameStore((s) => s.getReturnMultiple)
-  const { muted, volume } = useAudioStore()
+  const { muted, volume, sfxVolume } = useAudioStore()
 
   // 페이지 변경 → 트랙 전환
   useEffect(() => {
@@ -30,6 +30,9 @@ export default function AudioController() {
 
   // 음소거 변경
   useEffect(() => { audioManager.setMuted(muted) }, [muted])
+
+  // 효과음 볼륨 변경
+  useEffect(() => { audioManager.setSfxVolume(sfxVolume) }, [sfxVolume])
 
   return null
 }

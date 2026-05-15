@@ -95,6 +95,7 @@ export function setMuted(muted) {
 
 // ─── 버튼 클릭 효과음 (Web Audio API 합성음 — 파일 없이 동작) ──────────────
 let sfxContext = null
+let sfxVolume  = 0.5
 
 function getSfxCtx() {
   if (!sfxContext) {
@@ -106,7 +107,9 @@ function getSfxCtx() {
 }
 
 // 볼륨 설정에 비례한 기준 게인 (targetVolume 0.5 기준 = 0.1)
-function sfxGain() { return 0.2 * targetVolume }
+function sfxGain() { return 0.2 * sfxVolume }
+
+export function setSfxVolume(vol) { sfxVolume = vol }
 
 export function playSfx(type) {
   if (isMuted) return
