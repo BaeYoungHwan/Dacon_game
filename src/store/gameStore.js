@@ -30,6 +30,7 @@ export const useGameStore = create(
   persist(
     (set, get) => ({
       page: 'start',
+      isFirstPlay: false,
       nickname: '',
       turn: 0,
       totalTurns: TOTAL_TURNS,
@@ -51,6 +52,9 @@ export const useGameStore = create(
       setNickname: (name) => set({ nickname: name }),
       navigateTo: (page) => set({ page }),
 
+      finishIntro: () => set({ page: 'main' }),
+      clearFirstPlay: () => set({ isFirstPlay: false }),
+
       startGame: () => {
         const { active, hidden } = splitStocks(allStocks)
         const allPrices = Object.fromEntries(
@@ -60,7 +64,8 @@ export const useGameStore = create(
           ])
         )
         set({
-          page: 'main',
+          page: 'intro',
+          isFirstPlay: true,
           turn: 1,
           cash: INITIAL_CASH,
           portfolio: {},
