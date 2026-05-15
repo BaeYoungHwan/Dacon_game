@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-14 (차트 초안 + pregame 데이터)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-14 (지표 탭 고도화·SFX·RoundResultModal 제외)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -109,7 +109,7 @@
 | 1.4.11 | [Front] MarketPage 구현 (월스트리트 거래소 — 10종목 분석·매수·매도) | 송원호 | 완료 | 100% | 05/14 | 05/15 | 1 | src/pages/MarketPage.jsx | P0 |
 | 1.4.12 | [Front] InfoMerchantModal 구현 (정보상 — 국제뉴스·기업뉴스·추천종목, 라운드별 가격 변동) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/InfoMerchantModal.jsx | P1 |
 | 1.4.13 | [Front] TechMerchantModal 구현 (기술상 — 제외된 10종목 중 일부 유료 공개) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/merchant/TechMerchantModal.jsx | P1 |
-| 1.4.14 | [Front] RoundResultModal 구현 (라운드 종료 — 수익/손실 요약, 다음 라운드 버튼) | 송원호 | 대기 | 0% | 05/14 | 05/15 | 1 | src/components/game/RoundResultModal.jsx | P1 |
+| 1.4.14 | [Front] RoundResultModal 구현 (라운드 종료 — 수익/손실 요약, 다음 라운드 버튼) | 송원호 | **제외** | — | 05/14 | 05/15 | — | — | — |
 | 1.4.15 | [공용] stockData.json pregame 13주 차트 배경 데이터 완료 (2025-02-27~2025-05-22) | 배영환 | 완료 | 100% | 05/14 | 05/14 | 0.5 | scripts/collect-stock-data.py + stockData.json | P1 |
 | 1.4.16 | [Front] StockChart 컴포넌트 초안 (캔들차트 + pregame 연동 완료, MA/볼린저 미구현) | 송원호 | 진행중 | 50% | 05/14 | 05/15 | 1 | src/components/game/StockChart.jsx, chartUtils.js | P1 |
 
