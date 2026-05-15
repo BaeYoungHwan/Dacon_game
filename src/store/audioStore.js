@@ -6,7 +6,7 @@ export const useAudioStore = create(
   persist(
     (set) => ({
       muted: false,
-      volume: 0.5,
+      volume: 0.3,
       setMuted: (muted) => set({ muted }),
       setVolume: (volume) => set({ volume }),
       toggleMuted: () => set((s) => ({ muted: !s.muted })),
