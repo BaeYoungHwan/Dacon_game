@@ -10,10 +10,10 @@ const CARDS = [
   { getText: ()     => '50주 안에 코스피 지수 수익률을 이겨라.',                   color: '#67e8f9' }, // cyan-300
 ]
 
-const FADE_IN_MS  = 400
-const HOLD_MS     = 1000
-const LAST_HOLD_MS = 1200 // 마지막 카드는 조금 더 길게
-const FADE_OUT_MS = 300
+const FADE_IN_MS  = 570
+const HOLD_MS     = 1430
+const LAST_HOLD_MS = 1715 // 마지막 카드는 조금 더 길게
+const FADE_OUT_MS = 430
 
 export default function IntroScene() {
   const nickname    = useGameStore((s) => s.nickname)
@@ -74,7 +74,7 @@ export default function IntroScene() {
       {/* SKIP — 우하단 고정, 항상 표시 */}
       <button
         onClick={finishIntro}
-        className="absolute bottom-8 right-8 text-stone-500 hover:text-stone-300 text-sm transition-colors duration-150"
+        className="absolute bottom-8 right-8 text-stone-500 hover:text-stone-300 text-4xl px-4 py-2 transition-colors duration-150"
       >
         SKIP ▶
       </button>
