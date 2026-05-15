@@ -92,3 +92,39 @@ export function setMuted(muted) {
   isMuted = muted
   if (currentAudio) currentAudio.volume = muted ? 0 : targetVolume
 }
+
+// ─── 버튼 클릭 효과음 (Web Audio API 합성음 — 파일 없이 동작) ──────────────
+let sfxContext = null
+
+function getSfxCtx() {
+  if (!sfxContext) {
+    try { sfxContext = new (window.AudioContext || window.webkitAudioContext)() }
+    catch (_) { return null }
+  }
+  if (sfxContext.state === 'suspended') sfxContext.resume().catch(() => {})
+  return sfxContext
+}
+
+// 볼륨 설정에 비례한 기준 게인 (targetVolume 0.5 기준 = 0.1)
+function sfxGain() { return 0.2 * targetVolume }
+
+export function playSfx(type) {
+  if (isMuted) return
+  const ctx = getSfxCtx()
+  if (!ctx) return
+  try {
+    const osc  = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    const now = ctx.currentTime
+    if (type === 'click') {
+      osc.type = 'square'
+      osc.frequency.setValueAtTime(700, now)
+      osc.frequency.exponentialRampToValueAtTime(280, now + 0.1)
+      gain.gain.setValueAtTime(sfxGain(), now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12)
+      osc.start(now); osc.stop(now + 0.12)
+    }
+  } catch (_) {}
+}
