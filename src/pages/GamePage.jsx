@@ -72,6 +72,20 @@ export default function GamePage() {
     }
   }, [])
 
+  // 반응형 스케일 — 1695×928 기준 wrapper를 컨테이너 너비에 맞춰 transform: scale
+  // viewport가 작아지면 모든 absolute 요소가 비례 축소되어 레이아웃이 깨지지 않음
+  const containerRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => setScale(el.clientWidth / 1695)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   // 차트 클릭 — 작은 차트의 화면 좌표/사이즈 측정 후 모달 열기 (확대 애니메이션 시작점)
   const handleChartOpen = () => {
     const r = chartButtonRef.current?.getBoundingClientRect()
@@ -90,10 +104,12 @@ export default function GamePage() {
     setOpenNextTurn(false)
     if (isTurnTransition) return
     const nextWeek = turn + 1
-    // 라운드 진행 직전 — 현재 stockValue를 prev로 캐싱 (trend 비교 baseline)
-    prevStockValueRef.current = stockValue
+    // 라운드 진행 직전 — 현재 stockValue/totalAssets를 prev로 캐싱 (trend·delta 비교 baseline)
+    setPrevStockValue(stockValue)
+    setPrevTotalAssets(totalAssets)
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(STOCK_VALUE_CACHE_KEY, String(stockValue))
+      sessionStorage.setItem(TOTAL_ASSETS_CACHE_KEY, String(totalAssets))
     }
     // 가격/뉴스 계산은 미리 (이펙트 끝난 후 store에 반영)
     const result = progressTurn(nextWeek, [...activeStocks, ...hiddenStocks])
@@ -136,127 +152,183 @@ export default function GamePage() {
   }, 0)
   const totalAssets = cash + stockValue
 
-  // 평가액 trend 계산 — "다음 주" 클릭 직전의 stockValue와 현재(다음주 진행 후) stockValue를 비교
-  // useEffect로 갱신하면 nextTurn → useEffect → 다음 렌더 시 prev=stockValue 동일이라 trend가 안 잡힘.
-  // 그래서 handleNextTurn에서 클릭 직전 stockValue를 미리 prev로 캐싱하는 방식으로 변경.
-  // sessionStorage 사용 → 페이지 이동 후 GamePage remount되어도 prev 유지
+  // 평가액·총자산 trend·delta 계산 — "다음 주" 클릭 직전의 값을 prev로 캐싱해 다음 라운드와 비교
+  // sessionStorage로 페이지 이동(거래소/정보상/기술상) 후 remount되어도 prev 유지.
+  // 단, turn=1 마운트 시점(새 게임 시작 또는 재시작 직후)엔 sessionStorage prev 캐시를 클리어해
+  // 이전 게임의 trend/delta가 첫 라운드에 잘못 표시되지 않도록 함.
   const STOCK_VALUE_CACHE_KEY = 'anim-num:game-stock-value-prev'
-  const prevStockValueRef = useRef((() => {
+  const TOTAL_ASSETS_CACHE_KEY = 'anim-num:game-total-assets-prev'
+  const readCachedNumber = (key) => {
     if (typeof sessionStorage === 'undefined') return null
-    const cached = sessionStorage.getItem(STOCK_VALUE_CACHE_KEY)
+    const cached = sessionStorage.getItem(key)
     return cached === null ? null : Number(cached)
-  })())
+  }
+  const [prevStockValue, setPrevStockValue] = useState(() => {
+    if (turn === 1) {
+      // 새 게임 시작 — 이전 게임의 캐시 제거 (두 키 모두)
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(STOCK_VALUE_CACHE_KEY)
+        sessionStorage.removeItem(TOTAL_ASSETS_CACHE_KEY)
+      }
+      return null
+    }
+    return readCachedNumber(STOCK_VALUE_CACHE_KEY)
+  })
+  const [prevTotalAssets, setPrevTotalAssets] = useState(() => {
+    if (turn === 1) return null // 위 setter에서 이미 캐시 클리어됨
+    return readCachedNumber(TOTAL_ASSETS_CACHE_KEY)
+  })
 
   const stockValueTrend = (() => {
-    const prev = prevStockValueRef.current
-    if (prev === null || stockValue === prev) return null
-    return stockValue > prev ? 'up' : 'down'
+    if (prevStockValue === null || stockValue === prevStockValue) return null
+    return stockValue > prevStockValue ? 'up' : 'down'
   })()
 
+  // 총자산 — trend + 증감률(%) + 증감액(원)
+  const totalAssetsDelta = prevTotalAssets === null
+    ? null
+    : totalAssets - prevTotalAssets
+  const totalAssetsDeltaPct = (prevTotalAssets === null || prevTotalAssets === 0)
+    ? null
+    : ((totalAssets - prevTotalAssets) / prevTotalAssets) * 100
+  const totalAssetsTrend = (totalAssetsDelta === null || totalAssetsDelta === 0)
+    ? null
+    : totalAssetsDelta > 0 ? 'up' : 'down'
+
   return (
-    <div className="min-h-screen w-full flex flex-col bg-stone-900">
-      {/* 상단: 이미지 영역 + 오버레이 UI */}
-      <div className="flex-1 flex items-center justify-center overflow-hidden">
+    <div className="h-screen w-screen flex items-center justify-center bg-stone-900 overflow-hidden animate-page-enter">
+      {/* viewport에 맞춰 1695:928 비율 컨테이너 (다른 페이지와 동일 패턴) */}
+      <div
+        ref={containerRef}
+        className="relative aspect-[1695/928] overflow-hidden"
+        style={{
+          width: 'min(100vw, calc(100vh * 1695 / 928))',
+          height: 'min(100vh, calc(100vw * 928 / 1695))',
+          backgroundImage: "url('/images/game-bg.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* 스케일 래퍼 — 1695×928 고정 좌표로 모든 absolute 요소를 그리고, 컨테이너 너비에 맞춰 비례 축소 */}
         <div
-          className="relative w-full max-w-[1695px] aspect-[1695/928]"
+          className="absolute top-0 left-0"
           style={{
-            backgroundImage: "url('/images/game-bg.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            width: '1695px',
+            height: '928px',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
           }}
         >
-          {/* 좌측(수직 중앙): ROUND + 자산 + HOLDINGS */}
-          <div className="absolute top-1/2 left-4 -translate-y-1/2 bg-slate-900/85 backdrop-blur rounded-xl px-10 py-8 text-slate-100 z-10 border-2 border-cyan-500/60 shadow-[0_0_25px_rgba(34,211,238,0.15)] w-80">
-            <p className="text-sm text-cyan-300/80 tracking-wider">ROUND</p>
-            <p className="text-5xl font-bold leading-tight mb-4 text-cyan-100">{turn} / {totalTurns}</p>
+          {/* 좌측(수직 중앙): ROUND + 자산 + HOLDINGS — PopupOverlay와 통일된 그라데이션 톤 */}
+          <div className="absolute top-1/2 left-4 -translate-y-1/2 bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur rounded-xl px-6 py-6 text-slate-100 z-10 border-2 border-cyan-500/60 shadow-[0_0_40px_rgba(34,211,238,0.2)] w-80">
+            {/* ROUND — LED 인디케이터 헤더 (다른 페이지 PopupOverlay 패턴) */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="text-cyan-300 text-sm font-mono tracking-[0.25em]">ROUND</span>
+            </div>
+            <p className="text-4xl font-bold leading-tight mb-4 text-cyan-100 font-mono tabular-nums">{turn} / {totalTurns}</p>
 
             {/* 자산 정보 — 현금 / 주식 평가액(전라운드 대비 ▲▼) / 총 자산 */}
-            <div className="border-t border-cyan-700/40 pt-3 space-y-2">
+            <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3 space-y-2">
               <AssetRow label="현금"        value={cash}        cacheKey="game-cash" />
               <AssetRow label="주식 평가액" value={stockValue}  trend={stockValueTrend} cacheKey="game-stock-value" />
-              <div className="border-t border-cyan-700/40 pt-2 mt-1">
-                <AssetRow label="총 자산"   value={totalAssets} highlight cacheKey="game-total-assets" />
+              <div className="border-t border-cyan-500/20 pt-2">
+                <AssetRow
+                  label="총 자산"
+                  value={totalAssets}
+                  highlight
+                  trend={totalAssetsTrend}
+                  deltaPct={totalAssetsDeltaPct}
+                  deltaAmount={totalAssetsDelta}
+                  cacheKey="game-total-assets"
+                />
               </div>
             </div>
 
-            {/* HOLDINGS — 보유 종목 리스트 (전체 표시, 스크롤 없음) */}
-            <p className="text-sm text-cyan-300/80 tracking-wider mt-4 mb-2">HOLDINGS</p>
-            <div className="divide-y divide-cyan-900/30">
+            {/* HOLDINGS — 보유 종목 리스트 (LED 인디케이터 헤더) */}
+            <div className="flex items-center gap-2 mt-4 mb-2">
+              <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
+              <span className="text-cyan-300 text-[10px] font-mono tracking-[0.25em]">HOLDINGS</span>
+            </div>
+            <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-2">
               {holdings.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">보유 종목 없음</p>
+                <p className="text-xs text-slate-400 italic text-center py-1 font-mono">보유 종목 없음</p>
               ) : (
-                holdings.map((s) => {
-                  const currentPrice = (prices && prices[s.id]) || s.price || 0
-                  const prevClose = getPrevClose(s.id)
-                  const changePct = prevClose && prevClose !== 0
-                    ? ((currentPrice - prevClose) / prevClose) * 100
-                    : 0
-                  const hasPrev = prevClose !== null && prevClose !== 0
-                  // 소수점 2자리 반올림 기준 — ±0.005 미만이면 "변동 없음"
-                  const isZero = hasPrev && Math.abs(changePct) < 0.005
-                  const isUp = changePct > 0
-                  return (
-                    <div key={s.id} className="py-1">
-                      <div className="flex justify-between items-baseline">
-                        <span className="truncate text-slate-200 text-sm font-semibold">
-                          {s.mimeName || s.name || s.id}
-                        </span>
-                        <span className="text-cyan-200 ml-2 flex-shrink-0 text-xs font-mono">
-                          {portfolio[s.id]}주
-                        </span>
+                <div className="divide-y divide-cyan-500/15">
+                  {holdings.map((s) => {
+                    const currentPrice = (prices && prices[s.id]) || s.price || 0
+                    const prevClose = getPrevClose(s.id)
+                    const changePct = prevClose && prevClose !== 0
+                      ? ((currentPrice - prevClose) / prevClose) * 100
+                      : 0
+                    const hasPrev = prevClose !== null && prevClose !== 0
+                    // 소수점 2자리 반올림 기준 — ±0.005 미만이면 "변동 없음"
+                    const isZero = hasPrev && Math.abs(changePct) < 0.005
+                    const isUp = changePct > 0
+                    return (
+                      <div key={s.id} className="py-1 first:pt-0 last:pb-0">
+                        <div className="flex justify-between items-baseline">
+                          <span className="truncate text-slate-100 text-sm font-semibold">
+                            {s.mimeName || s.name || s.id}
+                          </span>
+                          <span className="text-cyan-200 ml-2 flex-shrink-0 text-xs font-mono tabular-nums">
+                            {portfolio[s.id]}주
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-baseline mt-0.5">
+                          <span className="text-cyan-100 font-mono tabular-nums text-xs">
+                            <AnimatedNumber value={currentPrice} cacheKey={`holding-price-${s.id}`} />원
+                          </span>
+                          <span
+                            className={`font-mono tabular-nums text-xs ${
+                              !hasPrev
+                                ? 'text-slate-500'
+                                : isZero
+                                ? 'text-slate-100'
+                                : isUp
+                                ? 'text-red-400'
+                                : 'text-blue-400'
+                            }`}
+                          >
+                            {!hasPrev ? (
+                              '—'
+                            ) : isZero ? (
+                              '0.00%'
+                            ) : (
+                              <>
+                                {isUp ? '▲' : '▼'} {isUp ? '+' : ''}
+                                <AnimatedNumber value={changePct} decimals={2} />%
+                              </>
+                            )}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-baseline mt-0.5">
-                        <span className="text-cyan-100 font-mono tabular-nums text-xs">
-                          <AnimatedNumber value={currentPrice} cacheKey={`holding-price-${s.id}`} />원
-                        </span>
-                        <span
-                          className={`font-mono tabular-nums text-xs ${
-                            !hasPrev
-                              ? 'text-slate-500'
-                              : isZero
-                              ? 'text-slate-100'
-                              : isUp
-                              ? 'text-red-400'
-                              : 'text-blue-400'
-                          }`}
-                        >
-                          {!hasPrev ? (
-                            '—'
-                          ) : isZero ? (
-                            '0.00%'
-                          ) : (
-                            <>
-                              {isUp ? '▲' : '▼'} {isUp ? '+' : ''}
-                              <AnimatedNumber value={changePct} decimals={2} />%
-                            </>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })
+                    )
+                  })}
+                </div>
               )}
             </div>
           </div>
 
-          {/* 차트 바로 위 전광판 — 게임 팁 우측→좌측 흐름 */}
+          {/* 차트 바로 위 전광판 — 게임 팁 우측→좌측 흐름 (X축 중앙 정렬) */}
           <div
-            style={{ top: 'calc(0.75rem + 115px)', left: 'calc(50% - 80px)' }}
+            style={{ top: 'calc(0.75rem + 115px)', left: '50%' }}
             className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10"
           >
             <Marquee items={GAMEPLAY_TIPS} leftLabel="📢 TIPS" />
           </div>
 
-          {/* 상단 중앙: KOSPI 지수 차트 — 클릭 시 확대 모달 (작은 차트 위치에서 출발하는 애니메이션) */}
+          {/* 상단 중앙: KOSPI 지수 차트 — 클릭 시 확대 모달 (작은 차트 위치에서 출발하는 애니메이션, X축 중앙 정렬) */}
           <button
             ref={chartButtonRef}
             type="button"
             onClick={handleChartOpen}
-            style={{ top: 'calc(0.75rem + 150px)', left: 'calc(50% - 80px)', outline: 'none' }}
+            style={{ top: 'calc(0.75rem + 150px)', left: '50%', outline: 'none' }}
             className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10 group cursor-pointer focus:outline-none transition-transform duration-150 hover:scale-[1.02]"
             aria-label="KOSPI 차트 확대"
           >
-            <KospiChart />
+            {/* 메인 화면 미니 차트 — 클릭 시 ChartExpandModal에서 풀 차트 표시 */}
+            <KospiChart compact />
             {/* hover 시 확대 아이콘 — 차트 우상단 inside */}
             <span className="absolute top-3 right-3 text-[10px] text-cyan-200 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none bg-slate-900/90 px-2 py-0.5 rounded border border-cyan-500/60 font-mono tracking-wider">
               🔍 EXPAND
@@ -351,7 +423,9 @@ export default function GamePage() {
           {/* 도움말 오버레이 — 각 UI 옆에 설명 풍선, 배경 클릭 시 닫힘 */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
         </div>
+        {/* /scale wrapper */}
       </div>
+      {/* /viewport-aware 컨테이너 */}
 
       {/* 하단 NewsPanel은 차트 위 전광판(Marquee)으로 통합됨 — 라운드별 뉴스가 tips로 흐름 */}
 
@@ -386,7 +460,7 @@ export default function GamePage() {
   )
 }
 
-// 게임 종료 확인 모달 — 화면 중앙, HTS 톤, 확인/취소 버튼
+// 게임 종료 확인 모달 — PopupOverlay 패턴 (font-mono 헤더 + ✕ + slate-800/70 카드)
 function ExitConfirmModal({ onConfirm, onCancel }) {
   return (
     <div
@@ -394,28 +468,37 @@ function ExitConfirmModal({ onConfirm, onCancel }) {
       onClick={onCancel}
     >
       <div
-        className="bg-gradient-to-b from-slate-900 to-slate-950 text-slate-100 border-2 border-cyan-500/60 rounded-lg p-8 shadow-[0_0_40px_rgba(34,211,238,0.2)] max-w-sm w-full"
+        className="relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/60 rounded-xl p-6 max-w-sm w-full shadow-[0_0_40px_rgba(34,211,238,0.2)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold mb-3 text-cyan-300 flex items-center gap-2">
-          <span>🚪</span>
-          <span>게임 종료</span>
-        </h2>
-        <p className="text-sm text-slate-200 mb-2">게임을 종료하고 초기 화면으로 돌아가시겠습니까?</p>
-        <p className="text-xs text-cyan-300/60 mb-6">⚠️ 현재 진행 상황은 모두 사라집니다.</p>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold text-cyan-300 font-mono tracking-wider">게임 종료</h2>
+          <button
+            onClick={onCancel}
+            style={{ outline: 'none' }}
+            className="text-cyan-300 hover:text-cyan-100 text-xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-4 mb-4">
+          <p className="text-sm text-cyan-100 mb-2">게임을 종료하고 초기 화면으로 돌아가시겠습니까?</p>
+          <p className="text-xs text-cyan-300/60 font-mono">⚠️ 현재 진행 상황은 모두 사라집니다.</p>
+        </div>
 
         <div className="flex gap-2">
           <button
             onClick={onCancel}
             style={{ outline: 'none' }}
-            className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded font-bold transition-all duration-150 focus:outline-none"
+            className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-500/60 text-slate-100 rounded-lg font-bold font-mono tracking-wider transition-all duration-150 focus:outline-none"
           >
             취소
           </button>
           <button
             onClick={onConfirm}
             style={{ outline: 'none' }}
-            className="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white rounded font-bold transition-all duration-150 focus:outline-none shadow-[0_0_15px_rgba(248,113,113,0.3)]"
+            className="flex-1 py-2 bg-red-700 hover:bg-red-600 border-2 border-red-400/60 text-white rounded-lg font-bold font-mono tracking-wider transition-all duration-150 focus:outline-none shadow-[0_0_15px_rgba(248,113,113,0.3)]"
           >
             종료
           </button>
@@ -493,32 +576,53 @@ function ChartExpandModal({ onClose, startRect }) {
 // ─────────────────────────────────────────────────────────
 
 // 좌측 카드 자산 한 줄 — 라벨 + (▲/▼ 아이콘) + 카운트 애니메이션 금액
-// highlight=true → 총 자산 강조 / trend='up'|'down'|null → 전라운드 대비 변동 아이콘
-// cacheKey → 페이지 전환 후에도 직전 값 보존 (sessionStorage)
-function AssetRow({ label, value, highlight, trend, cacheKey }) {
+// highlight=true   → 총 자산 강조
+// trend='up|down'  → 전라운드 대비 변동 아이콘
+// deltaPct·deltaAmount → 있으면 두 번째 줄에 ▲ +X.XX% (+27,000원) 표시
+// cacheKey         → 페이지 전환 후에도 직전 값 보존 (sessionStorage)
+function AssetRow({ label, value, highlight, trend, deltaPct, deltaAmount, cacheKey }) {
+  // 소수점 2자리 반올림 기준 — ±0.005% 미만이면 "변동 없음"으로 두 번째 줄 숨김
+  const hasDelta = deltaPct !== undefined && deltaPct !== null && Math.abs(deltaPct) >= 0.005
+  const isUp = (deltaPct ?? 0) > 0
+
   return (
-    <div className="flex justify-between items-baseline">
-      <span className={`text-sm ${highlight ? 'text-cyan-300 font-bold' : 'text-cyan-300/70'}`}>{label}</span>
-      <span className={`font-bold flex items-baseline gap-1 tabular-nums ${highlight ? 'text-xl text-cyan-100' : 'text-base text-slate-100'}`}>
-        {trend === 'up'   && <span className="text-red-400 text-xs">▲</span>}
-        {trend === 'down' && <span className="text-blue-400 text-xs">▼</span>}
-        <AnimatedNumber value={value} cacheKey={cacheKey} />원
-      </span>
+    <div>
+      <div className="flex justify-between items-baseline">
+        <span className={`text-sm ${highlight ? 'text-cyan-300 font-bold' : 'text-cyan-300/70'}`}>{label}</span>
+        <span className={`font-bold flex items-baseline gap-1 tabular-nums ${highlight ? 'text-xl text-cyan-100' : 'text-base text-slate-100'}`}>
+          {trend === 'up'   && <span className="text-red-400 text-xs">▲</span>}
+          {trend === 'down' && <span className="text-blue-400 text-xs">▼</span>}
+          <AnimatedNumber value={value} cacheKey={cacheKey} />원
+        </span>
+      </div>
+      {hasDelta && (
+        <div className="flex justify-end items-baseline mt-0.5 gap-1.5 font-mono tabular-nums text-xs">
+          <span className={isUp ? 'text-red-400' : 'text-blue-400'}>
+            {isUp ? '▲' : '▼'} <AnimatedNumber value={Math.abs(deltaPct)} decimals={2} />%
+          </span>
+          {deltaAmount !== undefined && deltaAmount !== null && (
+            <span className={isUp ? 'text-red-300/70' : 'text-blue-300/70'}>
+              ({isUp ? '+' : '-'}<AnimatedNumber value={Math.abs(deltaAmount)} />원)
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
-// 우상단 아이콘 버튼 — SVG 아이콘 + hover 시 라벨 풍선
+// 우상단 아이콘 버튼 — SVG 아이콘 + hover 시 inset+outer 글로우 (다른 페이지 Hotspot cyan 패턴)
 function IconButton({ icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
       style={{ outline: 'none' }}
-      className="relative group flex items-center justify-center bg-slate-900/85 hover:bg-slate-800 backdrop-blur rounded-lg w-16 h-16 border-2 border-cyan-500/60 text-cyan-300 hover:text-cyan-200 transition-all duration-150 focus:outline-none focus:ring-0 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+      className="relative group flex items-center justify-center bg-gradient-to-b from-slate-900 to-slate-950 hover:from-slate-800 hover:to-slate-900 backdrop-blur rounded-lg w-16 h-16 border-2 border-cyan-500/60 hover:border-cyan-300 text-cyan-300 hover:text-cyan-100 transition-all duration-150 focus:outline-none focus:ring-0 group-hover:shadow-[inset_0_0_25px_rgba(34,211,238,0.35),0_0_25px_rgba(34,211,238,0.35)]"
       aria-label={label}
     >
       {icon}
-      <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-cyan-200 text-sm px-3 py-1 rounded border border-cyan-500/60 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none shadow-lg">
+      {/* 라벨 풍선 — HelpBubble과 동일한 톤 */}
+      <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/95 text-cyan-100 text-sm px-3 py-1 rounded-lg border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)] opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none font-mono tracking-wider">
         {label}
       </span>
     </button>
@@ -554,11 +658,12 @@ function NPCHotspot({ left, label, subLabel, onClick, bubbleOffsetX = 0, glowOff
         }}
         className="absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
       >
-        <span className="block whitespace-nowrap bg-cyan-500 text-slate-900 font-bold text-xs px-3 py-1 rounded shadow-lg border-2 border-cyan-700">
+        {/* HelpBubble과 동일한 톤: slate-900/95 + cyan-400 border + 글로우 + font-mono */}
+        <span className="block whitespace-nowrap bg-slate-900/95 text-cyan-100 font-bold text-xs px-3 py-1.5 rounded-lg border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] font-mono tracking-wider">
           {label}
-          <span className="text-slate-700 font-normal ml-1">· {subLabel}</span>
+          <span className="text-cyan-300/70 font-normal ml-1">· {subLabel}</span>
         </span>
-        <span className="block w-0 h-0 mx-auto border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-cyan-700"></span>
+        <span className="block w-0 h-0 mx-auto border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-cyan-400"></span>
       </span>
     </button>
   )
@@ -643,49 +748,78 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
+      {/* KOSPI 차트 설명 — 차트 위쪽에서 아래로 +60px 이동, arrow="down"으로 아래 차트를 가리킴 */}
+      <HelpBubble style={{ top: 'calc(0.75rem + 85px)', left: 'calc(50% + 200px)', transform: 'translateX(-50%)' }} arrow="down">
+        <strong className="text-cyan-300 text-base block">📈 KOSPI 지수</strong>
+        <p className="text-xs mt-1 text-cyan-100">
+          한국 주식 시장 전체 평균값
+          <br />올라가면 시장 분위기가 좋아요
+          <br />클릭하면 큰 차트로 볼 수 있어요
+        </p>
+      </HelpBubble>
+
       {/* 좌측 카드 옆 (카드: left-4 w-80) */}
       <HelpBubble style={{ top: '50%', left: 'calc(1rem + 20rem + 0.75rem)', transform: 'translateY(-50%)' }}>
-        <strong className="text-cyan-300 text-base block">💼 자산 현황 카드</strong>
+        <strong className="text-cyan-300 text-base block">💼 내 자산 현황</strong>
         <p className="text-xs mt-1 text-cyan-100">
-          라운드 · 현금 · 평가액 · 총자산
-          <br />보유 종목 리스트를 한눈에
+          내 돈이 얼마인지 한눈에 확인
+          <br />현금 + 주식 가치 = 총 자산
+          <br />가진 종목과 손익도 표시
         </p>
       </HelpBubble>
 
       {/* 우상단 아이콘 3개 아래 */}
       <HelpBubble style={{ top: '6rem', right: '0.75rem' }}>
-        <strong className="text-cyan-300 text-base block">⚙️ 상단 메뉴</strong>
-        <p className="text-xs mt-1 text-cyan-100">도움말 보기 / 배경음·효과음 설정 / 게임 종료</p>
+        <strong className="text-cyan-300 text-base block">⚙️ 메뉴</strong>
+        <p className="text-xs mt-1 text-cyan-100">
+          도움말 다시 보기
+          <br />음악·효과음 크기 조절
+          <br />게임 종료
+        </p>
       </HelpBubble>
 
       {/* 우하단 다음 주 버튼 위 */}
       <HelpBubble style={{ bottom: '6rem', right: '1rem' }}>
-        <strong className="text-cyan-300 text-base block">▶ 다음 주</strong>
-        <p className="text-xs mt-1 text-cyan-100">한 라운드 진행 · 주가 갱신</p>
+        <strong className="text-cyan-300 text-base block">▶ 다음 주로</strong>
+        <p className="text-xs mt-1 text-cyan-100">
+          한 주를 보내고 주가 갱신
+          <br />⚠️ 누르면 되돌릴 수 없어요
+        </p>
       </HelpBubble>
 
       {/* 거래소 NPC (왼쪽, left 35%+7%=42%) — 머리 위 */}
       <HelpBubble style={{ top: '38%', left: '42%', transform: 'translate(-50%, -100%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">🏛️ 거래소</strong>
-        <p className="text-xs mt-1 text-cyan-100">시장 분석가에게 가서<br />공개된 10종목을 매수/매도</p>
+        <p className="text-xs mt-1 text-cyan-100">
+          주식을 사고파는 곳
+          <br />10개 종목 중 골라 거래해요
+        </p>
       </HelpBubble>
 
       {/* 정보상 NPC (가운데, left 48%+7%=55%) — 도움말 풍선 50px 우측 이동 */}
       <HelpBubble style={{ top: '38%', left: 'calc(55% + 50px)', transform: 'translate(-50%, -100%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">📰 정보상</strong>
-        <p className="text-xs mt-1 text-cyan-100">정보 브로커에게 가서<br />뉴스·추천 종목 구매</p>
+        <p className="text-xs mt-1 text-cyan-100">
+          뉴스에 따라 주가가 움직여요
+          <br />미리 보면 어떤 종목이 오를지
+          <br />힌트를 얻을 수 있어요
+        </p>
       </HelpBubble>
 
       {/* 기술상 NPC (오른쪽, left 62%+7%=69%) — 도움말 풍선 100px 우측 이동 */}
       <HelpBubble style={{ top: '38%', left: 'calc(69% + 100px)', transform: 'translate(-50%, -100%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">🔧 기술상</strong>
-        <p className="text-xs mt-1 text-cyan-100">퀀트에게 가서 비공개<br />10종목 유료 공개·거래</p>
+        <p className="text-xs mt-1 text-cyan-100">
+          숨겨진 종목 공개 (고위험·고수익)
+          <br />차트 분석 도구 구매
+          <br />10주차부터 이용 가능
+        </p>
       </HelpBubble>
     </div>
   )
 }
 
-// 도움말 풍선 한 개 — style로 위치 지정, arrow="down" 시 아래쪽 화살표 노치
+// 도움말 풍선 한 개 — style로 위치 지정, arrow="down|up" 시 위/아래쪽 화살표 노치
 function HelpBubble({ style, arrow, children }) {
   return (
     <div
@@ -695,6 +829,9 @@ function HelpBubble({ style, arrow, children }) {
       {children}
       {arrow === 'down' && (
         <span className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-cyan-400" />
+      )}
+      {arrow === 'up' && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-b-[10px] border-l-transparent border-r-transparent border-b-cyan-400" />
       )}
     </div>
   )

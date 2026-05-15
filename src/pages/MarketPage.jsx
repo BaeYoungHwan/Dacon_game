@@ -65,7 +65,7 @@ export default function MarketPage() {
   const selectedStock = activeStocks.find((s) => s.id === selectedStockId)
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden">
+    <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden animate-page-enter">
       {/* 배경 이미지 영역 — viewport 안에 들어가도록 width·height 모두 16:9로 클램프 */}
       <div
         className="relative aspect-[16/9]"

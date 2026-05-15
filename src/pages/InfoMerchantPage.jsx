@@ -76,7 +76,7 @@ export default function InfoMerchantPage() {
   }, [currentNews, activeStocks, prices])
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden">
+    <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden animate-page-enter">
       {/* 16:9 배경 컨테이너 */}
       <div
         className="relative aspect-[16/9]"
