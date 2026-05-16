@@ -1,25 +1,9 @@
-// 등급 카드 — 코스피 대비 초과수익률로 등급을 판정해 표시
 // Props: myReturn(내 수익률, 소수), kospiReturn(코스피 수익률, 소수)
-// 명세 v2 컴포넌트 원칙: store 직접 접근 X — 부모(GamePage)가 계산해서 넘김
-//
-// ⚠️ 배영환 협의 필요: 등급 임계값은 proposal-v1.md 기준 임시값
-//    추후 게임 디자인 확정 시 src/lib/grade.js 등으로 분리해 ResultPage와 공유
-
-const GRADES = [
-  { label: '전설의 동학개미', threshold: 200, color: 'text-yellow-300', emoji: '👑' },
-  { label: '작전세력',        threshold: 50,  color: 'text-purple-400', emoji: '🎩' },
-  { label: '큰손',            threshold: 0,   color: 'text-rise',       emoji: '💰' },
-  { label: '슈퍼개미',        threshold: -10, color: 'text-blue-300',   emoji: '🐜' },
-  { label: '개미',            threshold: -Infinity, color: 'text-fall', emoji: '😢' },
-]
-
-// 초과수익률(%p)로 등급 판정 — GRADES는 threshold 내림차순이므로 find가 곧 첫 매칭
-function getGrade(excessPp) {
-  return GRADES.find((g) => excessPp >= g.threshold)
-}
+// 명세 v2 원칙: store 직접 접근 X — 부모가 계산해서 넘김
+import { getGrade, calcExcessPp } from '../../lib/grade'
 
 export default function GradeCard({ myReturn, kospiReturn }) {
-  const excessPp = (myReturn - kospiReturn) * 100
+  const excessPp = calcExcessPp(myReturn, kospiReturn)
   const grade = getGrade(excessPp)
 
   return (

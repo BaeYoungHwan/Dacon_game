@@ -229,4 +229,4 @@ export const useGameStore = create(
   ),
 )
 
-export { INITIAL_CASH }
+export { INITIAL_CASH, INITIAL_KOSPI }
