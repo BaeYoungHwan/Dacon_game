@@ -46,7 +46,7 @@ function generatePackage(hiddenStocks, prices) {
   const minTotal = packagePrice * 0.9
   const maxTotal = packagePrice * 1.1
 
-  const pool = hiddenStocks.map(s => ({ ...s, _p: prices[s.id] ?? s.price }))
+  const pool = hiddenStocks.map(s => ({ ...s, currentPrice: prices[s.id] ?? s.price }))
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[pool[i], pool[j]] = [pool[j], pool[i]]
@@ -55,25 +55,28 @@ function generatePackage(hiddenStocks, prices) {
   const selected = []
   let total = 0
   for (const stock of pool) {
-    if (total + stock._p <= maxTotal) {
+    if (total + stock.currentPrice <= maxTotal) {
       selected.push(stock)
-      total += stock._p
+      total += stock.currentPrice
       if (total >= minTotal) break
     }
   }
 
   // 종목 합이 목표가보다 너무 낮으면 전체 포함 후 가격 맞춤
   if (total < minTotal) {
-    const allTotal = pool.reduce((s, x) => s + x._p, 0)
-    const fallbackPrice = Math.max(Math.round(allTotal / 10_000) * 10_000, 100_000)
+    const allTotal = pool.reduce((s, x) => s + x.currentPrice, 0)
+    const fallbackPrice = Math.min(
+      Math.max(Math.round(allTotal / 10_000) * 10_000, 1_000_000),
+      2_000_000
+    )
     return {
-      packageStocks: pool.sort((a, b) => a._p - b._p).map(({ _p, ...s }) => s),
+      packageStocks: pool.sort((a, b) => a.currentPrice - b.currentPrice).map(({ currentPrice, ...s }) => s),
       packagePrice: fallbackPrice,
     }
   }
 
   return {
-    packageStocks: selected.sort((a, b) => a._p - b._p).map(({ _p, ...s }) => s),
+    packageStocks: selected.sort((a, b) => a.currentPrice - b.currentPrice).map(({ currentPrice, ...s }) => s),
     packagePrice,
   }
 }
