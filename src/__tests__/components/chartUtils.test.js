@@ -129,3 +129,13 @@ describe("getRecentCloses", () => {
     closes.forEach(v => expect(typeof v).toBe("number"))
   })
 })
+
+describe("getBollingerSignal — 제로 밴드 가드", () => {
+  it("upper === lower (zero-width band) → pctB=0.5, bandSignal null", () => {
+    const band = [{ upper: 100, middle: 100, lower: 100 }]
+    const sig = getBollingerSignal(band, [100])
+    expect(sig.pctB).toBe(0.5)
+    expect(Number.isNaN(sig.pctB)).toBe(false)
+    expect(sig.bandSignal).toBeNull()
+  })
+})
