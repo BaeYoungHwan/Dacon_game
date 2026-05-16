@@ -3,6 +3,7 @@ import { useLeaderboardStore } from './leaderboardStore'
 import { persist } from 'zustand/middleware'
 import allStocks from '../data/stocks.json'
 import stockData from '../data/stockData.json'
+import { progressTurn } from '../lib/gameLogic'
 
 const INITIAL_CASH = 10_000_000
 const TOTAL_TURNS = 50
@@ -14,15 +15,25 @@ const stockDataByTicker = Object.fromEntries(
   stockData.stocks.map(s => [s.realTicker, s])
 )
 
+// 항상 activeStocks 최상위에 고정할 종목 (KODEX 200 + 인버스)
+const PINNED_IDS = ['069500', '252670']
+
 function splitStocks(stocks) {
-  const shuffled = [...stocks]
-  for (let i = shuffled.length - 1; i > 0; i--) {
+  const pinned = PINNED_IDS.map(id => stocks.find(s => s.id === id)).filter(Boolean)
+  const pool = stocks.filter(s => !PINNED_IDS.includes(s.id))
+
+  // pool에서 나머지 자리 수만큼 랜덤 선택
+  for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
   }
+  const randomCount = ACTIVE_STOCK_COUNT - pinned.length
+  const randomActive = pool.slice(0, randomCount).sort((a, b) =>
+    a.name.localeCompare(b.name, 'ko')
+  )
   return {
-    active: shuffled.slice(0, ACTIVE_STOCK_COUNT),
-    hidden: shuffled.slice(ACTIVE_STOCK_COUNT),
+    active: [...pinned, ...randomActive],
+    hidden: pool.slice(randomCount),
   }
 }
 
@@ -66,6 +77,7 @@ export const useGameStore = create(
             stockDataByTicker[s.id]?.prices[0]?.close ?? s.price,
           ])
         )
+        const initialTurn = progressTurn(1, [...active, ...hidden])
         set({
           page: 'intro',
           isFirstPlay: true,
@@ -81,8 +93,8 @@ export const useGameStore = create(
           macdPurchased: false,
           obvPurchased: false,
           prices: allPrices,
-          currentNews: null,
-          currentGlobalNews: null,
+          currentNews: initialTurn.news,
+          currentGlobalNews: initialTurn.globalNews,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
         })

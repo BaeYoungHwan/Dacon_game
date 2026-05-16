@@ -166,5 +166,13 @@
     "type": "etf",
     "price": 1873,
     "description": "코스피200 지수 2배 역방향 ETF — 하락장 헤지·단기 방어 수단"
+  },
+  {
+    "id": "069500",
+    "name": "KODEX 200",
+    "sector": "ETF",
+    "type": "etf",
+    "price": 36000,
+    "description": "코스피200 지수 1배 추종 ETF — 시장 전체 흐름에 베팅"
   }
 ]
