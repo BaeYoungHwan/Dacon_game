@@ -47,13 +47,11 @@ const INDICATOR_LABELS = {
 }
 // 지표별 구매 가능 최소 턴
 const INDICATOR_UNLOCK_TURN = { ma: 10, bollinger: 20, macd: 30, obv: 15 }
-const UNLOCK_COST = 900_000
-
 export default function TechMerchantPage() {
   const {
     navigateTo, cash, turn,
-    hiddenStocks, unlockedStockIds,
-    unlockStock, buyIndicator,
+    packageStocks, packagePrice, unlockPackage,
+    buyIndicator,
     maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
   } = useGameStore()
 
@@ -175,10 +173,10 @@ export default function TechMerchantPage() {
           turn={turn}
           cash={cash}
           purchasedMap={purchasedMap}
-          hiddenStocks={hiddenStocks}
-          unlockedStockIds={unlockedStockIds}
+          packageStocks={packageStocks}
+          packagePrice={packagePrice}
+          unlockPackage={unlockPackage}
           buyIndicator={buyIndicator}
-          unlockStock={unlockStock}
           onClose={() => setActivePopup(null)}
         />
       )}
@@ -246,7 +244,7 @@ function ObjectGlow({ style, label, onClick, glowColor = 'cyan' }) {
 // ─────────────────────────────────────────────────────────
 function PopupOverlay({
   activePopup, turn, cash, purchasedMap,
-  hiddenStocks, unlockedStockIds, buyIndicator, unlockStock,
+  packageStocks, packagePrice, unlockPackage, buyIndicator,
   onClose,
 }) {
   const title = {
@@ -289,9 +287,9 @@ function PopupOverlay({
         {activePopup === 'hiddenStocks' && (
           <HiddenStocksView
             cash={cash}
-            hiddenStocks={hiddenStocks}
-            unlockedStockIds={unlockedStockIds}
-            unlockStock={unlockStock}
+            packageStocks={packageStocks}
+            packagePrice={packagePrice}
+            unlockPackage={unlockPackage}
           />
         )}
       </div>
@@ -360,40 +358,39 @@ function IndicatorsView({ turn, cash, purchasedMap, buyIndicator }) {
 }
 
 // 깜짝 종목 판매상 뷰
-function HiddenStocksView({ cash, hiddenStocks, unlockedStockIds, unlockStock }) {
+function HiddenStocksView({ cash, packageStocks, packagePrice, unlockPackage }) {
   return (
     <div className="space-y-2">
       <p className="text-cyan-300/70 text-xs font-mono mb-3 tracking-wider">
-        🎲 예측 불가능한 비공개 종목 — 유료 공개 후 거래 가능
+        🎲 예측 불가능한 비공개 종목 — 패키지 구매 후 일괄 공개
       </p>
-      {hiddenStocks.length === 0 ? (
+      {packageStocks.length === 0 ? (
         <p className="text-cyan-300/60 text-sm text-center py-6 font-mono">비공개 종목이 없습니다.</p>
       ) : (
-        hiddenStocks.map((stock) => {
-          const isUnlocked = unlockedStockIds.includes(stock.id)
-          return (
+        <>
+          {packageStocks.map((stock, i) => (
             <div
               key={stock.id}
               className="flex justify-between items-center bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3"
             >
-              <span className="font-bold text-cyan-100">
-                {isUnlocked ? stock.name : '???'}
-              </span>
-              {isUnlocked ? (
-                <span className="text-emerald-400 text-sm font-bold font-mono">공개됨</span>
-              ) : (
-                <button
-                  onClick={() => unlockStock(stock.id, UNLOCK_COST)}
-                  disabled={cash < UNLOCK_COST}
-                  style={{ outline: 'none' }}
-                  className="px-3 py-1.5 bg-cyan-600/80 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-400/50"
-                >
-                  {UNLOCK_COST.toLocaleString()}원
-                </button>
-              )}
+              <span className="font-bold text-cyan-100">??? ({i + 1}번 종목)</span>
+              <span className="text-cyan-400/50 text-xs font-mono">비공개</span>
             </div>
-          )
-        })
+          ))}
+          <div className="mt-4 pt-3 border-t border-cyan-500/20 flex justify-between items-center">
+            <span className="text-cyan-300 text-sm font-mono">
+              패키지 {packageStocks.length}종목
+            </span>
+            <button
+              onClick={unlockPackage}
+              disabled={cash < packagePrice}
+              style={{ outline: 'none' }}
+              className="px-4 py-2 bg-cyan-600/80 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-400/50"
+            >
+              {packagePrice.toLocaleString()}원
+            </button>
+          </div>
+        </>
       )}
     </div>
   )
