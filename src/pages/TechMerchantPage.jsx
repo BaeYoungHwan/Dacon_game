@@ -50,7 +50,7 @@ const INDICATOR_UNLOCK_TURN = { ma: 10, bollinger: 20, macd: 30, obv: 15 }
 export default function TechMerchantPage() {
   const {
     navigateTo, cash, turn,
-    packageStocks, packagePrice, unlockPackage,
+    packageStocks, unlockPackageStock,
     buyIndicator,
     maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
   } = useGameStore()
@@ -174,8 +174,7 @@ export default function TechMerchantPage() {
           cash={cash}
           purchasedMap={purchasedMap}
           packageStocks={packageStocks}
-          packagePrice={packagePrice}
-          unlockPackage={unlockPackage}
+          unlockPackageStock={unlockPackageStock}
           buyIndicator={buyIndicator}
           onClose={() => setActivePopup(null)}
         />
@@ -244,7 +243,7 @@ function ObjectGlow({ style, label, onClick, glowColor = 'cyan' }) {
 // ─────────────────────────────────────────────────────────
 function PopupOverlay({
   activePopup, turn, cash, purchasedMap,
-  packageStocks, packagePrice, unlockPackage, buyIndicator,
+  packageStocks, unlockPackageStock, buyIndicator,
   onClose,
 }) {
   const title = {
@@ -288,8 +287,7 @@ function PopupOverlay({
           <HiddenStocksView
             cash={cash}
             packageStocks={packageStocks}
-            packagePrice={packagePrice}
-            unlockPackage={unlockPackage}
+            unlockPackageStock={unlockPackageStock}
           />
         )}
       </div>
@@ -358,39 +356,37 @@ function IndicatorsView({ turn, cash, purchasedMap, buyIndicator }) {
 }
 
 // 깜짝 종목 판매상 뷰
-function HiddenStocksView({ cash, packageStocks, packagePrice, unlockPackage }) {
+function HiddenStocksView({ cash, packageStocks, unlockPackageStock }) {
   return (
     <div className="space-y-2">
       <p className="text-cyan-300/70 text-xs font-mono mb-3 tracking-wider">
-        🎲 예측 불가능한 비공개 종목 — 패키지 구매 후 일괄 공개
+        🎲 예측 불가능한 비공개 종목 — 종목별 개별 구매 가능
       </p>
       {packageStocks.length === 0 ? (
         <p className="text-cyan-300/60 text-sm text-center py-6 font-mono">비공개 종목이 없습니다.</p>
       ) : (
-        <>
-          {packageStocks.map((stock, i) => (
-            <div
-              key={stock.id}
-              className="flex justify-between items-center bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3"
-            >
-              <span className="font-bold text-cyan-100">??? ({i + 1}번 종목)</span>
-              <span className="text-cyan-400/50 text-xs font-mono">비공개</span>
+        packageStocks.map((stock, i) => (
+          <div
+            key={stock.id}
+            className="flex justify-between items-center bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3"
+          >
+            <span className="font-bold text-cyan-100">??? ({i + 1}번 종목)</span>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-cyan-400 text-sm font-mono">{stock.packagePrice.toLocaleString()}원</div>
+                <div className="text-cyan-500/60 text-xs font-mono">{stock.quantity ?? 1}주 포함</div>
+              </div>
+              <button
+                onClick={() => unlockPackageStock(stock.id)}
+                disabled={cash < stock.packagePrice}
+                style={{ outline: 'none' }}
+                className="px-3 py-1.5 bg-cyan-600/80 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-400/50"
+              >
+                {cash < stock.packagePrice ? '잔액부족' : '구매'}
+              </button>
             </div>
-          ))}
-          <div className="mt-4 pt-3 border-t border-cyan-500/20 flex justify-between items-center">
-            <span className="text-cyan-300 text-sm font-mono">
-              패키지 {packageStocks.length}종목
-            </span>
-            <button
-              onClick={unlockPackage}
-              disabled={cash < packagePrice}
-              style={{ outline: 'none' }}
-              className="px-4 py-2 bg-cyan-600/80 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-400/50"
-            >
-              {packagePrice.toLocaleString()}원
-            </button>
           </div>
-        </>
+        ))
       )}
     </div>
   )
