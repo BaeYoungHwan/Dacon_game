@@ -18,8 +18,8 @@
 
 import { useState, useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
-import StockBoard from '../components/game/StockBoard'
 import StockChart from '../components/game/StockChart'
+import stockData from '../data/stockData.json'
 
 // 도움말 자동 표시 여부 기억용 sessionStorage 키 — 한 게임당 1회 자동 노출
 const MARKET_HELP_SEEN_KEY = 'market-help-seen'
@@ -61,8 +61,6 @@ export default function MarketPage() {
     setActivePopup(null)
     setSelectedStockId(null)
   }
-
-  const selectedStock = activeStocks.find((s) => s.id === selectedStockId)
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden animate-page-enter">
@@ -162,7 +160,6 @@ export default function MarketPage() {
       {activePopup && (
         <PopupOverlay
           activePopup={activePopup}
-          selectedStock={selectedStock}
           selectedStockId={selectedStockId}
           setSelectedStockId={setSelectedStockId}
           activeStocks={activeStocks}
@@ -222,111 +219,929 @@ function Hotspot({ className, style, label, onClick, glowColor = 'cyan' }) {
 // ─────────────────────────────────────────────────────────
 function PopupOverlay(props) {
   const {
-    activePopup, selectedStock, selectedStockId, setSelectedStockId,
+    activePopup, selectedStockId, setSelectedStockId,
     activeStocks, prices, portfolio, cash, buyStock, sellStock,
     maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
     onClose,
   } = props
 
-  return (
-    <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+  // 종목 분석 — 커스텀 16:9 배경 이미지 사용 (타이틀·도움말·이전·닫기 버튼이 이미지에 그려져 있어 hotspot으로 처리)
+  if (activePopup === 'analysis') {
+    return (
       <div
-        className={
-          'relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/60 rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto shadow-[0_0_40px_rgba(34,211,238,0.2)] ' +
-          (activePopup === 'analysis' ? 'max-w-3xl' : 'max-w-2xl')
-        }
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 animate-page-enter"
+        onClick={onClose}
       >
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            {activePopup === 'analysis' && selectedStockId && (
-              <button
-                onClick={() => setSelectedStockId(null)}
-                style={{ outline: 'none' }}
-                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-cyan-500/40 rounded text-sm text-cyan-200 transition-all duration-150 focus:outline-none"
-              >
-                ← 목록
-              </button>
-            )}
-            <h2 className="text-lg font-bold text-cyan-300 font-mono tracking-wider">
-              {activePopup === 'analysis' && !selectedStockId && '종목 분석'}
-              {activePopup === 'analysis' && selectedStock && `${selectedStock.name} 차트`}
-              {activePopup === 'buy' && '주식 구매'}
-              {activePopup === 'sell' && '주식 판매'}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ outline: 'none' }}
-            className="text-cyan-300 hover:text-cyan-100 text-xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
-          >
-            ✕
-          </button>
-        </div>
-
-        {activePopup === 'analysis' && !selectedStockId && (
-          <StockCardGrid stocks={activeStocks} prices={prices} onSelect={setSelectedStockId} />
-        )}
-
-        {activePopup === 'analysis' && selectedStockId && (
-          <StockChart
-            stockId={selectedStockId}
-            stockName={selectedStock?.name ?? ''}
-            maPurchased={maPurchased}
-            bollingerPurchased={bollingerPurchased}
-            macdPurchased={macdPurchased}
-            obvPurchased={obvPurchased}
+        <div
+          className="relative"
+          style={{
+            width: 'min(96vw, calc(94vh * 16 / 9))',
+            height: 'min(94vh, calc(96vw * 9 / 16))',
+            backgroundImage: "url('/images/stock-analysis-bg.webp')",
+            backgroundSize: '100% 100%',
+            backgroundPosition: 'center',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 상단 우측 그려진 버튼 위 hotspot — 도움말 / 닫기 */}
+          <Hotspot
+            label="도움말"
+            className="absolute rounded-lg"
+            style={{ top: '2%', right: '14%', width: '10%', height: '7%' }}
+            onClick={() => { /* TODO: 분석 모달용 도움말 */ }}
           />
-        )}
+          <Hotspot
+            label="닫기"
+            className="absolute rounded-lg"
+            style={{ top: '2%', right: '3%', width: '10%', height: '7%' }}
+            onClick={onClose}
+          />
 
-        {(activePopup === 'buy' || activePopup === 'sell') && (
-          <>
-            <div className="flex items-center justify-between bg-slate-800/70 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm mb-4">
-              <span className="text-cyan-300/80 font-mono tracking-wider">보유 현금</span>
-              <span className="font-bold text-cyan-100 tabular-nums">{cash.toLocaleString()}원</span>
-            </div>
-            <StockBoard
+          {/* 콘텐츠 영역 — 좌측 그리드 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
+          <div className="absolute" style={{ top: '12%', left: '3%', right: '22%', bottom: '4%' }}>
+            <StockAnalysisPanel
+              stocks={activeStocks}
+              prices={prices}
+              portfolio={portfolio}
+              selectedStockId={selectedStockId}
+              setSelectedStockId={setSelectedStockId}
+              maPurchased={maPurchased}
+              bollingerPurchased={bollingerPurchased}
+              macdPurchased={macdPurchased}
+              obvPurchased={obvPurchased}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 주식 구매 — 커스텀 16:9 배경 이미지 사용 (타이틀·도움말·닫기 버튼이 이미지에 그려져 있어 hotspot으로 처리)
+  if (activePopup === 'buy') {
+    return (
+      <div
+        className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 animate-page-enter"
+        onClick={onClose}
+      >
+        <div
+          className="relative"
+          style={{
+            width: 'min(96vw, calc(94vh * 16 / 9))',
+            height: 'min(94vh, calc(96vw * 9 / 16))',
+            backgroundImage: "url('/images/stock-buy-bg.webp')",
+            backgroundSize: '100% 100%',
+            backgroundPosition: 'center',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 상단 우측 그려진 버튼 위 hotspot — 도움말 / 닫기 */}
+          <Hotspot
+            label="도움말"
+            className="absolute rounded-lg"
+            style={{ top: '2%', right: '14%', width: '10%', height: '7%' }}
+            onClick={() => { /* TODO: 매수 모달용 도움말 */ }}
+          />
+          <Hotspot
+            label="닫기"
+            className="absolute rounded-lg"
+            style={{ top: '2%', right: '3%', width: '10%', height: '7%' }}
+            onClick={onClose}
+          />
+
+          {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
+          <div className="absolute" style={{ top: '12%', left: '3%', right: '23%', bottom: '7%' }}>
+            <BulkBuyPanel
               stocks={activeStocks}
               prices={prices}
               portfolio={portfolio}
               cash={cash}
-              onBuy={activePopup === 'buy' ? buyStock : undefined}
-              onSell={activePopup === 'sell' ? sellStock : undefined}
+              onBuy={buyStock}
             />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 주식 판매 — 커스텀 16:9 배경 이미지 사용 (로즈/레드 톤, 매수와 동일 패턴)
+  if (activePopup === 'sell') {
+    return (
+      <div
+        className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 animate-page-enter"
+        onClick={onClose}
+      >
+        <div
+          className="relative"
+          style={{
+            width: 'min(96vw, calc(94vh * 16 / 9))',
+            height: 'min(94vh, calc(96vw * 9 / 16))',
+            backgroundImage: "url('/images/stock-sell-bg.webp')",
+            backgroundSize: '100% 100%',
+            backgroundPosition: 'center',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 상단 우측 그려진 버튼 위 hotspot — 도움말 / 닫기 */}
+          <Hotspot
+            label="도움말"
+            className="absolute rounded-lg"
+            style={{ top: '2%', right: '14%', width: '10%', height: '7%' }}
+            onClick={() => { /* TODO: 매도 모달용 도움말 */ }}
+            glowColor="red"
+          />
+          <Hotspot
+            label="닫기"
+            className="absolute rounded-lg"
+            style={{ top: '2%', right: '3%', width: '10%', height: '7%' }}
+            onClick={onClose}
+            glowColor="red"
+          />
+
+          {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 제외) */}
+          <div className="absolute" style={{ top: '12%', left: '3%', right: '23%', bottom: '7%' }}>
+            <BulkSellPanel
+              stocks={activeStocks}
+              prices={prices}
+              portfolio={portfolio}
+              cash={cash}
+              onSell={sellStock}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}
+
+// 등락률(%)을 초보자용 자연어로 변환 — "▲ 2.34%" 같은 숫자는 처음 보는 사람에게 의미 없음
+// abs < 0.5%: 거의 그대로 / < 2%: 조금 / < 5%: (기본) / >= 5%: 많이
+// 아이콘은 emoji 대신 유니코드 삼각형 사용 — CSS color로 자유롭게 적용 가능 (emoji는 색상 고정)
+function friendlyChange(percent) {
+  const abs = Math.abs(percent)
+  if (abs < 0.5) return { emoji: '—', label: '거의 그대로', tone: 'flat' }
+  const tone = percent >= 0 ? 'up' : 'down'
+  const emoji = percent >= 0 ? '▲' : '▼'
+  const verb = percent >= 0 ? '올랐어요' : '내렸어요'
+  let degree = ''
+  if (abs < 2) degree = '조금 '
+  else if (abs >= 5) degree = '많이 '
+  return { emoji, label: `${degree}${verb}`, tone }
+}
+
+// 한국 증시 컨벤션: 상승=빨강, 하락=파랑. 보합은 흰색
+const TONE_CLASS = {
+  up: 'text-rise',
+  down: 'text-fall',
+  flat: 'text-slate-100',
+}
+
+// 종목분석 패널 — KRX 디지털 보드 톤의 멀티 패널 레이아웃
+// 상단: 종목 헤더 + 가로 칩 선택기 / 본문: 메인 차트 + MACD + OBV 패널 세로 스택
+function StockAnalysisPanel({
+  stocks, prices, portfolio,
+  selectedStockId, setSelectedStockId,
+  maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
+}) {
+  // 진입 시 첫 종목 자동 선택 — 빈 차트 화면 방지
+  useEffect(() => {
+    if (!selectedStockId && stocks.length > 0) {
+      setSelectedStockId(stocks[0].id)
+    }
+  }, [stocks, selectedStockId, setSelectedStockId])
+
+  const selectedStock = stocks.find((s) => s.id === selectedStockId)
+  const currentPrice = selectedStock ? (prices[selectedStock.id] ?? selectedStock.price) : 0
+  const priceDiff = selectedStock ? currentPrice - selectedStock.price : 0
+  const changePct = selectedStock ? (priceDiff / selectedStock.price) * 100 : 0
+  const headerMood = friendlyChange(changePct)
+  const heldQty = selectedStock ? (portfolio[selectedStock.id] || 0) : 0
+
+  return (
+    <div className="flex gap-3 h-full min-h-0">
+      {/* 좌: 종목 사이드바 — 세로 리스트 + 시안 글로우 스크롤바 */}
+      <div className="w-56 shrink-0 flex flex-col border-r border-cyan-500/20 pr-2 min-h-0">
+        <p className="text-xs text-cyan-300/60 font-mono tracking-wider mb-2 px-1 shrink-0">
+          📊 종목 ({stocks.length})
+        </p>
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1.5 space-y-1 scrollbar-cyan">
+          {stocks.map((stock) => {
+            const stockPrice = prices[stock.id] ?? stock.price
+            const stockChange = ((stockPrice - stock.price) / stock.price) * 100
+            const mood = friendlyChange(stockChange)
+            const isActive = stock.id === selectedStockId
+            const stockHeld = portfolio[stock.id] || 0
+            return (
+              <button
+                key={stock.id}
+                onClick={() => setSelectedStockId(stock.id)}
+                style={{ outline: 'none' }}
+                className={
+                  'w-full text-left px-2.5 py-1.5 rounded-md border transition-all duration-150 focus:outline-none ' +
+                  (isActive
+                    ? 'bg-cyan-500/15 border-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.25)]'
+                    : 'bg-slate-800/50 border-slate-700/60 hover:bg-slate-800 hover:border-cyan-500/40')
+                }
+              >
+                <div className="flex items-baseline justify-between gap-1">
+                  <span className="text-sm font-semibold text-slate-100 truncate">
+                    {isActive && <span className="text-cyan-400 mr-0.5">◎</span>}
+                    {stock.name}
+                  </span>
+                  <span className="text-sm font-bold text-cyan-100 font-mono tabular-nums shrink-0">
+                    {stockPrice.toLocaleString()}<span className="text-cyan-300/60 text-[10px] ml-0.5">원</span>
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-1 mt-0.5">
+                  <span className={`text-xs ${TONE_CLASS[mood.tone]}`}>
+                    {mood.emoji} {mood.label}
+                  </span>
+                  {stockHeld > 0 && (
+                    <span className="text-[11px] text-yellow-400 font-mono shrink-0">{stockHeld}주</span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* 우: 선택 종목 헤더 + 멀티 패널 차트 */}
+      <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
+        {selectedStock ? (
+          <>
+            {/* 선택 종목 헤더 */}
+            <div className="shrink-0 flex items-baseline justify-between flex-wrap gap-2 pb-2 border-b border-cyan-500/25 relative">
+              <span className="absolute -top-px left-0 h-px w-24 bg-gradient-to-r from-cyan-400 to-transparent" />
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <h3 className="text-xl font-bold text-cyan-50 font-mono tracking-wider">
+                  {selectedStock.name}
+                </h3>
+                <span className="text-xs text-cyan-300/60 font-mono">{selectedStock.sector}</span>
+                {heldQty > 0 && (
+                  <span className="text-xs text-yellow-400 font-mono">💰 {heldQty}주 보유</span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className="text-2xl font-bold text-cyan-100 font-mono tabular-nums tracking-tight drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">
+                  {currentPrice.toLocaleString()}<span className="text-cyan-300/70 text-base ml-1">원</span>
+                </span>
+                <span className={`text-sm font-semibold ${TONE_CLASS[headerMood.tone]}`}>
+                  {headerMood.emoji}{' '}
+                  {headerMood.tone === 'flat'
+                    ? '시작가와 거의 같아요'
+                    : `${Math.abs(priceDiff).toLocaleString()}원 ${headerMood.tone === 'up' ? '올랐어요' : '내렸어요'}`}
+                </span>
+              </div>
+            </div>
+
+            {/* 차트 패널 스택 — 스크롤 영역 */}
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-cyan -mr-1 pr-1.5">
+              <StockChart
+                stockId={selectedStockId}
+                maPurchased={maPurchased}
+                bollingerPurchased={bollingerPurchased}
+                macdPurchased={macdPurchased}
+                obvPurchased={obvPurchased}
+              />
+            </div>
           </>
+        ) : (
+          <div className="flex items-center justify-center h-full text-cyan-300/40 text-sm">
+            좌측에서 종목을 선택하세요
+          </div>
         )}
       </div>
     </div>
   )
 }
 
-// 종목 카드 그리드 — 분석 팝업의 종목 선택 화면
-function StockCardGrid({ stocks, prices, onSelect }) {
+// 차트 아래 빈 공간을 채우는 이번 주 정보 패널 — OHLC 4-카드 그리드 + 거래량 + 보유
+function WeekInfoPanel({ stockId, currentPrice, heldQty }) {
+  const turn = useGameStore((s) => s.turn)
+  const stockEntry = stockData.stocks.find((s) => s.realTicker === stockId)
+  if (!stockEntry) return null
+
+  // 현재 턴 캔들 (게임 prices 우선, 없으면 pregame 마지막 캔들)
+  const gamePrices = stockEntry.prices ?? []
+  const pregame = stockEntry.pregame_prices ?? []
+  const candle = (turn > 0 && gamePrices[turn - 1]) || pregame[pregame.length - 1]
+  if (!candle) return null
+
+  const { open, high, low, close, volume } = candle
+  const weekDiff = close - open
+  const weekTone = weekDiff > 0 ? 'up' : weekDiff < 0 ? 'down' : 'flat'
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {stocks.map((stock) => {
-        const currentPrice = prices[stock.id] ?? stock.price
-        const change = ((currentPrice - stock.price) / stock.price) * 100
-        const isRise = change >= 0
-        return (
+    <div className="mt-3 space-y-2">
+      {/* 시·고·저·종 4-카드 그리드 */}
+      <div className="grid grid-cols-4 gap-2">
+        <StatCard label="시가" value={open} />
+        <StatCard label="고가" value={high} toneClass="text-rise" />
+        <StatCard label="저가" value={low} toneClass="text-fall" />
+        <StatCard label="종가" value={close} highlight />
+      </div>
+
+      {/* 거래량 + 주간 변화 + 보유 정보 */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-baseline justify-between px-3 py-2 rounded-md border border-cyan-500/20 bg-slate-900/60 text-xs">
+          <span className="text-cyan-300/70 font-mono tracking-wider">📊 거래량</span>
+          <span className="text-cyan-100 font-mono tabular-nums">{volume.toLocaleString()}주</span>
+        </div>
+        <div className="flex items-baseline justify-between px-3 py-2 rounded-md border border-cyan-500/20 bg-slate-900/60 text-xs">
+          <span className="text-cyan-300/70 font-mono tracking-wider">📈 이번 주 변화</span>
+          <span className={`font-mono tabular-nums ${TONE_CLASS[weekTone]}`}>
+            {weekTone === 'flat'
+              ? '거의 그대로'
+              : `${weekTone === 'up' ? '🔺' : '🔻'} ${Math.abs(weekDiff).toLocaleString()}원`}
+          </span>
+        </div>
+      </div>
+
+      {/* 보유 시: 평가금액 박스 */}
+      {heldQty > 0 && (
+        <div className="flex items-baseline justify-between px-3 py-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 text-xs">
+          <span className="text-yellow-300 font-mono tracking-wider">
+            💰 {heldQty}주 보유 중 · 현재가 {currentPrice.toLocaleString()}원
+          </span>
+          <span className="text-yellow-200 font-bold font-mono tabular-nums">
+            평가금액 {(heldQty * currentPrice).toLocaleString()}원
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// 최근 N주 종가를 작은 스파크라인으로 표시 — 종목명/등락률 사이 빈 공간에 시각 정보 제공
+function MiniSparkline({ closes, width = 64, height = 20, tone = 'flat' }) {
+  if (!closes || closes.length < 2) return <span className="shrink-0" style={{ width, height }} />
+  const min = Math.min(...closes)
+  const max = Math.max(...closes)
+  const range = max - min || 1
+  const pts = closes
+    .map((p, i) => {
+      const x = (i / (closes.length - 1)) * (width - 2) + 1
+      const y = (height - 2) - ((p - min) / range) * (height - 4) + 1
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+  const color = tone === 'up' ? '#ef4444' : tone === 'down' ? '#3b82f6' : '#cbd5e1'
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="shrink-0">
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+// 주식 구매 모달 본문 — 각 종목별 자체 수량 컨트롤(+/−) + 일괄 매수
+// 수량 > 0인 종목만 자동으로 매수 대상에 포함됨 (별도 체크박스 없음)
+function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
+  const turn = useGameStore((s) => s.turn)
+  const [quantities, setQuantities] = useState({}) // { stockId: number }
+
+  const getQty = (id) => quantities[id] || 0
+  const setQty = (id, qty) => {
+    const next = Math.max(0, Math.floor(qty) || 0)
+    setQuantities((prev) => ({ ...prev, [id]: next }))
+  }
+  const incQty = (id) => setQty(id, getQty(id) + 1)
+  const decQty = (id) => setQty(id, getQty(id) - 1)
+
+  // 전체: 모든 종목 1주씩 (이미 수량 있으면 유지). 해제: 전체 0
+  const selectAll = () => {
+    const next = {}
+    stocks.forEach((s) => { next[s.id] = getQty(s.id) > 0 ? getQty(s.id) : 1 })
+    setQuantities(next)
+  }
+  const clearAll = () => setQuantities({})
+
+  const activeStocks = stocks.filter((s) => getQty(s.id) > 0)
+  const selectedCount = activeStocks.length
+  const totalQty = activeStocks.reduce((sum, s) => sum + getQty(s.id), 0)
+  const totalCost = activeStocks.reduce((sum, s) => sum + (prices[s.id] ?? 0) * getQty(s.id), 0)
+  const canAfford = totalCost <= cash
+  const remainingCash = cash - totalCost
+
+  // 시장 분위기 — 시작가 대비 0.5% 이상 변동 기준으로 상승·하락·보합 카운트
+  const moodCounts = stocks.reduce(
+    (acc, s) => {
+      const pct = (((prices[s.id] ?? s.price) - s.price) / s.price) * 100
+      if (pct >= 0.5) acc.up += 1
+      else if (pct <= -0.5) acc.down += 1
+      else acc.flat += 1
+      return acc
+    },
+    { up: 0, down: 0, flat: 0 }
+  )
+
+  const handleBulkBuy = () => {
+    if (selectedCount === 0 || !canAfford) return
+    activeStocks.forEach((s) => onBuy(s.id, getQty(s.id)))
+    setQuantities({})
+  }
+
+  return (
+    <div className="flex flex-col h-full gap-2 min-h-0 text-cyan-100">
+      {/* 보유 현금 — 박스 없이 라인 강조 */}
+      <div className="shrink-0 flex items-baseline justify-between pb-3 border-b border-cyan-500/20">
+        <span className="text-base text-cyan-300/70 font-mono tracking-[0.2em]">💰 보유 현금</span>
+        <span className="text-3xl font-bold text-cyan-50 font-mono tabular-nums drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+          {cash.toLocaleString()}
+          <span className="text-cyan-300/60 text-base ml-1">원</span>
+        </span>
+      </div>
+
+      {/* 종목 헤더 — 매수 종목 카운트 + 전체/해제 단축 */}
+      <div className="shrink-0 flex items-center justify-between mt-1">
+        <p className="text-base text-cyan-300/70 font-mono tracking-[0.15em]">
+          📊 매수 종목{' '}
+          <span className="text-cyan-200 font-bold">{selectedCount}</span>
+          <span className="text-cyan-500/40"> / {stocks.length}</span>
+        </p>
+        <div className="flex items-center gap-3 text-sm font-mono tracking-wider">
           <button
-            key={stock.id}
-            onClick={() => onSelect(stock.id)}
+            onClick={selectAll}
             style={{ outline: 'none' }}
-            className="bg-slate-800/70 hover:bg-slate-700/70 border border-cyan-500/30 hover:border-cyan-400 rounded-lg p-3 text-left transition-all duration-150 focus:outline-none"
+            className="text-cyan-300/70 hover:text-cyan-100 transition-colors focus:outline-none"
           >
-            <p className="font-semibold text-sm text-slate-100">{stock.name}</p>
-            <p className="text-xs text-cyan-300/60 mb-2">{stock.sector}</p>
-            <p className="font-bold text-cyan-100 tabular-nums">{currentPrice.toLocaleString()}원</p>
-            <p className={`text-xs tabular-nums ${isRise ? 'text-rise' : 'text-fall'}`}>
-              {isRise ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
-            </p>
+            전체 1주
           </button>
-        )
-      })}
+          <span className="text-cyan-500/30">|</span>
+          <button
+            onClick={clearAll}
+            style={{ outline: 'none' }}
+            className="text-cyan-300/70 hover:text-cyan-100 transition-colors focus:outline-none"
+          >
+            전체 해제
+          </button>
+        </div>
+      </div>
+
+      {/* 종목 리스트 — 각 행에 자체 수량 컨트롤 */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-cyan -mr-1 pr-1">
+        {stocks.map((stock) => {
+          const stockPrice = prices[stock.id] ?? stock.price
+          const stockChange = ((stockPrice - stock.price) / stock.price) * 100
+          const mood = friendlyChange(stockChange)
+          const qty = getQty(stock.id)
+          const isActive = qty > 0
+          const stockHeld = portfolio[stock.id] || 0
+          const subTotal = stockPrice * qty
+          const changeSign = stockChange > 0 ? '+' : ''
+
+          // 최근 8주 종가 — 스파크라인용 (pregame 끝 + 현재 턴까지의 게임 데이터)
+          const stockEntry = stockData.stocks.find((s) => s.realTicker === stock.id)
+          const pregame = stockEntry?.pregame_prices ?? []
+          const gamePrices = (stockEntry?.prices ?? []).slice(0, turn)
+          const recentCloses = [...pregame, ...gamePrices].slice(-8).map((c) => c.close)
+
+          // 전주대비 — 지난 주 종가와 현재가 차이
+          const prevWeekClose = recentCloses.length >= 2 ? recentCloses[recentCloses.length - 2] : stockPrice
+          const weekDiff = stockPrice - prevWeekClose
+          const weekDiffSign = weekDiff > 0 ? '+' : ''
+          const weekTone = weekDiff > 0 ? 'up' : weekDiff < 0 ? 'down' : 'flat'
+
+          return (
+            <div
+              key={stock.id}
+              className={
+                'w-full px-2 py-2.5 flex items-center gap-3 transition-all duration-150 border-l-2 border-b border-b-cyan-500/10 ' +
+                (isActive
+                  ? 'border-l-cyan-400 bg-cyan-400/10'
+                  : 'border-l-transparent hover:bg-cyan-400/5')
+              }
+            >
+              {/* 종목명 + 섹터 태그 + 보유 배지 (인라인) */}
+              <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                <span
+                  className={`text-lg font-semibold truncate ${
+                    isActive ? 'text-cyan-50' : 'text-slate-100'
+                  }`}
+                >
+                  {stock.name}
+                </span>
+                <span className="shrink-0 text-[11px] text-cyan-300/60 font-mono tracking-wider border border-cyan-500/20 rounded px-1.5 py-0.5">
+                  {stock.sector}
+                </span>
+                {stockHeld > 0 && (
+                  <span className="shrink-0 text-xs text-yellow-400/90 font-mono tabular-nums bg-yellow-500/10 border border-yellow-500/30 rounded px-1.5 py-0.5">
+                    💰 {stockHeld}주
+                  </span>
+                )}
+              </div>
+              {/* 최근 8주 추세 미니 스파크라인 */}
+              <div className="shrink-0 flex flex-col items-center gap-0.5">
+                <span className="text-xs text-cyan-300/50 font-mono tracking-wider">최근 8주</span>
+                <MiniSparkline closes={recentCloses} tone={mood.tone} />
+              </div>
+              {/* 등락률 % + 전주대비 절대값 (스택) */}
+              <div className="shrink-0 w-28 text-right font-mono tabular-nums flex flex-col items-end leading-tight">
+                <span className={`text-base font-semibold ${TONE_CLASS[mood.tone]}`}>
+                  {mood.emoji} {changeSign}{stockChange.toFixed(2)}%
+                </span>
+                <span className={`text-xs ${TONE_CLASS[weekTone]}`}>
+                  {weekDiffSign}{weekDiff.toLocaleString()}원
+                </span>
+              </div>
+              {/* 가격 */}
+              <span className="shrink-0 w-32 text-right text-lg font-bold text-cyan-100 font-mono tabular-nums">
+                {stockPrice.toLocaleString()}
+                <span className="text-cyan-300/60 text-sm ml-0.5">원</span>
+              </span>
+              {/* 수량 컨트롤 — 항상 노출 (qty=0이면 회색) */}
+              <div className="shrink-0 flex items-center gap-1">
+                <button
+                  onClick={() => decQty(stock.id)}
+                  disabled={qty === 0}
+                  style={{ outline: 'none' }}
+                  className="w-8 h-8 rounded border border-cyan-500/30 text-cyan-300 hover:text-cyan-100 hover:border-cyan-400 hover:shadow-[0_0_6px_rgba(34,211,238,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-cyan-500/30 disabled:hover:shadow-none transition-all focus:outline-none font-bold text-base"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={qty}
+                  onChange={(e) => setQty(stock.id, parseInt(e.target.value) || 0)}
+                  className={
+                    'w-14 px-1 py-1 rounded bg-transparent border text-center text-base font-mono tabular-nums focus:outline-none transition-all ' +
+                    (isActive
+                      ? 'border-cyan-400 text-cyan-50 focus:shadow-[0_0_6px_rgba(34,211,238,0.4)]'
+                      : 'border-cyan-500/30 text-cyan-300/60 focus:border-cyan-400 focus:text-cyan-100')
+                  }
+                />
+                <button
+                  onClick={() => incQty(stock.id)}
+                  style={{ outline: 'none' }}
+                  className="w-8 h-8 rounded border border-cyan-500/30 text-cyan-300 hover:text-cyan-100 hover:border-cyan-400 hover:shadow-[0_0_6px_rgba(34,211,238,0.3)] transition-all focus:outline-none font-bold text-base"
+                >
+                  ＋
+                </button>
+              </div>
+              {/* 매수 대상일 때만 소계 표시 */}
+              <span className="shrink-0 w-28 text-right font-mono tabular-nums">
+                {isActive && (
+                  <span className="text-cyan-200 font-bold text-sm">
+                    {subTotal.toLocaleString()}<span className="text-xs ml-0.5">원</span>
+                  </span>
+                )}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* 하단 영역 — 시장 분위기 + 합계 + 매수 후 잔액 + 일괄 매수 */}
+      <div className="shrink-0 flex flex-col gap-2.5 pt-3 border-t border-cyan-500/30">
+        {/* 시장 분위기 — 오늘 N종목 중 X상승 Y하락 Z보합 */}
+        <div className="flex items-center justify-between gap-3 text-sm font-mono">
+          <span className="text-cyan-300/60 tracking-[0.15em]">🌐 시장 분위기</span>
+          <div className="flex items-center gap-3 tabular-nums">
+            <span className="text-rise">▲ {moodCounts.up}</span>
+            <span className="text-fall">▼ {moodCounts.down}</span>
+            <span className="text-slate-100">— {moodCounts.flat}</span>
+          </div>
+        </div>
+
+        {/* 요약 라인 — 종목/주수 + 합계 금액 */}
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-base text-cyan-300/70 font-mono tracking-[0.15em]">
+            {selectedCount > 0
+              ? <>📦 {selectedCount}종목 · 총 <span className="text-cyan-100 font-bold">{totalQty}</span>주</>
+              : <span className="text-cyan-300/50">수량을 입력하면 매수 대상이 됩니다</span>}
+          </span>
+          <div className="text-right">
+            <p className="text-sm text-cyan-300/60 font-mono tracking-[0.15em]">합계</p>
+            <p className={`text-2xl font-bold font-mono tabular-nums ${canAfford ? 'text-cyan-50 drop-shadow-[0_0_6px_rgba(34,211,238,0.4)]' : 'text-rise drop-shadow-[0_0_6px_rgba(239,68,68,0.4)]'}`}>
+              {totalCost.toLocaleString()}
+              <span className="text-cyan-300/60 text-base ml-0.5">원</span>
+            </p>
+          </div>
+        </div>
+
+        {/* 매수 후 예상 잔액 — 결정에 직접 도움되는 정보 */}
+        {selectedCount > 0 && (
+          <div className="flex items-baseline justify-between gap-3 text-sm font-mono pl-2 border-l-2 border-cyan-500/30">
+            <span className="text-cyan-300/70 tracking-[0.1em]">매수 후 예상 잔액</span>
+            <span className={`tabular-nums font-bold ${canAfford ? 'text-cyan-200' : 'text-rise'}`}>
+              {remainingCash.toLocaleString()}<span className="text-cyan-300/60 text-xs ml-0.5">원</span>
+            </span>
+          </div>
+        )}
+
+        {/* 일괄 매수 버튼 */}
+        <button
+          onClick={handleBulkBuy}
+          disabled={selectedCount === 0 || !canAfford}
+          style={{ outline: 'none' }}
+          className={
+            'w-full px-3 py-3.5 rounded font-mono tracking-[0.2em] font-bold text-lg transition-all duration-150 focus:outline-none border ' +
+            (selectedCount === 0 || !canAfford
+              ? 'bg-slate-900/40 text-cyan-300/30 border-cyan-500/15 cursor-not-allowed'
+              : 'bg-gradient-to-r from-cyan-500/20 via-cyan-400/25 to-cyan-500/20 text-cyan-50 border-cyan-400 hover:from-cyan-500/30 hover:via-cyan-400/40 hover:to-cyan-500/30 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]')
+          }
+        >
+          {selectedCount === 0
+            ? '수량을 입력하세요'
+            : !canAfford
+            ? `잔액 부족 — ${(totalCost - cash).toLocaleString()}원 부족`
+            : `🛒 ${selectedCount}종목 · ${totalQty}주 일괄 매수`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// 주식 판매 모달 본문 — 보유 종목만 노출 + 종목별 매도 수량 컨트롤 + 일괄 매도
+// BulkBuyPanel과 동일한 구조지만 로즈/레드 톤으로 매도 컨텍스트 구분
+function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
+  const turn = useGameStore((s) => s.turn)
+  const [quantities, setQuantities] = useState({}) // { stockId: number }
+
+  // 보유 종목만 노출
+  const heldStocks = stocks.filter((s) => (portfolio[s.id] || 0) > 0)
+
+  const getQty = (id) => quantities[id] || 0
+  const setQty = (id, qty) => {
+    const held = portfolio[id] || 0
+    const next = Math.max(0, Math.min(held, Math.floor(qty) || 0))
+    setQuantities((prev) => ({ ...prev, [id]: next }))
+  }
+  const incQty = (id) => setQty(id, getQty(id) + 1)
+  const decQty = (id) => setQty(id, getQty(id) - 1)
+
+  // 전체 매도: 보유 종목 전부 전량 매도 / 전체 해제: 0
+  const sellAll = () => {
+    const next = {}
+    heldStocks.forEach((s) => { next[s.id] = portfolio[s.id] || 0 })
+    setQuantities(next)
+  }
+  const clearAll = () => setQuantities({})
+
+  const activeSells = heldStocks.filter((s) => getQty(s.id) > 0)
+  const selectedCount = activeSells.length
+  const totalQty = activeSells.reduce((sum, s) => sum + getQty(s.id), 0)
+  const totalProceeds = activeSells.reduce((sum, s) => sum + (prices[s.id] ?? 0) * getQty(s.id), 0)
+  const remainingCash = cash + totalProceeds
+
+  // 시장 분위기 (전체 종목 기준, 매수 모달과 동일)
+  const moodCounts = stocks.reduce(
+    (acc, s) => {
+      const pct = (((prices[s.id] ?? s.price) - s.price) / s.price) * 100
+      if (pct >= 0.5) acc.up += 1
+      else if (pct <= -0.5) acc.down += 1
+      else acc.flat += 1
+      return acc
+    },
+    { up: 0, down: 0, flat: 0 }
+  )
+
+  const handleBulkSell = () => {
+    if (selectedCount === 0) return
+    activeSells.forEach((s) => onSell(s.id, getQty(s.id)))
+    setQuantities({})
+  }
+
+  return (
+    <div className="flex flex-col h-full gap-2 min-h-0 text-rose-50">
+      {/* 보유 현금 — 로즈 라인 강조 */}
+      <div className="shrink-0 flex items-baseline justify-between pb-3 border-b border-rose-500/20">
+        <span className="text-base text-rose-300/70 font-mono tracking-[0.2em]">💰 보유 현금</span>
+        <span className="text-3xl font-bold text-rose-50 font-mono tabular-nums drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]">
+          {cash.toLocaleString()}
+          <span className="text-rose-300/60 text-base ml-1">원</span>
+        </span>
+      </div>
+
+      {/* 종목 헤더 — 매도 종목 카운트 + 전량/해제 단축 */}
+      <div className="shrink-0 flex items-center justify-between mt-1">
+        <p className="text-base text-rose-300/70 font-mono tracking-[0.15em]">
+          📉 매도 종목{' '}
+          <span className="text-rose-200 font-bold">{selectedCount}</span>
+          <span className="text-rose-500/40"> / {heldStocks.length}</span>
+        </p>
+        <div className="flex items-center gap-3 text-sm font-mono tracking-wider">
+          <button
+            onClick={sellAll}
+            disabled={heldStocks.length === 0}
+            style={{ outline: 'none' }}
+            className="text-rose-300/70 hover:text-rose-100 disabled:opacity-30 disabled:hover:text-rose-300/70 transition-colors focus:outline-none"
+          >
+            전량 매도
+          </button>
+          <span className="text-rose-500/30">|</span>
+          <button
+            onClick={clearAll}
+            style={{ outline: 'none' }}
+            className="text-rose-300/70 hover:text-rose-100 transition-colors focus:outline-none"
+          >
+            전체 해제
+          </button>
+        </div>
+      </div>
+
+      {/* 종목 리스트 — 보유 종목만, 매도 수량 컨트롤 */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-rose -mr-1 pr-1">
+        {heldStocks.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-rose-300/40 font-mono tracking-wider">
+            보유 중인 종목이 없습니다
+          </div>
+        ) : (
+          heldStocks.map((stock) => {
+            const stockPrice = prices[stock.id] ?? stock.price
+            const stockChange = ((stockPrice - stock.price) / stock.price) * 100
+            const mood = friendlyChange(stockChange)
+            const qty = getQty(stock.id)
+            const isActive = qty > 0
+            const stockHeld = portfolio[stock.id] || 0
+            const subTotal = stockPrice * qty
+            const changeSign = stockChange > 0 ? '+' : ''
+
+            // 최근 8주 종가 + 전주대비
+            const stockEntry = stockData.stocks.find((s) => s.realTicker === stock.id)
+            const pregame = stockEntry?.pregame_prices ?? []
+            const gamePrices = (stockEntry?.prices ?? []).slice(0, turn)
+            const recentCloses = [...pregame, ...gamePrices].slice(-8).map((c) => c.close)
+            const prevWeekClose = recentCloses.length >= 2 ? recentCloses[recentCloses.length - 2] : stockPrice
+            const weekDiff = stockPrice - prevWeekClose
+            const weekDiffSign = weekDiff > 0 ? '+' : ''
+            const weekTone = weekDiff > 0 ? 'up' : weekDiff < 0 ? 'down' : 'flat'
+
+            return (
+              <div
+                key={stock.id}
+                className={
+                  'w-full px-2 py-2.5 flex items-center gap-3 transition-all duration-150 border-l-2 border-b border-b-rose-500/10 ' +
+                  (isActive
+                    ? 'border-l-rose-400 bg-rose-400/10'
+                    : 'border-l-transparent hover:bg-rose-400/5')
+                }
+              >
+                {/* 종목명 + 섹터 + 보유 배지 */}
+                <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                  <span
+                    className={`text-lg font-semibold truncate ${
+                      isActive ? 'text-rose-50' : 'text-slate-100'
+                    }`}
+                  >
+                    {stock.name}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-rose-300/60 font-mono tracking-wider border border-rose-500/20 rounded px-1.5 py-0.5">
+                    {stock.sector}
+                  </span>
+                  <span className="shrink-0 text-xs text-yellow-400/90 font-mono tabular-nums bg-yellow-500/10 border border-yellow-500/30 rounded px-1.5 py-0.5">
+                    💰 {stockHeld}주
+                  </span>
+                </div>
+                {/* 미니 스파크라인 */}
+                <div className="shrink-0 flex flex-col items-center gap-0.5">
+                  <span className="text-xs text-rose-300/50 font-mono tracking-wider">최근 8주</span>
+                  <MiniSparkline closes={recentCloses} tone={mood.tone} />
+                </div>
+                {/* 등락률 % + 전주대비 절대값 (스택) */}
+                <div className="shrink-0 w-28 text-right font-mono tabular-nums flex flex-col items-end leading-tight">
+                  <span className={`text-base font-semibold ${TONE_CLASS[mood.tone]}`}>
+                    {mood.emoji} {changeSign}{stockChange.toFixed(2)}%
+                  </span>
+                  <span className={`text-xs ${TONE_CLASS[weekTone]}`}>
+                    {weekDiffSign}{weekDiff.toLocaleString()}원
+                  </span>
+                </div>
+                {/* 가격 */}
+                <span className="shrink-0 w-32 text-right text-lg font-bold text-rose-100 font-mono tabular-nums">
+                  {stockPrice.toLocaleString()}
+                  <span className="text-rose-300/60 text-sm ml-0.5">원</span>
+                </span>
+                {/* 매도 수량 컨트롤 — max는 보유 수량 */}
+                <div className="shrink-0 flex items-center gap-1">
+                  <button
+                    onClick={() => decQty(stock.id)}
+                    disabled={qty === 0}
+                    style={{ outline: 'none' }}
+                    className="w-8 h-8 rounded border border-rose-500/30 text-rose-300 hover:text-rose-100 hover:border-rose-400 hover:shadow-[0_0_6px_rgba(244,63,94,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-rose-500/30 disabled:hover:shadow-none transition-all focus:outline-none font-bold text-base"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    max={stockHeld}
+                    value={qty}
+                    onChange={(e) => setQty(stock.id, parseInt(e.target.value) || 0)}
+                    className={
+                      'w-14 px-1 py-1 rounded bg-transparent border text-center text-base font-mono tabular-nums focus:outline-none transition-all ' +
+                      (isActive
+                        ? 'border-rose-400 text-rose-50 focus:shadow-[0_0_6px_rgba(244,63,94,0.4)]'
+                        : 'border-rose-500/30 text-rose-300/60 focus:border-rose-400 focus:text-rose-100')
+                    }
+                  />
+                  <button
+                    onClick={() => incQty(stock.id)}
+                    disabled={qty >= stockHeld}
+                    style={{ outline: 'none' }}
+                    className="w-8 h-8 rounded border border-rose-500/30 text-rose-300 hover:text-rose-100 hover:border-rose-400 hover:shadow-[0_0_6px_rgba(244,63,94,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-rose-500/30 disabled:hover:shadow-none transition-all focus:outline-none font-bold text-base"
+                  >
+                    ＋
+                  </button>
+                </div>
+                {/* 매도 대상일 때만 매도 금액 표시 */}
+                <span className="shrink-0 w-28 text-right font-mono tabular-nums">
+                  {isActive && (
+                    <span className="text-rose-200 font-bold text-sm">
+                      {subTotal.toLocaleString()}<span className="text-xs ml-0.5">원</span>
+                    </span>
+                  )}
+                </span>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* 하단 영역 — 시장 분위기 + 합계 + 매도 후 잔액 + 일괄 매도 */}
+      <div className="shrink-0 flex flex-col gap-2.5 pt-3 border-t border-rose-500/30">
+        {/* 시장 분위기 */}
+        <div className="flex items-center justify-between gap-3 text-sm font-mono">
+          <span className="text-rose-300/60 tracking-[0.15em]">🌐 시장 분위기</span>
+          <div className="flex items-center gap-3 tabular-nums">
+            <span className="text-rise">▲ {moodCounts.up}</span>
+            <span className="text-fall">▼ {moodCounts.down}</span>
+            <span className="text-slate-100">— {moodCounts.flat}</span>
+          </div>
+        </div>
+
+        {/* 요약 라인 */}
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-base text-rose-300/70 font-mono tracking-[0.15em]">
+            {selectedCount > 0
+              ? <>📦 {selectedCount}종목 · 총 <span className="text-rose-100 font-bold">{totalQty}</span>주</>
+              : <span className="text-rose-300/50">매도할 수량을 입력하세요</span>}
+          </span>
+          <div className="text-right">
+            <p className="text-sm text-rose-300/60 font-mono tracking-[0.15em]">매도 수익</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-rose-50 drop-shadow-[0_0_6px_rgba(244,63,94,0.4)]">
+              {totalProceeds.toLocaleString()}
+              <span className="text-rose-300/60 text-base ml-0.5">원</span>
+            </p>
+          </div>
+        </div>
+
+        {/* 매도 후 예상 현금 */}
+        {selectedCount > 0 && (
+          <div className="flex items-baseline justify-between gap-3 text-sm font-mono pl-2 border-l-2 border-rose-500/30">
+            <span className="text-rose-300/70 tracking-[0.1em]">매도 후 예상 현금</span>
+            <span className="tabular-nums font-bold text-rose-200">
+              {remainingCash.toLocaleString()}<span className="text-rose-300/60 text-xs ml-0.5">원</span>
+            </span>
+          </div>
+        )}
+
+        {/* 일괄 매도 버튼 */}
+        <button
+          onClick={handleBulkSell}
+          disabled={selectedCount === 0}
+          style={{ outline: 'none' }}
+          className={
+            'w-full px-3 py-3.5 rounded font-mono tracking-[0.2em] font-bold text-lg transition-all duration-150 focus:outline-none border ' +
+            (selectedCount === 0
+              ? 'bg-slate-900/40 text-rose-300/30 border-rose-500/15 cursor-not-allowed'
+              : 'bg-gradient-to-r from-rose-500/20 via-rose-400/25 to-rose-500/20 text-rose-50 border-rose-400 hover:from-rose-500/30 hover:via-rose-400/40 hover:to-rose-500/30 hover:shadow-[0_0_20px_rgba(244,63,94,0.5)]')
+          }
+        >
+          {heldStocks.length === 0
+            ? '보유 종목이 없습니다'
+            : selectedCount === 0
+            ? '매도할 수량을 입력하세요'
+            : `💸 ${selectedCount}종목 · ${totalQty}주 일괄 매도`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function StatCard({ label, value, toneClass = 'text-cyan-100', highlight }) {
+  return (
+    <div
+      className={`rounded-md border px-2 py-1.5 min-w-0 ${
+        highlight
+          ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_10px_rgba(34,211,238,0.15)]'
+          : 'border-cyan-500/20 bg-slate-900/60'
+      }`}
+    >
+      <p className="text-[10px] text-cyan-300/60 font-mono tracking-wider truncate">{label}</p>
+      <p className={`text-sm font-bold font-mono tabular-nums truncate ${toneClass}`}>
+        {value?.toLocaleString()}
+        <span className="text-[10px] text-cyan-300/60 ml-0.5">원</span>
+      </p>
     </div>
   )
 }

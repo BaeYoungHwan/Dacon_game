@@ -36,6 +36,9 @@ export const useGameStore = create(
       totalTurns: TOTAL_TURNS,
       cash: INITIAL_CASH,
       portfolio: {},
+      // 종목별 최초 매수 라운드 — 매도 모달에서 "이번 주 매수한 종목" 표시용
+      // 보유 0 → >0 전환 시 현재 turn 기록, 전량 매도 시 삭제
+      purchaseRounds: {},
       activeStocks: [],
       hiddenStocks: [],
       unlockedStockIds: [],
@@ -69,6 +72,7 @@ export const useGameStore = create(
           turn: 1,
           cash: INITIAL_CASH,
           portfolio: {},
+          purchaseRounds: {},
           activeStocks: active,
           hiddenStocks: hidden,
           unlockedStockIds: [],
@@ -99,23 +103,32 @@ export const useGameStore = create(
       },
 
       buyStock: (stockId, quantity) => {
-        const { cash, portfolio, prices } = get()
+        const { cash, portfolio, prices, purchaseRounds, turn } = get()
         const cost = prices[stockId] * quantity
         if (cost > cash) return false
+        const wasZero = (portfolio[stockId] || 0) === 0
         set({
           cash: cash - cost,
           portfolio: { ...portfolio, [stockId]: (portfolio[stockId] || 0) + quantity },
+          // 보유 0 → >0 첫 진입 시에만 매수 라운드 기록 (추가 매수 시엔 유지)
+          purchaseRounds: wasZero
+            ? { ...purchaseRounds, [stockId]: turn }
+            : purchaseRounds,
         })
         return true
       },
 
       sellStock: (stockId, quantity) => {
-        const { cash, portfolio, prices } = get()
+        const { cash, portfolio, prices, purchaseRounds } = get()
         const held = portfolio[stockId] || 0
         if (quantity > held) return false
         const next = { ...portfolio, [stockId]: held - quantity }
-        if (next[stockId] === 0) delete next[stockId]
-        set({ cash: cash + prices[stockId] * quantity, portfolio: next })
+        const nextRounds = { ...purchaseRounds }
+        if (next[stockId] === 0) {
+          delete next[stockId]
+          delete nextRounds[stockId]
+        }
+        set({ cash: cash + prices[stockId] * quantity, portfolio: next, purchaseRounds: nextRounds })
         return true
       },
 
@@ -161,6 +174,7 @@ export const useGameStore = create(
           turn: 0,
           cash: INITIAL_CASH,
           portfolio: {},
+          purchaseRounds: {},
           activeStocks: [],
           hiddenStocks: [],
           unlockedStockIds: [],
@@ -185,6 +199,7 @@ export const useGameStore = create(
         totalTurns: state.totalTurns,
         cash: state.cash,
         portfolio: state.portfolio,
+        purchaseRounds: state.purchaseRounds,
         activeStocks: state.activeStocks,
         hiddenStocks: state.hiddenStocks,
         unlockedStockIds: state.unlockedStockIds,
