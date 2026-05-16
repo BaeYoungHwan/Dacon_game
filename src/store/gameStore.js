@@ -51,12 +51,15 @@ function generatePackage(hiddenStocks, prices) {
   const count = Math.min(pool.length, Math.floor(Math.random() * 3) + 1)
   const selected = pool.slice(0, count)
 
-  // 각 종목 개별 가격: 100만~200만원 × ±10%
+  // 각 종목: 목표 가치 100만~200만원 → 주수 계산 → ±10% 적용 = 구매가
+  // 구매 시 플레이어는 quantity 주를 실제로 받음
   const packageStocks = selected.map(({ currentPrice, ...s }) => {
-    const base = (Math.floor(Math.random() * 11) + 10) * 100_000
-    const factor = 0.9 + Math.random() * 0.2
-    const stockPackagePrice = Math.round(base * factor / 10_000) * 10_000
-    return { ...s, packagePrice: stockPackagePrice }
+    const base = (Math.floor(Math.random() * 11) + 10) * 100_000  // 1M~2M 목표 가치
+    const quantity = Math.max(1, Math.round(base / currentPrice))
+    const actualValue = quantity * currentPrice
+    const factor = 0.9 + Math.random() * 0.2                       // ±10% 노이즈
+    const stockPackagePrice = Math.round(actualValue * factor / 1_000) * 1_000
+    return { ...s, quantity, packagePrice: stockPackagePrice }
   })
 
   // 금액 오름차순 정렬
@@ -193,11 +196,13 @@ export const useGameStore = create(
       },
 
       unlockPackageStock: (stockId) => {
-        const { cash, packageStocks, hiddenStocks, activeStocks, unlockedStockIds } = get()
+        const { cash, packageStocks, hiddenStocks, activeStocks, unlockedStockIds, portfolio, purchaseRounds, turn } = get()
         const target = packageStocks.find(s => s.id === stockId)
         if (!target || target.packagePrice > cash) return false
-        const { packagePrice: _, ...stockWithoutPrice } = target
+        const { packagePrice: _, quantity, ...stockWithoutPrice } = target
         const remaining = packageStocks.filter(s => s.id !== stockId)
+        const qty = quantity ?? 1
+        const wasZero = (portfolio[stockId] || 0) === 0
         set({
           cash: cash - target.packagePrice,
           unlockedStockIds: [...unlockedStockIds, stockId],
@@ -205,6 +210,8 @@ export const useGameStore = create(
           activeStocks: [...activeStocks, stockWithoutPrice],
           packageStocks: remaining,
           packagePrice: remaining.reduce((sum, s) => sum + s.packagePrice, 0),
+          portfolio: { ...portfolio, [stockId]: (portfolio[stockId] || 0) + qty },
+          purchaseRounds: wasZero ? { ...purchaseRounds, [stockId]: turn } : purchaseRounds,
         })
         return true
       },
@@ -218,7 +225,7 @@ export const useGameStore = create(
         return true
       },
 
-      // 총 자산의 10% 수수료로 다음 주 최고 상승 종목 1개 공개
+      // 총 자산의 5% 수수료로 다음 주 최고 상승 종목 1개 공개
       purchaseInsiderInfo: () => {
         const { cash, portfolio, prices, activeStocks, turn, totalTurns, insiderTip } = get()
 

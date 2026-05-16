@@ -64,7 +64,7 @@ export default function InfoMerchantPage() {
     [activeStocks],
   )
 
-  // 총 자산의 10% 수수료 계산
+  // 총 자산의 5% 수수료 계산
   const insiderFee = useMemo(() => {
     const stockValue = (activeStocks || []).reduce((sum, s) => {
       return sum + (prices[s.id] ?? s.price ?? 0) * (portfolio[s.id] || 0)
@@ -378,7 +378,6 @@ function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought,
 
   // 구매 완료 — 결과 표시
   if (alreadyBought && insiderTip) {
-    const isPositive = insiderTip.nextRatio >= 0
     return (
       <div className="space-y-3">
         <p className="text-xs text-emerald-400/80 font-mono mb-1">
