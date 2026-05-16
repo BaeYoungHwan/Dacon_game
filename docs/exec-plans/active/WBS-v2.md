@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-15 (GamePage 전반 폴리싱 7종 — 디자인 톤 통일(자산카드/IconButton/ExitConfirmModal/NPC라벨/KospiChart+Marquee outer) / KospiChart compact 모드 + SVG 디테일 보강(글로우·area fill·펄스 ring·pregame↔game 연결·Y축 좌측 정렬) / 총자산 전주 대비 증감률·증감액 표시 / ResizeObserver + transform:scale wrapper로 viewport 반응형 / 도움말 KOSPI 박스 추가 + 8개 풍선 입문자용 리라이팅 + arrow="up" 지원 / 페이지 진입 애니메이션(opacity+scale+blur) 4개 페이지 적용 / 새 게임 첫 라운드 trend·delta 초기화(useRef→useState + sessionStorage 클리어))
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-16 (1.8.1~1.8.2·1.8.5 완료, ResultPage 코스피 연동 1.8.7 추가 — 디자인 톤 통일(자산카드/IconButton/ExitConfirmModal/NPC라벨/KospiChart+Marquee outer) / KospiChart compact 모드 + SVG 디테일 보강(글로우·area fill·펄스 ring·pregame↔game 연결·Y축 좌측 정렬) / 총자산 전주 대비 증감률·증감액 표시 / ResizeObserver + transform:scale wrapper로 viewport 반응형 / 도움말 KOSPI 박스 추가 + 8개 풍선 입문자용 리라이팅 + arrow="up" 지원 / 페이지 진입 애니메이션(opacity+scale+blur) 4개 페이지 적용 / 새 게임 첫 라운드 trend·delta 초기화(useRef→useState + sessionStorage 클리어))
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -36,7 +36,8 @@
 | 1.5 P1 통합 | 8 | 8 | 100% |
 | 1.6 P2 QA + 배포 | 6 | 4 | 66.7% |
 | 1.7 버퍼 | 2 | 0 | 0% |
-| **전체** | **65** | **58** | **89.2%** |
+| 1.8 추가 작업 | 7 | 5 | 71.4% |
+| **전체** | **72** | **63** | **87.5%** |
 
 ---
 
@@ -184,12 +185,13 @@
 
 | WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
 |-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
-| 1.8.1 | [공용] 코덱스1x 종목 추가 + 인버스 1주 무조건 포함 (stockData.json 업데이트) | 배영환 | 대기 | 0% | 05/16 | 05/16 | 1 | stockData.json | P1 |
-| 1.8.2 | [Front] 종목 분석/구매/판매 목록 정렬 — 종목명 순 + 코덱스1x·인버스 최상위 고정 | 배영환 | 대기 | 0% | 05/16 | 05/16 | 1 | MarketPage.jsx 등 | P1 |
+| 1.8.1 | [공용] KODEX 200 종목 추가 + 인버스 PINNED_IDS 고정 최상위 (stockData.json + stocks.json + gameStore.js 업데이트) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 1 | stockData.json, stocks.json, gameStore.js | P1 |
+| 1.8.2 | [공용] activeStocks 고정 정렬 — splitStocks 교체, KODEX 200·인버스 PINNED_IDS 최상위 + 나머지 8개 가나다순 랜덤 (gameStore.js) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 1 | gameStore.js | P1 |
 | 1.8.3 | [기획] 추천 종목 기능 설계 (/deep-interview 진행) | 배영환 | 대기 | 0% | 05/16 | 05/16 | 0.5 | 기획 메모 | P1 |
 | 1.8.4 | [QA] 볼린저 밴드 및 OBV 차트 동작 확인 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.5 | QA 체크 | P1 |
-| 1.8.5 | [버그] 뉴스 파트 국제 뉴스 미표시 원인 분석 및 수정 | 배영환 | 대기 | 0% | 05/16 | 05/16 | 0.5 | 버그 수정 커밋 | P0 |
+| 1.8.5 | [버그] 국제뉴스 초기값 미표시 수정 — startGame에서 progressTurn(1) 호출로 첫 라운드 currentGlobalNews 즉시 반영 (gameStore.js) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.5 | gameStore.js | P0 |
 | 1.8.6 | [기획] 깜짝 구매 기능 설계 (/deep-interview 진행) | 배영환 | 대기 | 0% | 05/16 | 05/16 | 0.5 | 기획 메모 | P1 |
+| 1.8.7 | [Front] ResultPage 코스피 수익률 연동 + GradeCard 기반 초과수익률 등급 적용 — INITIAL_KOSPI export, myReturn vs kospiReturn %p 계산, 리더보드 등급 라벨 통일 (ResultPage.jsx, gameStore.js) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.5 | src/pages/ResultPage.jsx, src/store/gameStore.js | P1 |
 
 ---
 
