@@ -139,16 +139,17 @@ export const useGameStore = create(
       },
 
       nextTurn: ({ newPrices, news, globalNews, newKospi, newExchangeRate }) => {
-        const { turn, totalTurns, exchangeRate } = get()
+        const { turn, totalTurns, exchangeRate, prices: prevPrices } = get()
         const next = turn + 1
+        const isLast = next > totalTurns
         set({
           turn: next,
-          prices: newPrices,
+          prices: isLast ? prevPrices : newPrices,
           currentNews: news,
           currentGlobalNews: globalNews,
           kospi: newKospi,
           exchangeRate: newExchangeRate ?? exchangeRate,
-          page: next > totalTurns ? 'result' : 'main',
+          page: isLast ? 'result' : 'main',
         })
       },
 
