@@ -6,7 +6,7 @@
 // 클릭 영역(핫스팟) — 모두 1920×1080 기준 % 좌표
 //   · 좌측 지구본: 국제 뉴스 팝업
 //   · 중앙 서류가방: 기업 뉴스 팝업 (섹터별 뉴스 목록)
-//   · 우측 태블릿: 내부 정보 팝업 (총 자산 10% 수수료 → 다음 주 최고 상승 종목 공개)
+//   · 우측 태블릿: 내부 정보 팝업 (총 자산 5% 수수료 → 다음 주 최고 상승 종목 공개)
 //   · 우상단: 도움말 / 메인 버튼
 //   · 우하단: 거래소 / 기술상 버튼 (기술상은 10턴 해금)
 //
@@ -357,7 +357,7 @@ function CompanyNewsView({ sectors, currentNews }) {
   )
 }
 
-// 내부 정보 구매 — 총 자산 10% 수수료로 다음 주 최고 상승 종목 공개
+// 내부 정보 구매 — 총 자산 5% 수수료로 다음 주 최고 상승 종목 공개
 function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought, canAfford, onPurchase }) {
   const [error, setError] = useState(null)
 
