@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.4.37~1.4.45 추가 — MarketPage 3종 모달 KRX 디지털 보드 풀 리뉴얼 + PR #44 리뷰 후속 + 데드 코드 정리. 종목분석 16:9 + 멀티 패널 차트(메인/MACD/OBV 동시 노출, 네온 글로우, 워밍업 X축 재구성) + 주식구매 BulkBuyPanel + 주식판매 BulkSellPanel + chartUtils 확장 평균 + calcOBV 시그니처 수정 + 등락률 4곳 저번 주 대비 통일 + gameStore purchaseRounds 추가 + 3개 도움말 오버레이 + 시안/로즈 스크롤바 + number input 스피너 숨김 + PR 리뷰 후속 4건(MACD 매핑 주석/StockChart useMemo/HOTSPOT 상수/PopupOverlay props drilling 14→4) + 데드 코드 정리(SignalBadge·signal 계산·WeekInfoPanel·StatCard·미사용 import + macdArr 잠재 TypeError 동시 해결))
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 추가 — Vitest QA 환경 구축 + 단위·통합 테스트 66개 작성 + getBollingerSignal 제로 밴드 NaN 버그 수정 + PR #48 머지. 1.4.37~1.4.45 추가 — MarketPage 3종 모달 KRX 디지털 보드 풀 리뉴얼 + PR #44 리뷰 후속 + 데드 코드 정리. 종목분석 16:9 + 멀티 패널 차트(메인/MACD/OBV 동시 노출, 네온 글로우, 워밍업 X축 재구성) + 주식구매 BulkBuyPanel + 주식판매 BulkSellPanel + chartUtils 확장 평균 + calcOBV 시그니처 수정 + 등락률 4곳 저번 주 대비 통일 + gameStore purchaseRounds 추가 + 3개 도움말 오버레이 + 시안/로즈 스크롤바 + number input 스피너 숨김 + PR 리뷰 후속 4건(MACD 매핑 주석/StockChart useMemo/HOTSPOT 상수/PopupOverlay props drilling 14→4) + 데드 코드 정리(SignalBadge·signal 계산·WeekInfoPanel·StatCard·미사용 import + macdArr 잠재 TypeError 동시 해결))
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -222,6 +222,22 @@
 | 1.9.9 | [하네스] `global-setup/` 생성 — notify.ps1(Windows 알림), context-bar.sh(상태바), install.sh | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.2 | global-setup/ | P2 |
 | 1.9.10 | [하네스] `scripts/executor.py` 생성 — WBS 체크박스 자동 실행기 (--dry-run/--retry-failed) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | scripts/executor.py | P2 |
 | 1.9.11 | [하네스] `docs/exec-plans/completed/` 디렉토리 생성 — 완료 플랜 아카이브 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | docs/exec-plans/completed/ | P2 |
+
+---
+
+## 1.10 QA 자동화 — Vitest 단위·통합 테스트 (배영환)
+
+| ID | 작업 | 담당 | 상태 | 완료% | 시작 | 종료 | 예상h | 산출물 | 우선순위 |
+|----|------|------|------|--------|------|------|--------|--------|---------|
+| 1.10.1 | [QA] Vitest + jsdom 환경 설정 — vite.config.js test 블록, package.json scripts(test/test:watch/test:cover/test:3) | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | vite.config.js, package.json | P0 |
+| 1.10.2 | [QA] src/__tests__/setup.js — @testing-library/jest-dom 초기화 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/__tests__/setup.js | P0 |
+| 1.10.3 | [QA] grade.test.js — calcExcessPp 3케이스, getGrade 경계값 10케이스, GRADES 내림차순 검증 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/lib/grade.test.js | P1 |
+| 1.10.4 | [QA] gameLogic.test.js — progressTurn 가격·KOSPI·뉴스 7케이스 (실제 JSON 사용, mock 없음) | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/lib/gameLogic.test.js | P1 |
+| 1.10.5 | [QA] gameStore.test.js — buyStock·sellStock·unlockStock·unlockPackageStock·buyIndicator·purchaseInsiderInfo·localStorage 보안·getFinalAssets 23케이스 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 1 | src/__tests__/store/gameStore.test.js | P0 |
+| 1.10.6 | [QA] chartUtils.test.js — calcMA·calcBollinger·calcMACD·calcOBV·신호감지 5종·getRecentCloses 20케이스 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 1 | src/__tests__/components/chartUtils.test.js | P1 |
+| 1.10.7 | [QA] gameTurnFlow.test.js — gameStore+progressTurn 통합 4케이스, pass^3 검증 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/integration/gameTurnFlow.test.js | P1 |
+| 1.10.8 | [QA] qa-report.md — 테스트 결과·커버리지·갭 분석 리포트 작성 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.3 | docs/ref/qa-report.md | P2 |
+| 1.10.9 | [fix] getBollingerSignal 제로 밴드 NaN 버그 수정 — bandWidth===0 시 pctB=0.5 고정 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/components/game/chartUtils.js:113 | P1 |
 
 ---
 
