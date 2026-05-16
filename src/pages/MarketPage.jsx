@@ -24,6 +24,43 @@ import stockData from '../data/stockData.json'
 // 도움말 자동 표시 여부 기억용 sessionStorage 키 — 한 게임당 1회 자동 노출
 const MARKET_HELP_SEEN_KEY = 'market-help-seen'
 
+// ─────────────────────────────────────────────────────────
+// 핫스팟 좌표 상수 — 화면별 픽셀 단위 미세조정값을 한곳에 모아 유지보수 용이
+// MARKET: MarketPage 배경 이미지(1920×1080 기준) 위에 떠 있는 영역들
+// MODAL: 16:9 16:9 이미지 모달(분석/매수/매도) 우상단 그려진 도움말·닫기 버튼 위치
+// ─────────────────────────────────────────────────────────
+const HOTSPOT = {
+  // 거래소 메인 — 배경 이미지의 키오스크·NPC·홀로그램 영역 핫스팟
+  market: {
+    analysis: { top: 'calc(8% + 1.481%)', left: 'calc(28% - 0.060%)', width: 'calc(42% + 1.845%)', height: 'calc(58% + 6.138%)' },
+    buy:      { top: '55%', left: 'calc(15% - 7.738%)', width: '16%', height: '35%' },
+    sell:     { top: '55%', right: 'calc(15% - 5.952%)', width: '16%', height: '35%' },
+    help:     { top: '3%', right: 'calc(14.5% - 2.202%)', width: 'calc(10% - 0.357%)', height: 'calc(8% - 2.116%)' },
+    main:     { top: '3%', right: 'calc(2% - 0.179%)', width: 'calc(11% - 1.190%)', height: 'calc(8% - 2.116%)' },
+    infoMerchant: { right: 'calc(15% - 1.786%)', bottom: 'calc(2% - 0.529%)', width: '11%', height: 'calc(7% - 1.270%)' },
+    techMerchant: { right: 'calc(2% - 0.595%)', bottom: 'calc(2% - 0.741%)', width: 'calc(12% - 1.071%)', height: 'calc(7% - 1.058%)' },
+  },
+  // 분석 모달 — 그려진 우상단 버튼 위 hotspot
+  analysis: {
+    help:  { top: 'calc(2% + 11px)', right: 'calc(14% + 22px)', width: 'calc(10% - 20px)', height: 'calc(7% - 10px)' },
+    close: { top: 'calc(2% + 11px)', right: 'calc(3% + 27px)', width: 'calc(10% - 24px)', height: 'calc(7% - 10px)' },
+  },
+  // 매수 모달
+  buy: {
+    help:  { top: 'calc(2% + 11px)', right: 'calc(14% + 22px)', width: 'calc(10% - 20px)', height: 'calc(7% - 10px)' },
+    close: { top: 'calc(2% + 12px)', right: 'calc(3% + 34px)', width: 'calc(10% - 26px)', height: 'calc(7% - 10px)' },
+  },
+  // 매도 모달 (매수와 동일 좌표)
+  sell: {
+    help:  { top: 'calc(2% + 11px)', right: 'calc(14% + 22px)', width: 'calc(10% - 20px)', height: 'calc(7% - 10px)' },
+    close: { top: 'calc(2% + 12px)', right: 'calc(3% + 34px)', width: 'calc(10% - 26px)', height: 'calc(7% - 10px)' },
+  },
+}
+
+// 모달 콘텐츠 영역 좌표 — 캐릭터·말풍선 영역 제외
+const MODAL_CONTENT_BOUNDS = { top: '12%', left: '3%', right: '23%', bottom: '8%' }
+const SELL_MODAL_CONTENT_BOUNDS = { top: '12%', left: '3%', right: '23%', bottom: '7%' }
+
 // 모듈 로드 시점에 1회 구독 — 새 게임 시작(page: 'start' → 다른 페이지) 신호 감지 시 플래그 초기화
 // → 게임을 새로 시작할 때마다 거래소 첫 진입에서 도움말이 다시 자동 노출됨
 // HMR 시 모듈이 재평가되면 이전 구독이 좀비로 남으므로 dispose에서 정리
@@ -39,11 +76,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default function MarketPage() {
-  const {
-    activeStocks, prices, portfolio, buyStock, sellStock, navigateTo,
-    maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
-    cash,
-  } = useGameStore()
+  const navigateTo = useGameStore((s) => s.navigateTo)
 
   const [activePopup, setActivePopup] = useState(null) // 'analysis' | 'buy' | 'sell' | null
   const [selectedStockId, setSelectedStockId] = useState(null)
@@ -75,103 +108,38 @@ export default function MarketPage() {
           backgroundPosition: 'center',
         }}
       >
-          {/* 중앙 종목분석 홀로그램 핫스팟 — 1920×1080 기준 px를 %로 환산하여 모든 창 크기에서 비례 유지 */}
-          {/* 환산 기준: 가로 1px ≈ 0.0595% (컨테이너 1680px) / 세로 1px ≈ 0.1058% (컨테이너 945px) */}
-          <Hotspot
-            label="종목분석 열기"
-            className="absolute rounded-[15px]"
-            style={{
-              top: 'calc(8% + 1.481%)',     /* +14px */
-              left: 'calc(28% - 0.060%)',   /* -1px */
-              width: 'calc(42% + 1.845%)',  /* +31px */
-              height: 'calc(58% + 6.138%)', /* +58px */
-            }}
-            onClick={() => setActivePopup('analysis')}
-          />
+          {/* 핫스팟 좌표는 상단 HOTSPOT.market 상수에서 관리 (1920×1080 비례 % + 픽셀 미세조정) */}
+          <Hotspot label="종목분석 열기" className="absolute rounded-[15px]"
+            style={HOTSPOT.market.analysis} onClick={() => setActivePopup('analysis')} />
 
-          {/* 좌하 주식구매 키오스크 핫스팟 — 좌측 130px 이동 */}
-          <Hotspot
-            label="주식 구매"
-            className="absolute top-[55%] w-[16%] h-[35%] rounded-xl"
-            style={{ left: 'calc(15% - 7.738%)' /* -130px */ }}
-            glowColor="emerald"
-            onClick={() => setActivePopup('buy')}
-          />
+          <Hotspot label="주식 구매" className="absolute rounded-xl"
+            style={HOTSPOT.market.buy} glowColor="emerald" onClick={() => setActivePopup('buy')} />
 
-          {/* 우하 주식판매 키오스크 핫스팟 — 우측 100px 이동 */}
-          <Hotspot
-            label="주식 판매"
-            className="absolute top-[55%] w-[16%] h-[35%] rounded-xl"
-            style={{ right: 'calc(15% - 5.952%)' /* -100px */ }}
-            glowColor="red"
-            onClick={() => setActivePopup('sell')}
-          />
+          <Hotspot label="주식 판매" className="absolute rounded-xl"
+            style={HOTSPOT.market.sell} glowColor="red" onClick={() => setActivePopup('sell')} />
 
-          {/* 우상단: 도움말 / 메인 핫스팟 */}
-          <Hotspot
-            label="도움말"
-            className="absolute top-[3%] rounded-[8.5px]"
-            style={{
-              right: 'calc(14.5% - 2.202%)', /* -37px */
-              width: 'calc(10% - 0.357%)',   /* -6px */
-              height: 'calc(8% - 2.116%)',   /* -20px */
-            }}
-            onClick={() => setOpenHelp(true)}
-          />
-          <Hotspot
-            label="메인으로"
-            className="absolute top-[3%] rounded-[8.5px]"
-            style={{
-              right: 'calc(2% - 0.179%)',   /* -3px */
-              width: 'calc(11% - 1.190%)',  /* -20px */
-              height: 'calc(8% - 2.116%)',  /* -20px */
-            }}
-            onClick={() => navigateTo('main')}
-          />
+          <Hotspot label="도움말" className="absolute rounded-[8.5px]"
+            style={HOTSPOT.market.help} onClick={() => setOpenHelp(true)} />
 
-          {/* 우하단: 정보상 / 기술상 핫스팟 */}
-          <Hotspot
-            label="정보상"
-            className="absolute w-[11%] rounded-lg"
-            style={{
-              right: 'calc(15% - 1.786%)', /* -30px */
-              bottom: 'calc(2% - 0.529%)', /* -5px */
-              height: 'calc(7% - 1.270%)', /* -12px */
-            }}
-            onClick={() => navigateTo('infoMerchant')}
-          />
-          <Hotspot
-            label="기술상"
-            className="absolute rounded-[10px]"
-            style={{
-              right: 'calc(2% - 0.595%)',  /* -10px */
-              bottom: 'calc(2% - 0.741%)', /* -7px */
-              width: 'calc(12% - 1.071%)', /* -18px */
-              height: 'calc(7% - 1.058%)', /* -10px */
-            }}
-            onClick={() => navigateTo('techMerchant')}
-          />
+          <Hotspot label="메인으로" className="absolute rounded-[8.5px]"
+            style={HOTSPOT.market.main} onClick={() => navigateTo('main')} />
+
+          <Hotspot label="정보상" className="absolute rounded-lg"
+            style={HOTSPOT.market.infoMerchant} onClick={() => navigateTo('infoMerchant')} />
+
+          <Hotspot label="기술상" className="absolute rounded-[10px]"
+            style={HOTSPOT.market.techMerchant} onClick={() => navigateTo('techMerchant')} />
 
           {/* 도움말 오버레이 (배경 클릭 시 닫힘) */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
       </div>
 
-      {/* 팝업 — 종목분석 / 주식구매 / 주식판매 */}
+      {/* 팝업 — 종목분석 / 주식구매 / 주식판매 (store 의존 props는 내부에서 직접 구독) */}
       {activePopup && (
         <PopupOverlay
           activePopup={activePopup}
           selectedStockId={selectedStockId}
           setSelectedStockId={setSelectedStockId}
-          activeStocks={activeStocks}
-          prices={prices}
-          portfolio={portfolio}
-          cash={cash}
-          buyStock={buyStock}
-          sellStock={sellStock}
-          maPurchased={maPurchased}
-          bollingerPurchased={bollingerPurchased}
-          macdPurchased={macdPurchased}
-          obvPurchased={obvPurchased}
           onClose={closePopup}
         />
       )}
@@ -585,13 +553,19 @@ function SellHelpOverlay({ onClose }) {
 // ─────────────────────────────────────────────────────────
 // 팝업 컨테이너 — 분석/매수/매도 공통 모달
 // ─────────────────────────────────────────────────────────
-function PopupOverlay(props) {
-  const {
-    activePopup, selectedStockId, setSelectedStockId,
-    activeStocks, prices, portfolio, cash, buyStock, sellStock,
-    maPurchased, bollingerPurchased, macdPurchased, obvPurchased,
-    onClose,
-  } = props
+function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClose }) {
+  // store 의존 데이터는 부모(MarketPage)에서 prop drilling 대신 직접 구독
+  const activeStocks       = useGameStore((s) => s.activeStocks)
+  const prices             = useGameStore((s) => s.prices)
+  const portfolio          = useGameStore((s) => s.portfolio)
+  const cash               = useGameStore((s) => s.cash)
+  const buyStock           = useGameStore((s) => s.buyStock)
+  const sellStock          = useGameStore((s) => s.sellStock)
+  const maPurchased        = useGameStore((s) => s.maPurchased)
+  const bollingerPurchased = useGameStore((s) => s.bollingerPurchased)
+  const macdPurchased      = useGameStore((s) => s.macdPurchased)
+  const obvPurchased       = useGameStore((s) => s.obvPurchased)
+
   const [showAnalysisHelp, setShowAnalysisHelp] = useState(false)
   const [showBuyHelp, setShowBuyHelp] = useState(false)
   const [showSellHelp, setShowSellHelp] = useState(false)
@@ -614,29 +588,11 @@ function PopupOverlay(props) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 상단 우측 그려진 버튼 위 hotspot — 도움말 / 닫기 */}
-          <Hotspot
-            label="도움말"
-            className="absolute rounded-lg"
-            style={{
-              top: 'calc(2% + 11px)',
-              right: 'calc(14% + 22px)',
-              width: 'calc(10% - 20px)',
-              height: 'calc(7% - 10px)',
-            }}
-            onClick={() => setShowAnalysisHelp(true)}
-          />
-          <Hotspot
-            label="닫기"
-            className="absolute rounded-lg"
-            style={{
-              top: 'calc(2% + 11px)',
-              right: 'calc(3% + 27px)',
-              width: 'calc(10% - 24px)',
-              height: 'calc(7% - 10px)',
-            }}
-            onClick={onClose}
-          />
+          {/* 상단 우측 그려진 버튼 위 hotspot — 좌표는 HOTSPOT.analysis 상수 */}
+          <Hotspot label="도움말" className="absolute rounded-lg"
+            style={HOTSPOT.analysis.help} onClick={() => setShowAnalysisHelp(true)} />
+          <Hotspot label="닫기" className="absolute rounded-lg"
+            style={HOTSPOT.analysis.close} onClick={onClose} />
 
           {/* 도움말 오버레이 — 모달 안에 떠서 차트 위에 설명 표시 */}
           {showAnalysisHelp && (
@@ -644,7 +600,7 @@ function PopupOverlay(props) {
           )}
 
           {/* 콘텐츠 영역 — 좌측 그리드 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
-          <div className="absolute" style={{ top: '12%', left: '3%', right: '23%', bottom: '8%' }}>
+          <div className="absolute" style={MODAL_CONTENT_BOUNDS}>
             <StockAnalysisPanel
               stocks={activeStocks}
               prices={prices}
@@ -680,29 +636,11 @@ function PopupOverlay(props) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 상단 우측 그려진 버튼 위 hotspot — 도움말 / 닫기 */}
-          <Hotspot
-            label="도움말"
-            className="absolute rounded-lg"
-            style={{
-              top: 'calc(2% + 11px)',
-              right: 'calc(14% + 22px)',
-              width: 'calc(10% - 20px)',
-              height: 'calc(7% - 10px)',
-            }}
-            onClick={() => setShowBuyHelp(true)}
-          />
-          <Hotspot
-            label="닫기"
-            className="absolute rounded-lg"
-            style={{
-              top: 'calc(2% + 12px)',
-              right: 'calc(3% + 34px)',
-              width: 'calc(10% - 26px)',
-              height: 'calc(7% - 10px)',
-            }}
-            onClick={onClose}
-          />
+          {/* 상단 우측 그려진 버튼 위 hotspot — 좌표는 HOTSPOT.buy 상수 */}
+          <Hotspot label="도움말" className="absolute rounded-lg"
+            style={HOTSPOT.buy.help} onClick={() => setShowBuyHelp(true)} />
+          <Hotspot label="닫기" className="absolute rounded-lg"
+            style={HOTSPOT.buy.close} onClick={onClose} />
 
           {/* 도움말 오버레이 — 모달 안에 떠서 차트 위에 설명 표시 */}
           {showBuyHelp && (
@@ -710,7 +648,7 @@ function PopupOverlay(props) {
           )}
 
           {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
-          <div className="absolute" style={{ top: '12%', left: '3%', right: '23%', bottom: '7%' }}>
+          <div className="absolute" style={SELL_MODAL_CONTENT_BOUNDS}>
             <BulkBuyPanel
               stocks={activeStocks}
               prices={prices}
@@ -742,31 +680,11 @@ function PopupOverlay(props) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 상단 우측 그려진 버튼 위 hotspot — 도움말 / 닫기 */}
-          <Hotspot
-            label="도움말"
-            className="absolute rounded-lg"
-            style={{
-              top: 'calc(2% + 11px)',
-              right: 'calc(14% + 22px)',
-              width: 'calc(10% - 20px)',
-              height: 'calc(7% - 10px)',
-            }}
-            onClick={() => setShowSellHelp(true)}
-            glowColor="red"
-          />
-          <Hotspot
-            label="닫기"
-            className="absolute rounded-lg"
-            style={{
-              top: 'calc(2% + 12px)',
-              right: 'calc(3% + 34px)',
-              width: 'calc(10% - 26px)',
-              height: 'calc(7% - 10px)',
-            }}
-            onClick={onClose}
-            glowColor="red"
-          />
+          {/* 상단 우측 그려진 버튼 위 hotspot — 좌표는 HOTSPOT.sell 상수 */}
+          <Hotspot label="도움말" className="absolute rounded-lg" glowColor="red"
+            style={HOTSPOT.sell.help} onClick={() => setShowSellHelp(true)} />
+          <Hotspot label="닫기" className="absolute rounded-lg" glowColor="red"
+            style={HOTSPOT.sell.close} onClick={onClose} />
 
           {/* 도움말 오버레이 — 모달 안에 떠서 차트 위에 설명 표시 */}
           {showSellHelp && (
@@ -774,7 +692,7 @@ function PopupOverlay(props) {
           )}
 
           {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 제외) */}
-          <div className="absolute" style={{ top: '12%', left: '3%', right: '23%', bottom: '7%' }}>
+          <div className="absolute" style={SELL_MODAL_CONTENT_BOUNDS}>
             <BulkSellPanel
               stocks={activeStocks}
               prices={prices}
@@ -942,63 +860,6 @@ function StockAnalysisPanel({
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-// 차트 아래 빈 공간을 채우는 이번 주 정보 패널 — OHLC 4-카드 그리드 + 거래량 + 보유
-function WeekInfoPanel({ stockId, currentPrice, heldQty }) {
-  const turn = useGameStore((s) => s.turn)
-  const stockEntry = stockData.stocks.find((s) => s.realTicker === stockId)
-  if (!stockEntry) return null
-
-  // 현재 턴 캔들 (게임 prices 우선, 없으면 pregame 마지막 캔들)
-  const gamePrices = stockEntry.prices ?? []
-  const pregame = stockEntry.pregame_prices ?? []
-  const candle = (turn > 0 && gamePrices[turn - 1]) || pregame[pregame.length - 1]
-  if (!candle) return null
-
-  const { open, high, low, close, volume } = candle
-  const weekDiff = close - open
-  const weekTone = weekDiff > 0 ? 'up' : weekDiff < 0 ? 'down' : 'flat'
-
-  return (
-    <div className="mt-3 space-y-2">
-      {/* 시·고·저·종 4-카드 그리드 */}
-      <div className="grid grid-cols-4 gap-2">
-        <StatCard label="시가" value={open} />
-        <StatCard label="고가" value={high} toneClass="text-rise" />
-        <StatCard label="저가" value={low} toneClass="text-fall" />
-        <StatCard label="종가" value={close} highlight />
-      </div>
-
-      {/* 거래량 + 주간 변화 + 보유 정보 */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="flex items-baseline justify-between px-3 py-2 rounded-md border border-cyan-500/20 bg-slate-900/60 text-xs">
-          <span className="text-cyan-300/70 font-mono tracking-wider">📊 거래량</span>
-          <span className="text-cyan-100 font-mono tabular-nums">{volume.toLocaleString()}주</span>
-        </div>
-        <div className="flex items-baseline justify-between px-3 py-2 rounded-md border border-cyan-500/20 bg-slate-900/60 text-xs">
-          <span className="text-cyan-300/70 font-mono tracking-wider">📈 이번 주 변화</span>
-          <span className={`font-mono tabular-nums ${TONE_CLASS[weekTone]}`}>
-            {weekTone === 'flat'
-              ? '거의 그대로'
-              : `${weekTone === 'up' ? '🔺' : '🔻'} ${Math.abs(weekDiff).toLocaleString()}원`}
-          </span>
-        </div>
-      </div>
-
-      {/* 보유 시: 평가금액 박스 */}
-      {heldQty > 0 && (
-        <div className="flex items-baseline justify-between px-3 py-2 rounded-md border border-yellow-500/30 bg-yellow-500/5 text-xs">
-          <span className="text-yellow-300 font-mono tracking-wider">
-            💰 {heldQty}주 보유 중 · 현재가 {currentPrice.toLocaleString()}원
-          </span>
-          <span className="text-yellow-200 font-bold font-mono tabular-nums">
-            평가금액 {(heldQty * currentPrice).toLocaleString()}원
-          </span>
-        </div>
-      )}
     </div>
   )
 }
@@ -1555,24 +1416,6 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
             : `💸 ${selectedCount}종목 · ${totalQty}주 일괄 매도`}
         </button>
       </div>
-    </div>
-  )
-}
-
-function StatCard({ label, value, toneClass = 'text-cyan-100', highlight }) {
-  return (
-    <div
-      className={`rounded-md border px-2 py-1.5 min-w-0 ${
-        highlight
-          ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_10px_rgba(34,211,238,0.15)]'
-          : 'border-cyan-500/20 bg-slate-900/60'
-      }`}
-    >
-      <p className="text-[10px] text-cyan-300/60 font-mono tracking-wider truncate">{label}</p>
-      <p className={`text-sm font-bold font-mono tabular-nums truncate ${toneClass}`}>
-        {value?.toLocaleString()}
-        <span className="text-[10px] text-cyan-300/60 ml-0.5">원</span>
-      </p>
     </div>
   )
 }

@@ -38,6 +38,10 @@ export function calcBollinger(closes, period = 20) {
   })
 }
 
+// MACD = EMA12 − EMA26, Signal = MACD의 EMA9, Histogram = MACD − Signal
+// firstMacd: ema26가 처음 값을 갖는 인덱스(=25). 이전은 모두 null
+// macdSlice: result[firstMacd..]의 MACD 값만 추출한 부분 배열 (signal EMA9 입력용)
+// signalSlice → 결과 매핑: signalSlice[j]는 macdSlice[j], 즉 원본 인덱스 firstMacd + j 에 대응
 export function calcMACD(closes) {
   const empty = { macd: null, signal: null, histogram: null }
   const result = closes.map(() => ({ ...empty }))
@@ -51,7 +55,7 @@ export function calcMACD(closes) {
   const macdSlice = result.slice(firstMacd).map(d => d.macd)
   const signalSlice = calcEMA(macdSlice, 9)
   signalSlice.forEach((sig, j) => {
-    const gi = firstMacd + j
+    const gi = firstMacd + j  // 부분 배열 인덱스 j → 원본 인덱스 firstMacd + j
     result[gi].signal = sig
     if (result[gi].macd !== null && sig !== null) {
       result[gi].histogram = result[gi].macd - sig

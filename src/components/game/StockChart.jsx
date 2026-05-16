@@ -1,12 +1,10 @@
 // 종목별 주봉 캔들스틱 차트 - 세로 스택 멀티 패널 (메인 차트 + MACD + OBV)
 // 각 지표 패널은 항상 노출되며 미구매 시 잠금 상태(LockedHint) 표시
 
+import { useMemo } from "react"
 import stockData from "../../data/stockData.json"
 import { useGameStore } from "../../store/gameStore"
-import {
-  calcMA, calcBollinger, calcMACD, calcOBV,
-  getMaSignal, getBollingerSignal, getMacdSignal, getObvSignal,
-} from "./chartUtils"
+import { calcMA, calcBollinger, calcMACD, calcOBV } from "./chartUtils"
 
 const SVG_W = 700
 const PAD = { top: 10, right: 10, bottom: 22, left: 60 }
@@ -141,20 +139,6 @@ function XAxisLabels({ dates, total, svgH }) {
   )
 }
 
-function SignalBadge({ text, type }) {
-  const colors = {
-    bull:    "bg-red-900/60 text-red-300 border-red-700",
-    bear:    "bg-blue-900/60 text-blue-300 border-blue-700",
-    warn:    "bg-yellow-900/60 text-yellow-300 border-yellow-700",
-    neutral: "bg-gray-800 text-gray-400 border-gray-600",
-  }
-  return (
-    <span className={"text-[10px] px-2 py-0.5 rounded border " + (colors[type] ?? colors.neutral)}>
-      {text}
-    </span>
-  )
-}
-
 function LegendLine({ color, dashed, label }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -213,11 +197,64 @@ function LockedHint() {
 
 // ─── 메인 컴포넌트 ───────────────────────────────────────────
 // props: stockId(realTicker), maPurchased, bollingerPurchased, macdPurchased, obvPurchased
+const CANDLE_H = 220
+const SUB_H    = 80
+
 export default function StockChart({ stockId, maPurchased, bollingerPurchased, macdPurchased, obvPurchased }) {
   const turn = useGameStore((s) => s.turn)
 
   const stockEntry = stockData.stocks.find((s) => s.realTicker === stockId)
-  if (!stockEntry) {
+
+  // 캔들·지표·Y축 스케일 — 종목/턴/구매 상태가 변할 때만 재계산
+  // (종목 전환·매수·매도마다 차트 전체가 재렌더되므로 메모이즈 효과 큼)
+  const chartData = useMemo(() => {
+    if (!stockEntry) return null
+
+    const pregame   = stockEntry.pregame_prices ?? []
+    const gamePrices = (stockEntry.prices ?? []).slice(0, turn)
+    const allCandles = [...pregame, ...gamePrices]
+    const total = allCandles.length
+
+    const dates   = allCandles.map((c) => c.date  ?? "")
+    const closes  = allCandles.map((c) => c.close)
+    const highs   = allCandles.map((c) => c.high  ?? c.close)
+    const lows    = allCandles.map((c) => c.low   ?? c.close)
+    const volumes = allCandles.map((c) => c.volume ?? 0)
+
+    const cw   = candleWidth(total)
+    const maxVol = Math.max(...volumes, 1)
+
+    // 지표 계산 (구매 시에만)
+    const ma5  = maPurchased        ? calcMA(closes, 5)        : []
+    const ma20 = maPurchased        ? calcMA(closes, 20)       : []
+    // calcBollinger는 [{upper, middle, lower}, ...] 객체 배열 반환 — polyline용으로 분리
+    const bollArr   = bollingerPurchased ? calcBollinger(closes) : []
+    const bollUpper = bollArr.map((b) => (b ? b.upper : null))
+    const bollLower = bollArr.map((b) => (b ? b.lower : null))
+
+    // Y축 스케일 — 캔들 + 볼린저 모두 포함해서 라인이 잘리지 않게
+    const bollUpperVals = bollUpper.filter((v) => v !== null && v !== undefined)
+    const bollLowerVals = bollLower.filter((v) => v !== null && v !== undefined)
+    const minV = Math.min(...lows, ...bollLowerVals) * 0.995
+    const maxV = Math.max(...highs, ...bollUpperVals) * 1.005
+
+    // calcMACD는 [{macd, signal, histogram}, ...] 객체 배열 반환 — 분리
+    const macdArr    = macdPurchased ? calcMACD(closes) : []
+    const macdLine   = macdArr.map((m) => (m ? m.macd : null))
+    const signalLine = macdArr.map((m) => (m ? m.signal : null))
+    const histLine   = macdArr.map((m) => (m ? m.histogram : null))
+    // calcOBV는 ohlcv 객체 배열(close, volume 포함)을 받음
+    const obv = obvPurchased ? calcOBV(allCandles) : []
+
+    return {
+      pregame, allCandles, total, dates, volumes,
+      cw, maxVol, minV, maxV,
+      ma5, ma20, bollUpper, bollLower,
+      macdLine, signalLine, histLine, obv,
+    }
+  }, [stockEntry, turn, maPurchased, bollingerPurchased, macdPurchased, obvPurchased])
+
+  if (!stockEntry || !chartData) {
     return (
       <div className="flex items-center justify-center h-40 text-cyan-300/40 text-sm font-mono tracking-wider">
         차트 데이터 없음
@@ -225,49 +262,12 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
     )
   }
 
-  // pregame 전체 + 현재 턴까지의 게임 데이터
-  const pregame   = stockEntry.pregame_prices ?? []
-  const gamePrices = (stockEntry.prices ?? []).slice(0, turn)
-  const allCandles = [...pregame, ...gamePrices]
-  const total = allCandles.length
-
-  const dates   = allCandles.map((c) => c.date  ?? "")
-  const closes  = allCandles.map((c) => c.close)
-  const highs   = allCandles.map((c) => c.high  ?? c.close)
-  const lows    = allCandles.map((c) => c.low   ?? c.close)
-  const volumes = allCandles.map((c) => c.volume ?? 0)
-
-  const cw   = candleWidth(total)
-  const maxVol = Math.max(...volumes, 1)
-
-  const CANDLE_H = 220
-  const SUB_H    = 80
-
-  // 지표 계산 (구매 시에만)
-  const ma5  = maPurchased        ? calcMA(closes, 5)         : []
-  const ma20 = maPurchased        ? calcMA(closes, 20)        : []
-  // calcBollinger는 [{upper, middle, lower}, ...] 객체 배열 반환 — polyline용으로 분리
-  const bollArr   = bollingerPurchased ? calcBollinger(closes) : []
-  const bollUpper = bollArr.map((b) => (b ? b.upper : null))
-  const bollLower = bollArr.map((b) => (b ? b.lower : null))
-
-  // Y축 스케일 — 캔들 + 볼린저 + MA 모두 포함해서 라인이 잘리지 않게
-  const bollUpperVals = bollUpper.filter((v) => v !== null && v !== undefined)
-  const bollLowerVals = bollLower.filter((v) => v !== null && v !== undefined)
-  const minV = Math.min(...lows, ...bollLowerVals) * 0.995
-  const maxV = Math.max(...highs, ...bollUpperVals) * 1.005
-  // calcMACD는 [{macd, signal, histogram}, ...] 객체 배열 반환 — 분리
-  const macdArr    = macdPurchased ? calcMACD(closes) : []
-  const macdLine   = macdArr.map((m) => (m ? m.macd : null))
-  const signalLine = macdArr.map((m) => (m ? m.signal : null))
-  const histLine   = macdArr.map((m) => (m ? m.histogram : null))
-  // calcOBV는 ohlcv 객체 배열(close, volume 포함)을 받음
-  const obv  = obvPurchased       ? calcOBV(allCandles)       : []
-
-  const maSignal   = maPurchased        ? getMaSignal(ma5, ma20)              : null
-  const bollSignal = bollingerPurchased ? getBollingerSignal(bollArr, closes) : null
-  const macdSignal = macdPurchased      ? getMacdSignal(macdArr)              : null
-  const obvSignal  = obvPurchased       ? getObvSignal(obv)                   : null
+  const {
+    pregame, allCandles, total, dates, volumes,
+    cw, maxVol, minV, maxV,
+    ma5, ma20, bollUpper, bollLower,
+    macdLine, signalLine, histLine, obv,
+  } = chartData
 
   return (
     <div className="space-y-5 w-full text-white">
