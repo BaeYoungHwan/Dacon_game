@@ -109,7 +109,8 @@ export function getBollingerSignal(bollinger, closes) {
   const bl = bollinger[last]
   if (!bl || bl.upper === null) return null
   const price = closes[last]
-  const pctB = (price - bl.lower) / (bl.upper - bl.lower)
+  const bandWidth = bl.upper - bl.lower
+  const pctB = bandWidth === 0 ? 0.5 : (price - bl.lower) / bandWidth
   let bandSignal = null
   if (pctB > 0.9) bandSignal = '상단밴드 근접 — 과매수 주의'
   else if (pctB < 0.1) bandSignal = '하단밴드 근접 — 과매도 구간'
