@@ -209,7 +209,7 @@ export default function GamePage() {
         style={{
           width: 'min(100vw, calc(100vh * 1695 / 928))',
           height: 'min(100vh, calc(100vw * 928 / 1695))',
-          backgroundImage: "url('/images/game-bg.png')",
+          backgroundImage: "url('/images/game-bg.webp')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
