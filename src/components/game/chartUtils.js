@@ -1,10 +1,26 @@
 // 기술 지표 계산 유틸리티 — indicatorsPurchased 시 StockChart에서 사용
 
+import stockData from '../../data/stockData.json'
+
+// 종목의 최근 N주 종가 추출 — pregame + 현재 턴까지의 게임 데이터를 합쳐 마지막 N개
+// 스파크라인·전주대비 계산용 (사이드바 / BulkBuyPanel / BulkSellPanel 공통 사용)
+export function getRecentCloses(stockId, turn, n = 8) {
+  const stockEntry = stockData.stocks.find((s) => s.realTicker === stockId)
+  if (!stockEntry) return []
+  const pregame = stockEntry.pregame_prices ?? []
+  const gamePrices = (stockEntry.prices ?? []).slice(0, turn)
+  return [...pregame, ...gamePrices].slice(-n).map((c) => c.close)
+}
+
+// 이동 평균 — 표준은 period-1 인덱스까지 null이지만, pregame 데이터가 짧은 우리 게임에선
+// 차트 좌측이 비어 보임. 워밍업 동안엔 사용 가능한 만큼만 평균내는 "확장 평균(expanding MA)"
+// 방식으로 변경 → 인덱스 0부터 값이 채워져 라인이 전 폭에 그려짐
 export function calcMA(closes, period) {
   return closes.map((_, i) => {
-    if (i < period - 1) return null
-    const slice = closes.slice(i - period + 1, i + 1)
-    return slice.reduce((a, b) => a + b, 0) / period
+    const start = Math.max(0, i - period + 1)
+    const slice = closes.slice(start, i + 1)
+    if (slice.length === 0) return null
+    return slice.reduce((a, b) => a + b, 0) / slice.length
   })
 }
 
@@ -19,17 +35,25 @@ function calcEMA(closes, period) {
   return result
 }
 
+// 볼린저밴드 — calcMA의 확장 방식과 동기. 표본이 1개일 땐 std=0이라 band 폭이 0
+// (좌측 끝에서 시작해 데이터가 쌓이며 자연스럽게 벌어짐 — funnel 형태)
 export function calcBollinger(closes, period = 20) {
   const ma = calcMA(closes, period)
   return closes.map((_, i) => {
     if (ma[i] === null) return { upper: null, middle: null, lower: null }
-    const slice = closes.slice(i - period + 1, i + 1)
-    const variance = slice.reduce((sum, v) => sum + (v - ma[i]) ** 2, 0) / period
+    const start = Math.max(0, i - period + 1)
+    const slice = closes.slice(start, i + 1)
+    if (slice.length < 2) return { upper: ma[i], middle: ma[i], lower: ma[i] }
+    const variance = slice.reduce((sum, v) => sum + (v - ma[i]) ** 2, 0) / slice.length
     const std = Math.sqrt(variance)
     return { upper: ma[i] + 2 * std, middle: ma[i], lower: ma[i] - 2 * std }
   })
 }
 
+// MACD = EMA12 − EMA26, Signal = MACD의 EMA9, Histogram = MACD − Signal
+// firstMacd: ema26가 처음 값을 갖는 인덱스(=25). 이전은 모두 null
+// macdSlice: result[firstMacd..]의 MACD 값만 추출한 부분 배열 (signal EMA9 입력용)
+// signalSlice → 결과 매핑: signalSlice[j]는 macdSlice[j], 즉 원본 인덱스 firstMacd + j 에 대응
 export function calcMACD(closes) {
   const empty = { macd: null, signal: null, histogram: null }
   const result = closes.map(() => ({ ...empty }))
@@ -43,7 +67,7 @@ export function calcMACD(closes) {
   const macdSlice = result.slice(firstMacd).map(d => d.macd)
   const signalSlice = calcEMA(macdSlice, 9)
   signalSlice.forEach((sig, j) => {
-    const gi = firstMacd + j
+    const gi = firstMacd + j  // 부분 배열 인덱스 j → 원본 인덱스 firstMacd + j
     result[gi].signal = sig
     if (result[gi].macd !== null && sig !== null) {
       result[gi].histogram = result[gi].macd - sig

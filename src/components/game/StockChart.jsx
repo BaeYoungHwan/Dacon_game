@@ -1,12 +1,10 @@
 // 종목별 주봉 캔들스틱 차트 - 세로 스택 멀티 패널 (메인 차트 + MACD + OBV)
 // 각 지표 패널은 항상 노출되며 미구매 시 잠금 상태(LockedHint) 표시
 
+import { useMemo } from "react"
 import stockData from "../../data/stockData.json"
 import { useGameStore } from "../../store/gameStore"
-import {
-  calcMA, calcBollinger, calcMACD, calcOBV,
-  getMaSignal, getBollingerSignal, getMacdSignal, getObvSignal,
-} from "./chartUtils"
+import { calcMA, calcBollinger, calcMACD, calcOBV } from "./chartUtils"
 
 const SVG_W = 700
 const PAD = { top: 10, right: 10, bottom: 22, left: 60 }
@@ -82,6 +80,39 @@ function YAxis({ minV, maxV, svgH, steps = 5 }) {
   )
 }
 
+// 큰 숫자 단축 표기 — OBV 같은 누적 거래량용 (1.2B / 600M / 12K)
+function formatCompactNumber(v) {
+  const abs = Math.abs(v)
+  if (abs >= 1e9) return (v / 1e9).toFixed(1) + 'B'
+  if (abs >= 1e6) return (v / 1e6).toFixed(1) + 'M'
+  if (abs >= 1e3) return (v / 1e3).toFixed(1) + 'K'
+  return Math.round(v).toString()
+}
+
+// 서브 패널용 Y축 — 단계 적게, 포매터 커스터마이즈 가능, 라벨 추가 여백(extraGap) 지원
+function SubYAxis({ minV, maxV, svgH, formatter, steps = 3, extraGap = 0 }) {
+  const labels = Array.from({ length: steps }, (_, i) => {
+    const frac = i / (steps - 1)
+    const v = minV + (maxV - minV) * frac
+    return { v, y: toY(v, minV, maxV, svgH) }
+  })
+  const fmt = formatter ?? ((v) => Math.round(v).toLocaleString())
+  return (
+    <>
+      {labels.map(({ v, y }, i) => (
+        <g key={i}>
+          <line x1={PAD.left} x2={SVG_W - PAD.right} y1={y} y2={y}
+            stroke="rgba(34,211,238,0.15)" strokeDasharray="2 4" />
+          <text x={PAD.left - 4 - extraGap} y={y} textAnchor="end" dominantBaseline="middle"
+            fill="#a5f3fc" fontSize={11} fontFamily={AXIS_FONT}>
+            {fmt(v)}
+          </text>
+        </g>
+      ))}
+    </>
+  )
+}
+
 function XAxisLabels({ dates, total, svgH }) {
   if (!total) return null
   const count = Math.min(7, total)
@@ -108,28 +139,14 @@ function XAxisLabels({ dates, total, svgH }) {
   )
 }
 
-function SignalBadge({ text, type }) {
-  const colors = {
-    bull:    "bg-red-900/60 text-red-300 border-red-700",
-    bear:    "bg-blue-900/60 text-blue-300 border-blue-700",
-    warn:    "bg-yellow-900/60 text-yellow-300 border-yellow-700",
-    neutral: "bg-gray-800 text-gray-400 border-gray-600",
-  }
-  return (
-    <span className={"text-[10px] px-2 py-0.5 rounded border " + (colors[type] ?? colors.neutral)}>
-      {text}
-    </span>
-  )
-}
-
 function LegendLine({ color, dashed, label }) {
   return (
-    <div className="flex items-center gap-1">
-      <svg width={14} height={8} viewBox="0 0 14 8">
-        <line x1={0} x2={14} y1={4} y2={4} stroke={color} strokeWidth={2}
+    <div className="flex items-center gap-1.5">
+      <svg width={16} height={8} viewBox="0 0 16 8">
+        <line x1={0} x2={16} y1={4} y2={4} stroke={color} strokeWidth={2}
           strokeDasharray={dashed ? "3 2" : undefined} />
       </svg>
-      <span className="text-[10px] text-cyan-300/70 font-mono tracking-wider">{label}</span>
+      <span className="text-xs text-cyan-300/80 font-mono tracking-wider">{label}</span>
     </div>
   )
 }
@@ -180,11 +197,64 @@ function LockedHint() {
 
 // ─── 메인 컴포넌트 ───────────────────────────────────────────
 // props: stockId(realTicker), maPurchased, bollingerPurchased, macdPurchased, obvPurchased
+const CANDLE_H = 220
+const SUB_H    = 80
+
 export default function StockChart({ stockId, maPurchased, bollingerPurchased, macdPurchased, obvPurchased }) {
   const turn = useGameStore((s) => s.turn)
 
   const stockEntry = stockData.stocks.find((s) => s.realTicker === stockId)
-  if (!stockEntry) {
+
+  // 캔들·지표·Y축 스케일 — 종목/턴/구매 상태가 변할 때만 재계산
+  // (종목 전환·매수·매도마다 차트 전체가 재렌더되므로 메모이즈 효과 큼)
+  const chartData = useMemo(() => {
+    if (!stockEntry) return null
+
+    const pregame   = stockEntry.pregame_prices ?? []
+    const gamePrices = (stockEntry.prices ?? []).slice(0, turn)
+    const allCandles = [...pregame, ...gamePrices]
+    const total = allCandles.length
+
+    const dates   = allCandles.map((c) => c.date  ?? "")
+    const closes  = allCandles.map((c) => c.close)
+    const highs   = allCandles.map((c) => c.high  ?? c.close)
+    const lows    = allCandles.map((c) => c.low   ?? c.close)
+    const volumes = allCandles.map((c) => c.volume ?? 0)
+
+    const cw   = candleWidth(total)
+    const maxVol = Math.max(...volumes, 1)
+
+    // 지표 계산 (구매 시에만)
+    const ma5  = maPurchased        ? calcMA(closes, 5)        : []
+    const ma20 = maPurchased        ? calcMA(closes, 20)       : []
+    // calcBollinger는 [{upper, middle, lower}, ...] 객체 배열 반환 — polyline용으로 분리
+    const bollArr   = bollingerPurchased ? calcBollinger(closes) : []
+    const bollUpper = bollArr.map((b) => (b ? b.upper : null))
+    const bollLower = bollArr.map((b) => (b ? b.lower : null))
+
+    // Y축 스케일 — 캔들 + 볼린저 모두 포함해서 라인이 잘리지 않게
+    const bollUpperVals = bollUpper.filter((v) => v !== null && v !== undefined)
+    const bollLowerVals = bollLower.filter((v) => v !== null && v !== undefined)
+    const minV = Math.min(...lows, ...bollLowerVals) * 0.995
+    const maxV = Math.max(...highs, ...bollUpperVals) * 1.005
+
+    // calcMACD는 [{macd, signal, histogram}, ...] 객체 배열 반환 — 분리
+    const macdArr    = macdPurchased ? calcMACD(closes) : []
+    const macdLine   = macdArr.map((m) => (m ? m.macd : null))
+    const signalLine = macdArr.map((m) => (m ? m.signal : null))
+    const histLine   = macdArr.map((m) => (m ? m.histogram : null))
+    // calcOBV는 ohlcv 객체 배열(close, volume 포함)을 받음
+    const obv = obvPurchased ? calcOBV(allCandles) : []
+
+    return {
+      pregame, allCandles, total, dates, volumes,
+      cw, maxVol, minV, maxV,
+      ma5, ma20, bollUpper, bollLower,
+      macdLine, signalLine, histLine, obv,
+    }
+  }, [stockEntry, turn, maPurchased, bollingerPurchased, macdPurchased, obvPurchased])
+
+  if (!stockEntry || !chartData) {
     return (
       <div className="flex items-center justify-center h-40 text-cyan-300/40 text-sm font-mono tracking-wider">
         차트 데이터 없음
@@ -192,58 +262,17 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
     )
   }
 
-  // pregame 전체 + 현재 턴까지의 게임 데이터
-  const pregame   = stockEntry.pregame_prices ?? []
-  const gamePrices = (stockEntry.prices ?? []).slice(0, turn)
-  const allCandles = [...pregame, ...gamePrices]
-  const total = allCandles.length
-
-  const dates   = allCandles.map((c) => c.date  ?? "")
-  const closes  = allCandles.map((c) => c.close)
-  const highs   = allCandles.map((c) => c.high  ?? c.close)
-  const lows    = allCandles.map((c) => c.low   ?? c.close)
-  const volumes = allCandles.map((c) => c.volume ?? 0)
-
-  const minV = Math.min(...lows)  * 0.995
-  const maxV = Math.max(...highs) * 1.005
-  const cw   = candleWidth(total)
-  const maxVol = Math.max(...volumes, 1)
-
-  const CANDLE_H = 220
-  const SUB_H    = 80
-
-  // 지표 계산 (구매 시에만)
-  const ma5  = maPurchased        ? calcMA(closes, 5)         : []
-  const ma20 = maPurchased        ? calcMA(closes, 20)        : []
-  // calcBollinger는 [{upper, middle, lower}, ...] 객체 배열 반환 — polyline용으로 분리
-  const bollArr   = bollingerPurchased ? calcBollinger(closes) : []
-  const bollUpper = bollArr.map((b) => (b ? b.upper : null))
-  const bollLower = bollArr.map((b) => (b ? b.lower : null))
-  // calcMACD는 [{macd, signal, histogram}, ...] 객체 배열 반환 — 분리
-  const macdArr    = macdPurchased ? calcMACD(closes) : []
-  const macdLine   = macdArr.map((m) => (m ? m.macd : null))
-  const signalLine = macdArr.map((m) => (m ? m.signal : null))
-  const histLine   = macdArr.map((m) => (m ? m.histogram : null))
-  const obv  = obvPurchased       ? calcOBV(closes, volumes)  : []
-
-  const maSignal   = maPurchased        ? getMaSignal(ma5, ma20)              : null
-  const bollSignal = bollingerPurchased ? getBollingerSignal(bollArr, closes) : null
-  const macdSignal = macdPurchased      ? getMacdSignal(macdArr)              : null
-  const obvSignal  = obvPurchased       ? getObvSignal(obv)                   : null
+  const {
+    pregame, allCandles, total, dates, volumes,
+    cw, maxVol, minV, maxV,
+    ma5, ma20, bollUpper, bollLower,
+    macdLine, signalLine, histLine, obv,
+  } = chartData
 
   return (
     <div className="space-y-5 w-full text-white">
-      {/* === 메인 차트 패널 — 캔들 + 거래량 + 신호 배지 === */}
+      {/* === 메인 차트 패널 — 캔들 + 거래량 === */}
       <PanelFrame label="메인 차트" tone="violet">
-        {/* 신호 배지 */}
-        {(maSignal || bollSignal || macdSignal || obvSignal) && (
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            {maSignal   && <SignalBadge text={maSignal.text}   type={maSignal.type} />}
-            {bollSignal && <SignalBadge text={bollSignal.text} type={bollSignal.type} />}
-            {macdSignal && <SignalBadge text={macdSignal.text} type={macdSignal.type} />}
-            {obvSignal  && <SignalBadge text={obvSignal.text}  type={obvSignal.type} />}
-          </div>
-        )}
         {/* 범례 (MA / 볼린저) */}
         {(maPurchased || bollingerPurchased) && (
           <div className="flex flex-wrap gap-3 mb-1">
@@ -300,79 +329,25 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
               })}
               {maPurchased && ma5.length > 0 && (
                 <polyline points={buildPolylinePoints(ma5, total, minV, maxV, CANDLE_H)}
-                  fill="none" stroke="#f59e0b" strokeWidth={1.8} />
+                  fill="none" stroke="#f59e0b" strokeWidth={1.2} strokeOpacity={0.9} />
               )}
               {maPurchased && ma20.length > 0 && (
                 <polyline points={buildPolylinePoints(ma20, total, minV, maxV, CANDLE_H)}
-                  fill="none" stroke="#60a5fa" strokeWidth={1.8} />
+                  fill="none" stroke="#60a5fa" strokeWidth={1.2} strokeOpacity={0.9} />
               )}
               {bollingerPurchased && bollUpper.length > 0 && (
                 <>
                   <polyline points={buildPolylinePoints(bollUpper, total, minV, maxV, CANDLE_H)}
-                    fill="none" stroke="#a78bfa" strokeWidth={1.4} strokeDasharray="3 2" />
+                    fill="none" stroke="#a78bfa" strokeWidth={1} strokeDasharray="3 2" strokeOpacity={0.85} />
                   <polyline points={buildPolylinePoints(bollLower, total, minV, maxV, CANDLE_H)}
-                    fill="none" stroke="#a78bfa" strokeWidth={1.4} strokeDasharray="3 2" />
+                    fill="none" stroke="#a78bfa" strokeWidth={1} strokeDasharray="3 2" strokeOpacity={0.85} />
                 </>
               )}
             </g>
-            {/* 고가 마커 — 빨강 배지 */}
-            {(() => {
-              let mi = 0
-              for (let i = 1; i < highs.length; i++) if (highs[i] > highs[mi]) mi = i
-              const hx = toX(mi, total)
-              const hy = toY(highs[mi], minV, maxV, CANDLE_H)
-              const textX = Math.min(Math.max(hx, PAD.left + 40), SVG_W - PAD.right - 40)
-              return (
-                <g>
-                  <text x={textX} y={hy - 8} textAnchor="middle"
-                    fill="#fca5a5" fontSize={9} fontFamily={AXIS_FONT}
-                    filter="url(#candleGlow)">
-                    최고 {Math.round(highs[mi]).toLocaleString()}
-                  </text>
-                </g>
-              )
-            })()}
-            {/* 저가 마커 — 시안 배지 */}
-            {(() => {
-              let mi = 0
-              for (let i = 1; i < lows.length; i++) if (lows[i] < lows[mi]) mi = i
-              const lx = toX(mi, total)
-              const ly = toY(lows[mi], minV, maxV, CANDLE_H)
-              const textX = Math.min(Math.max(lx, PAD.left + 40), SVG_W - PAD.right - 40)
-              return (
-                <g>
-                  <text x={textX} y={ly + 14} textAnchor="middle"
-                    fill="#67e8f9" fontSize={9} fontFamily={AXIS_FONT}
-                    filter="url(#candleGlow)">
-                    최저 {Math.round(lows[mi]).toLocaleString()}
-                  </text>
-                </g>
-              )
-            })()}
-            {/* 현재가 마커 — 우측 Y축에 시안 배지 */}
-            {(() => {
-              const last = closes[closes.length - 1]
-              const y = toY(last, minV, maxV, CANDLE_H)
-              const labelW = 56
-              return (
-                <g>
-                  <line x1={PAD.left} x2={SVG_W - PAD.right} y1={y} y2={y}
-                    stroke="rgba(34,211,238,0.4)" strokeDasharray="2 3" strokeWidth={1} />
-                  <rect x={SVG_W - PAD.right - labelW} y={y - 8}
-                    width={labelW} height={16}
-                    fill="rgba(34,211,238,0.85)" rx={2}
-                    filter="url(#candleGlow)" />
-                  <text x={SVG_W - PAD.right - 4} y={y + 3} textAnchor="end"
-                    fill="#0f172a" fontSize={10} fontFamily={AXIS_FONT} fontWeight="bold">
-                    {Math.round(last).toLocaleString()}
-                  </text>
-                </g>
-              )
-            })()}
           </svg>
         </div>
         {/* 거래량 라벨 + 막대 (캔들 색상 동기) */}
-        <p className="text-[10px] text-violet-300/70 font-mono tracking-wider mt-2 ml-1">거래량</p>
+        <p className="text-sm text-violet-300/80 font-mono tracking-wider mt-2 ml-1 font-bold">거래량</p>
         <div className="w-full" style={{ aspectRatio: `${SVG_W} / ${SUB_H}` }}>
           <svg
             viewBox={`0 0 ${SVG_W} ${SUB_H}`}
@@ -382,6 +357,11 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
             style={{ display: "block" }}
           >
             <NeonGlowDefs id="volGlow" stdDeviation={1.2} />
+            {/* Y축 — 0부터 최대 거래량까지, 단축 표기 */}
+            <SubYAxis minV={0} maxV={maxVol} svgH={SUB_H} steps={3}
+              formatter={formatCompactNumber} />
+            {/* X축 — 날짜 라벨 */}
+            <XAxisLabels dates={dates} total={total} svgH={SUB_H} />
             <g filter="url(#volGlow)">
               {volumes.map((v, i) => {
                 const barH  = (v / maxVol) * (SUB_H - PAD.top - PAD.bottom)
@@ -401,64 +381,28 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
         </div>
       </PanelFrame>
 
-      {/* === 모멘텀 펄스 (MACD) — 글로우 + 히스토그램 === */}
+      {/* === 모멘텀 펄스 (MACD) — 유효 히스토그램만 X축 전 폭으로 펼침 === */}
       <PanelFrame label="모멘텀 펄스 (MACD)" tone="violet" locked={!macdPurchased}>
         {macdPurchased ? (() => {
-          const vals = [...macdLine, ...signalLine].filter((v) => v !== null && v !== undefined)
-          const histVals = histLine.filter((v) => v !== null && v !== undefined)
-          const minM = Math.min(...vals, ...histVals, 0)
-          const maxM = Math.max(...vals, ...histVals, 0.001)
+          // MACD 워밍업(35주) 이전엔 null이라 그대로 두면 우측에 쏠림 — 유효 인덱스만 추출해 X축 재구성
+          const validHist = histLine
+            .map((h, i) => ({ h, originalIdx: i }))
+            .filter(({ h }) => h !== null && h !== undefined)
+          if (validHist.length === 0) {
+            return (
+              <div className="flex items-center justify-center py-6 text-cyan-300/40 text-xs font-mono tracking-wider">
+                MACD 데이터 준비 중... (35주 이상 필요)
+              </div>
+            )
+          }
+          const histVals = validHist.map(({ h }) => h)
+          const absMax = Math.max(...histVals.map(Math.abs), 0.001)
+          const minM = -absMax
+          const maxM = absMax
           const zeroY = toY(0, minM, maxM, SUB_H)
-          const histBarW = Math.max(1, candleWidth(total) * 0.5)
-          return (
-            <>
-              <div className="w-full" style={{ aspectRatio: `${SVG_W} / ${SUB_H}` }}>
-                <svg
-                  viewBox={`0 0 ${SVG_W} ${SUB_H}`}
-                  width="100%"
-                  height="100%"
-                  preserveAspectRatio="none"
-                  style={{ display: "block" }}
-                >
-                  <NeonGlowDefs id="macdGlow" stdDeviation={1.8} />
-                  {/* 0 기준선 */}
-                  <line x1={PAD.left} x2={SVG_W - PAD.right} y1={zeroY} y2={zeroY}
-                    stroke="rgba(34,211,238,0.15)" strokeDasharray="2 3" />
-                  <g filter="url(#macdGlow)">
-                    {/* 히스토그램 — MACD 와 Signal 차이 */}
-                    {histLine.map((h, i) => {
-                      if (h === null || h === undefined) return null
-                      const hy = toY(h, minM, maxM, SUB_H)
-                      const x = toX(i, total) - histBarW / 2
-                      const top = Math.min(hy, zeroY)
-                      const height = Math.max(Math.abs(hy - zeroY), 0.5)
-                      return (
-                        <rect key={i} x={x} y={top} width={histBarW} height={height}
-                          fill={h >= 0 ? '#60a5fa' : '#f87171'}
-                          fillOpacity={0.55} />
-                      )
-                    })}
-                    <polyline points={buildPolylinePoints(macdLine,   total, minM, maxM, SUB_H)}
-                      fill="none" stroke="#60a5fa" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-                    <polyline points={buildPolylinePoints(signalLine, total, minM, maxM, SUB_H)}
-                      fill="none" stroke="#f87171" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-                  </g>
-                </svg>
-              </div>
-              <div className="flex items-center gap-3 mt-1 ml-1">
-                <LegendLine color="#60a5fa" label="MACD" />
-                <LegendLine color="#f87171" label="Signal" />
-              </div>
-            </>
-          )
-        })() : <LockedHint />}
-      </PanelFrame>
-
-      {/* === 머니 플로우 (OBV) — 강한 시안 글로우 === */}
-      <PanelFrame label="머니 플로우 (OBV)" tone="emerald" locked={!obvPurchased}>
-        {obvPurchased && obv.length > 0 ? (() => {
-          const minO = Math.min(...obv)
-          const maxO = Math.max(...obv, minO + 1)
+          const macdTotal = validHist.length
+          const macdDates = validHist.map(({ originalIdx }) => dates[originalIdx])
+          const histBarW = Math.max(1.5, candleWidth(macdTotal) * 0.7)
           return (
             <div className="w-full" style={{ aspectRatio: `${SVG_W} / ${SUB_H}` }}>
               <svg
@@ -468,10 +412,61 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
                 preserveAspectRatio="none"
                 style={{ display: "block" }}
               >
-                <NeonGlowDefs id="obvGlow" stdDeviation={2.4} />
+                <NeonGlowDefs id="macdGlow" stdDeviation={1} />
+                <SubYAxis minV={minM} maxV={maxM} svgH={SUB_H} steps={3}
+                  formatter={(v) => v.toFixed(2)} extraGap={4} />
+                <XAxisLabels dates={macdDates} total={macdTotal} svgH={SUB_H} />
+                {/* 0 기준선 */}
+                <line x1={PAD.left} x2={SVG_W - PAD.right} y1={zeroY} y2={zeroY}
+                  stroke="rgba(34,211,238,0.4)" strokeDasharray="3 3" strokeWidth={1} />
+                {/* 히스토그램 막대 — 한국 증시 컨벤션: 양수(올라간) 빨강, 음수(내려간) 파랑 */}
+                <g filter="url(#macdGlow)">
+                  {validHist.map(({ h }, newIdx) => {
+                    const hy = toY(h, minM, maxM, SUB_H)
+                    const x = toX(newIdx, macdTotal) - histBarW / 2
+                    const top = Math.min(hy, zeroY)
+                    const height = Math.max(Math.abs(hy - zeroY), 0.5)
+                    return (
+                      <rect key={newIdx} x={x} y={top} width={histBarW} height={height}
+                        fill={h >= 0 ? '#ef4444' : '#3b82f6'}
+                        fillOpacity={0.85} />
+                    )
+                  })}
+                </g>
+              </svg>
+            </div>
+          )
+        })() : <LockedHint />}
+      </PanelFrame>
+
+      {/* === 머니 플로우 (OBV) — 강한 시안 글로우 === */}
+      <PanelFrame label="머니 플로우 (OBV)" tone="emerald" locked={!obvPurchased}>
+        {obvPurchased && obv.length > 0 ? (() => {
+          // 데이터 범위 — 0 강제 포함하지 않음 (값이 한 방향이어도 패널을 잘 활용)
+          const minO = Math.min(...obv)
+          const maxO = Math.max(...obv)
+          const range = maxO - minO
+          // 평평한 데이터(전부 동일) 방어
+          const safeMin = range === 0 ? minO - 1 : minO
+          const safeMax = range === 0 ? maxO + 1 : maxO
+          return (
+            <div className="w-full" style={{ aspectRatio: `${SVG_W} / ${SUB_H}` }}>
+              <svg
+                viewBox={`0 0 ${SVG_W} ${SUB_H}`}
+                width="100%"
+                height="100%"
+                preserveAspectRatio="none"
+                style={{ display: "block" }}
+              >
+                <NeonGlowDefs id="obvGlow" stdDeviation={1.4} />
+                {/* Y축 — 큰 숫자 단축 표기 (1.2B / 600M / 0) */}
+                <SubYAxis minV={safeMin} maxV={safeMax} svgH={SUB_H} steps={3}
+                  formatter={formatCompactNumber} />
+                {/* X축 — 날짜 라벨 */}
+                <XAxisLabels dates={dates} total={total} svgH={SUB_H} />
                 <g filter="url(#obvGlow)">
-                  <polyline points={buildPolylinePoints(obv, total, minO, maxO, SUB_H)}
-                    fill="none" stroke="#22d3ee" strokeWidth={2.4}
+                  <polyline points={buildPolylinePoints(obv, total, safeMin, safeMax, SUB_H)}
+                    fill="none" stroke="#22d3ee" strokeWidth={2.8}
                     strokeLinecap="round" strokeLinejoin="round" />
                 </g>
               </svg>
