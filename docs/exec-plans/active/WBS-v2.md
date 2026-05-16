@@ -195,6 +195,27 @@
 
 ---
 
+
+## 1.9 하네스 업그레이드 — claude-code-template 반영 (배영환)
+
+> 기간: 2026-05-16 | 담당: 배영환 | 출처: https://github.com/BaeYoungHwan/claude-code-template
+
+| WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
+|-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
+| 1.9.1 | [하네스] `.claude/commands/commit.md` 생성 — 커밋 자동화 슬래시 스킬 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | .claude/commands/commit.md | P1 |
+| 1.9.2 | [하네스] `.claude/commands/PR.md` 생성 — PR 생성 자동화 슬래시 스킬 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | .claude/commands/PR.md | P1 |
+| 1.9.3 | [하네스] `.claude/commands/ralph.md` 생성 — 완료 보장 루프 (plan→exec→verify→fix) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | .claude/commands/ralph.md | P1 |
+| 1.9.4 | [하네스] `.claude/commands/ultrawork.md` 생성 — 병렬 작업 최대화 (20~40% 토큰 절약) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | .claude/commands/ultrawork.md | P1 |
+| 1.9.5 | [하네스] `.claude/commands/deep-interview.md` 생성 — 소크라테스식 스펙 구체화 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | .claude/commands/deep-interview.md | P1 |
+| 1.9.6 | [하네스] `.claude/commands/close-project.md` 생성 — 11단계 프로젝트 종료 체크리스트 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | .claude/commands/close-project.md | P1 |
+| 1.9.7 | [하네스] `agents/security-reviewer.md` 생성 — OWASP Top 10 보안 심층 분석 에이전트 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | agents/security-reviewer.md | P1 |
+| 1.9.8 | [하네스] `agents/step-validator.md` 생성 — ultrawork 완료 후 lint/빌드/diff 검증 에이전트 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | agents/step-validator.md | P1 |
+| 1.9.9 | [하네스] `global-setup/` 생성 — notify.ps1(Windows 알림), context-bar.sh(상태바), install.sh | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.2 | global-setup/ | P2 |
+| 1.9.10 | [하네스] `scripts/executor.py` 생성 — WBS 체크박스 자동 실행기 (--dry-run/--retry-failed) | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | scripts/executor.py | P2 |
+| 1.9.11 | [하네스] `docs/exec-plans/completed/` 디렉토리 생성 — 완료 플랜 아카이브 | 배영환 | 완료 | 100% | 05/16 | 05/16 | 0.1 | docs/exec-plans/completed/ | P2 |
+
+---
+
 ## 브랜치 전략
 
 | 브랜치 | 담당자 | 연결 태스크 |
