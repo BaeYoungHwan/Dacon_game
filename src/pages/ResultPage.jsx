@@ -2,18 +2,7 @@ import { useGameStore, INITIAL_CASH, INITIAL_KOSPI } from '../store/gameStore'
 import { useLeaderboardStore } from '../store/leaderboardStore'
 import Leaderboard from '../components/leaderboard/Leaderboard'
 import GradeCard from '../components/game/GradeCard'
-
-// 초과수익률(%p) → 등급 라벨 (리더보드 제출용)
-const GRADE_LABELS = [
-  { label: '전설의 동학개미', threshold: 200 },
-  { label: '작전세력',        threshold: 50  },
-  { label: '큰손',            threshold: 0   },
-  { label: '슈퍼개미',        threshold: -10 },
-  { label: '개미',            threshold: -Infinity },
-]
-function getGradeLabel(excessPp) {
-  return GRADE_LABELS.find(g => excessPp >= g.threshold)?.label ?? '개미'
-}
+import { getGrade, calcExcessPp } from '../lib/grade'
 
 export default function ResultPage() {
   const { nickname, getFinalAssets, kospi, resetGame } = useGameStore()
@@ -22,8 +11,8 @@ export default function ResultPage() {
   const finalAssets = getFinalAssets()
   const myReturn    = (finalAssets - INITIAL_CASH) / INITIAL_CASH
   const kospiReturn = (kospi - INITIAL_KOSPI) / INITIAL_KOSPI
-  const excessPp    = (myReturn - kospiReturn) * 100
-  const gradeLabel  = getGradeLabel(excessPp)
+  const excessPp    = calcExcessPp(myReturn, kospiReturn)
+  const gradeLabel  = getGrade(excessPp).label
 
   const profit = finalAssets - INITIAL_CASH
 
