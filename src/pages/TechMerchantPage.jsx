@@ -34,7 +34,7 @@ if (typeof window !== 'undefined') {
 
 // 지표별 구매 비용
 const INDICATOR_COSTS = {
-  ma: 600_000,
+  ma: 300_000,
   bollinger: 900_000,
   macd: 1_200_000,
   obv: 600_000,
@@ -325,7 +325,7 @@ function IndicatorsView({ turn, cash, purchasedMap, buyIndicator }) {
       <p className="text-cyan-300/70 text-xs font-mono mb-3 tracking-wider">
         📊 구매한 지표는 거래소 차트에 영구 표시됩니다.
       </p>
-      {Object.entries(INDICATOR_COSTS).map(([key, cost]) => {
+      {Object.entries(INDICATOR_COSTS).sort(([a], [b]) => INDICATOR_UNLOCK_TURN[a] - INDICATOR_UNLOCK_TURN[b]).map(([key, cost]) => {
         const minTurn = INDICATOR_UNLOCK_TURN[key]
         const locked = turn < minTurn
         return (
