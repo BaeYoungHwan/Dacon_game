@@ -37,6 +37,50 @@ function splitStocks(stocks) {
   }
 }
 
+function generatePackage(hiddenStocks, prices) {
+  if (!hiddenStocks.length) return { packageStocks: [], packagePrice: 0 }
+
+  // 패키지 가격: 100만~200만원 (10만원 단위)
+  const packagePrice = (Math.floor(Math.random() * 11) + 10) * 100_000
+
+  const minTotal = packagePrice * 0.9
+  const maxTotal = packagePrice * 1.1
+
+  const pool = hiddenStocks.map(s => ({ ...s, currentPrice: prices[s.id] ?? s.price }))
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+
+  const selected = []
+  let total = 0
+  for (const stock of pool) {
+    if (total + stock.currentPrice <= maxTotal) {
+      selected.push(stock)
+      total += stock.currentPrice
+      if (total >= minTotal) break
+    }
+  }
+
+  // 종목 합이 목표가보다 너무 낮으면 전체 포함 후 가격 맞춤
+  if (total < minTotal) {
+    const allTotal = pool.reduce((s, x) => s + x.currentPrice, 0)
+    const fallbackPrice = Math.min(
+      Math.max(Math.round(allTotal / 10_000) * 10_000, 1_000_000),
+      2_000_000
+    )
+    return {
+      packageStocks: pool.sort((a, b) => a.currentPrice - b.currentPrice).map(({ currentPrice, ...s }) => s),
+      packagePrice: fallbackPrice,
+    }
+  }
+
+  return {
+    packageStocks: selected.sort((a, b) => a.currentPrice - b.currentPrice).map(({ currentPrice, ...s }) => s),
+    packagePrice,
+  }
+}
+
 export const useGameStore = create(
   persist(
     (set, get) => ({
@@ -53,6 +97,8 @@ export const useGameStore = create(
       activeStocks: [],
       hiddenStocks: [],
       unlockedStockIds: [],
+      packageStocks: [],
+      packagePrice: 0,
       maPurchased: false,
       bollingerPurchased: false,
       macdPurchased: false,
@@ -77,6 +123,7 @@ export const useGameStore = create(
             stockDataByTicker[s.id]?.prices[0]?.close ?? s.price,
           ])
         )
+        const { packageStocks, packagePrice } = generatePackage(hidden, allPrices)
         const initialTurn = progressTurn(1, [...active, ...hidden])
         set({
           page: 'intro',
@@ -88,6 +135,8 @@ export const useGameStore = create(
           activeStocks: active,
           hiddenStocks: hidden,
           unlockedStockIds: [],
+          packageStocks,
+          packagePrice,
           maPurchased: false,
           bollingerPurchased: false,
           macdPurchased: false,
@@ -157,6 +206,21 @@ export const useGameStore = create(
         return true
       },
 
+      unlockPackage: () => {
+        const { cash, packageStocks, packagePrice, hiddenStocks, activeStocks, unlockedStockIds } = get()
+        if (!packageStocks.length || packagePrice > cash) return false
+        const ids = packageStocks.map(s => s.id)
+        set({
+          cash: cash - packagePrice,
+          unlockedStockIds: [...unlockedStockIds, ...ids],
+          hiddenStocks: hiddenStocks.filter(s => !ids.includes(s.id)),
+          activeStocks: [...activeStocks, ...packageStocks],
+          packageStocks: [],
+          packagePrice: 0,
+        })
+        return true
+      },
+
       // key: "ma" | "bollinger" | "macd" | "obv"
       buyIndicator: (key, cost) => {
         const { cash } = get()
@@ -190,6 +254,8 @@ export const useGameStore = create(
           activeStocks: [],
           hiddenStocks: [],
           unlockedStockIds: [],
+          packageStocks: [],
+          packagePrice: 0,
           maPurchased: false,
           bollingerPurchased: false,
           macdPurchased: false,
@@ -215,6 +281,8 @@ export const useGameStore = create(
         activeStocks: state.activeStocks,
         hiddenStocks: state.hiddenStocks,
         unlockedStockIds: state.unlockedStockIds,
+        packageStocks: state.packageStocks,
+        packagePrice: state.packagePrice,
         maPurchased: state.maPurchased,
         bollingerPurchased: state.bollingerPurchased,
         macdPurchased: state.macdPurchased,
