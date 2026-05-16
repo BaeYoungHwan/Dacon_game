@@ -336,7 +336,10 @@ export const useGameStore = create(
         exchangeRate: state.exchangeRate,
         currentNews: state.currentNews,
         currentGlobalNews: state.currentGlobalNews,
-        insiderTip: state.insiderTip,
+        // nextClose·nextRatio는 미래 정보 — localStorage 노출 방지
+        insiderTip: state.insiderTip
+          ? (({ nextClose: _nc, nextRatio: _nr, ...safe }) => safe)(state.insiderTip)
+          : null,
       }),
     },
   ),
