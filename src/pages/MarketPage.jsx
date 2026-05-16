@@ -19,7 +19,7 @@
 import { useState, useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import StockChart from '../components/game/StockChart'
-import stockData from '../data/stockData.json'
+import { getRecentCloses } from '../components/game/chartUtils'
 
 // 도움말 자동 표시 여부 기억용 sessionStorage 키 — 한 게임당 1회 자동 노출
 const MARKET_HELP_SEEN_KEY = 'market-help-seen'
@@ -58,8 +58,8 @@ const HOTSPOT = {
 }
 
 // 모달 콘텐츠 영역 좌표 — 캐릭터·말풍선 영역 제외
-const MODAL_CONTENT_BOUNDS = { top: '12%', left: '3%', right: '23%', bottom: '8%' }
-const SELL_MODAL_CONTENT_BOUNDS = { top: '12%', left: '3%', right: '23%', bottom: '7%' }
+const ANALYSIS_CONTENT_BOUNDS = { top: '12%', left: '3%', right: '23%', bottom: '8%' }  // 분석 모달 전용
+const TRADE_CONTENT_BOUNDS    = { top: '12%', left: '3%', right: '23%', bottom: '7%' }  // 매수·매도 모달 공용
 
 // 모듈 로드 시점에 1회 구독 — 새 게임 시작(page: 'start' → 다른 페이지) 신호 감지 시 플래그 초기화
 // → 게임을 새로 시작할 때마다 거래소 첫 진입에서 도움말이 다시 자동 노출됨
@@ -185,10 +185,68 @@ function Hotspot({ className, style, label, onClick, glowColor = 'cyan' }) {
 // ─────────────────────────────────────────────────────────
 // 종목분석 도움말 오버레이 — 차트 각 구성 요소 설명
 // ─────────────────────────────────────────────────────────
-function HelpSection({ icon, title, badge, children }) {
+// 도움말 오버레이 공통 래퍼 — backdrop·헤더·닫기 버튼·하단 안내 공유, tone(cyan/rose)으로 분기
+const HELP_TONE = {
+  cyan: {
+    border: 'border-cyan-500/60',
+    shadow: 'shadow-[0_0_40px_rgba(34,211,238,0.25)]',
+    headerText: 'text-cyan-300',
+    headerBorder: 'border-cyan-500/30',
+    accentBar: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.7)]',
+    close: 'text-cyan-300 hover:text-cyan-100',
+    scrollbar: 'scrollbar-cyan',
+    footer: 'text-cyan-300/50',
+  },
+  rose: {
+    border: 'border-rose-500/60',
+    shadow: 'shadow-[0_0_40px_rgba(244,63,94,0.25)]',
+    headerText: 'text-rose-300',
+    headerBorder: 'border-rose-500/30',
+    accentBar: 'bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.7)]',
+    close: 'text-rose-300 hover:text-rose-100',
+    scrollbar: 'scrollbar-rose',
+    footer: 'text-rose-300/50',
+  },
+}
+
+function HelpOverlayShell({ title = '도움말', tone = 'cyan', onClose, children }) {
+  const t = HELP_TONE[tone] ?? HELP_TONE.cyan
+  return (
+    <div
+      className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6 animate-page-enter"
+      onClick={onClose}
+    >
+      <div
+        className={`relative max-w-2xl w-full max-h-full overflow-y-auto ${t.scrollbar} bg-gradient-to-b from-slate-900 to-slate-950 border-2 ${t.border} rounded-xl p-6 ${t.shadow}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={`flex justify-between items-baseline mb-4 pb-3 border-b ${t.headerBorder}`}>
+          <h2 className={`flex items-center gap-2 text-xl font-bold ${t.headerText} font-mono tracking-wider`}>
+            <span className={`inline-block w-1 h-6 rounded-sm ${t.accentBar}`} />
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{ outline: 'none' }}
+            className={`${t.close} text-2xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none`}
+          >
+            ✕
+          </button>
+        </div>
+        <div className="space-y-5">{children}</div>
+        <p className={`mt-5 text-center text-xs ${t.footer} font-mono tracking-wider`}>
+          화면 바깥쪽을 클릭하면 닫혀요
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function HelpSection({ icon, title, badge, tone = 'cyan', children }) {
+  const titleClass = tone === 'rose' ? 'text-rose-100' : 'text-cyan-100'
   return (
     <div>
-      <h3 className="flex items-center gap-2 text-base font-bold text-cyan-100 font-mono tracking-wider mb-1.5">
+      <h3 className={`flex items-center gap-2 text-base font-bold ${titleClass} font-mono tracking-wider mb-1.5`}>
         <span className="text-lg">{icon}</span>
         <span>{title}</span>
         {badge && (
@@ -204,33 +262,7 @@ function HelpSection({ icon, title, badge, children }) {
 
 function AnalysisHelpOverlay({ onClose }) {
   return (
-    <div
-      className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6 animate-page-enter"
-      onClick={onClose}
-    >
-      <div
-        className="relative max-w-2xl w-full max-h-full overflow-y-auto scrollbar-cyan
-          bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/60 rounded-xl p-6
-          shadow-[0_0_40px_rgba(34,211,238,0.25)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div className="flex justify-between items-baseline mb-4 pb-3 border-b border-cyan-500/30">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-cyan-300 font-mono tracking-wider">
-            <span className="inline-block w-1 h-6 bg-cyan-400 rounded-sm shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
-            도움말
-          </h2>
-          <button
-            onClick={onClose}
-            style={{ outline: 'none' }}
-            className="text-cyan-300 hover:text-cyan-100 text-2xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* 본문 */}
-        <div className="space-y-5">
+    <HelpOverlayShell tone="cyan" onClose={onClose}>
           <HelpSection icon="📊" title="종목 선택">
             <p>좌측 사이드바에서 종목 카드를 클릭하면 우측 차트가 그 종목으로 갱신돼요.</p>
             <p className="text-cyan-300/70 text-xs">선택된 종목 옆에는 ◎ 표시가 붙어요.</p>
@@ -304,14 +336,7 @@ function AnalysisHelpOverlay({ onClose }) {
           <div className="mt-4 px-4 py-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5 text-xs text-cyan-200 font-mono leading-relaxed">
             <strong className="text-cyan-100">💡 TIP</strong> · 캔들·거래량·MA·볼린저·MACD·OBV를 종합적으로 봐야 매수·매도 타이밍을 잘 잡을 수 있어요. <strong>기술상</strong>에서 지표를 구매할수록 더 많은 정보가 차트에 나타납니다.
           </div>
-        </div>
-
-        {/* 하단 닫기 안내 */}
-        <p className="mt-5 text-center text-xs text-cyan-300/50 font-mono tracking-wider">
-          화면 바깥쪽을 클릭하면 닫혀요
-        </p>
-      </div>
-    </div>
+    </HelpOverlayShell>
   )
 }
 
@@ -320,33 +345,7 @@ function AnalysisHelpOverlay({ onClose }) {
 // ─────────────────────────────────────────────────────────
 function BuyHelpOverlay({ onClose }) {
   return (
-    <div
-      className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6 animate-page-enter"
-      onClick={onClose}
-    >
-      <div
-        className="relative max-w-2xl w-full max-h-full overflow-y-auto scrollbar-cyan
-          bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/60 rounded-xl p-6
-          shadow-[0_0_40px_rgba(34,211,238,0.25)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div className="flex justify-between items-baseline mb-4 pb-3 border-b border-cyan-500/30">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-cyan-300 font-mono tracking-wider">
-            <span className="inline-block w-1 h-6 bg-cyan-400 rounded-sm shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
-            도움말
-          </h2>
-          <button
-            onClick={onClose}
-            style={{ outline: 'none' }}
-            className="text-cyan-300 hover:text-cyan-100 text-2xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* 본문 */}
-        <div className="space-y-5">
+    <HelpOverlayShell tone="cyan" onClose={onClose}>
           <HelpSection icon="💰" title="보유 현금">
             <p>현재 사용 가능한 현금이에요. 매수 합계가 이 금액을 넘으면 매수 버튼이 비활성화됩니다.</p>
           </HelpSection>
@@ -417,86 +416,36 @@ function BuyHelpOverlay({ onClose }) {
           <div className="mt-4 px-4 py-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5 text-xs text-cyan-200 font-mono leading-relaxed">
             <strong className="text-cyan-100">💡 TIP</strong> · <strong>종목분석</strong>에서 차트를 확인한 뒤 종목을 구매하는 흐름으로 진행하세요.
           </div>
-        </div>
-
-        {/* 하단 닫기 안내 */}
-        <p className="mt-5 text-center text-xs text-cyan-300/50 font-mono tracking-wider">
-          화면 바깥쪽을 클릭하면 닫혀요
-        </p>
-      </div>
-    </div>
+    </HelpOverlayShell>
   )
 }
 
 // ─────────────────────────────────────────────────────────
 // 주식 판매 도움말 오버레이 — 로즈 톤
 // ─────────────────────────────────────────────────────────
-function SellHelpSection({ icon, title, badge, children }) {
-  return (
-    <div>
-      <h3 className="flex items-center gap-2 text-base font-bold text-rose-100 font-mono tracking-wider mb-1.5">
-        <span className="text-lg">{icon}</span>
-        <span>{title}</span>
-        {badge && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded border border-yellow-500/50 text-yellow-300 font-mono tracking-wider">
-            {badge}
-          </span>
-        )}
-      </h3>
-      <div className="text-sm text-slate-200 ml-7 leading-relaxed space-y-1">{children}</div>
-    </div>
-  )
-}
-
 function SellHelpOverlay({ onClose }) {
   return (
-    <div
-      className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex items-center justify-center p-6 animate-page-enter"
-      onClick={onClose}
-    >
-      <div
-        className="relative max-w-2xl w-full max-h-full overflow-y-auto scrollbar-rose
-          bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-rose-500/60 rounded-xl p-6
-          shadow-[0_0_40px_rgba(244,63,94,0.25)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div className="flex justify-between items-baseline mb-4 pb-3 border-b border-rose-500/30">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-rose-300 font-mono tracking-wider">
-            <span className="inline-block w-1 h-6 bg-rose-400 rounded-sm shadow-[0_0_8px_rgba(244,63,94,0.7)]" />
-            도움말
-          </h2>
-          <button
-            onClick={onClose}
-            style={{ outline: 'none' }}
-            className="text-rose-300 hover:text-rose-100 text-2xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* 본문 */}
-        <div className="space-y-5">
-          <SellHelpSection icon="💰" title="보유 현금">
+    <HelpOverlayShell tone="rose" onClose={onClose}>
+          <HelpSection tone="rose" icon="💰" title="보유 현금">
             <p>매도 후 받게 될 현금이 합산되어 잔액으로 늘어나요.</p>
-          </SellHelpSection>
+          </HelpSection>
 
-          <SellHelpSection icon="📉" title="매도 종목 선택">
+          <HelpSection tone="rose" icon="📉" title="매도 종목 선택">
             <p>현재 <strong className="text-rose-200">보유 중인 종목만</strong> 리스트에 표시돼요.</p>
             <p>각 종목 행의 <strong className="text-rose-200">수량 컨트롤(− N +)</strong>로 팔 주식 수를 정하세요. 보유 수량을 초과해서 팔 수 없습니다.</p>
             <p className="text-rose-300/70 text-xs">매도 대상 종목은 좌측에 로즈 액센트 바가 점등되고 종목명이 강조됩니다.</p>
-          </SellHelpSection>
+          </HelpSection>
 
-          <SellHelpSection icon="⚡" title="빠른 단축 액션">
+          <HelpSection tone="rose" icon="⚡" title="빠른 단축 액션">
             <p>
               <strong className="text-rose-200">전량 매도</strong>: 보유 종목 전부를 보유 수량만큼 자동 설정.
             </p>
             <p>
               <strong className="text-rose-200">전체 해제</strong>: 모든 종목 수량을 0으로 리셋.
             </p>
-          </SellHelpSection>
+          </HelpSection>
 
-          <SellHelpSection icon="🔺" title="등락률 보기">
+          <HelpSection tone="rose" icon="🔺" title="등락률 보기">
             <div className="flex items-center gap-2">
               <span className="text-rise font-mono">▲ +2.34%</span>
               <span>: 저번 주 대비 상승률 (빨강)</span>
@@ -508,45 +457,38 @@ function SellHelpOverlay({ onClose }) {
             <p className="text-rose-300/70 text-xs">
               그 아래 작은 숫자는 <strong>전주대비 절대 변동량</strong>. 단기 모멘텀 참고용이에요.
             </p>
-          </SellHelpSection>
+          </HelpSection>
 
-          <SellHelpSection icon="📈" title="최근 8주 추세 (스파크라인)">
+          <HelpSection tone="rose" icon="📈" title="최근 8주 추세 (스파크라인)">
             <p>종목명 옆 작은 라인은 최근 8주 종가 추이예요.</p>
             <p className="text-rose-300/70 text-xs">
               우상향이면 추세가 더 갈 수도, 우하향이면 손절·익절 타이밍을 고민해볼 수 있어요.
             </p>
-          </SellHelpSection>
+          </HelpSection>
 
-          <SellHelpSection icon="🌐" title="시장 분위기">
+          <HelpSection tone="rose" icon="🌐" title="시장 분위기">
             <p>전체 10종목 중 상승·하락·보합 분포를 보여줘요.</p>
             <div className="flex items-center gap-3 text-sm font-mono mt-1">
               <span className="text-rise">▲ 상승</span>
               <span className="text-fall">▼ 하락</span>
               <span className="text-slate-100">— 보합</span>
             </div>
-          </SellHelpSection>
+          </HelpSection>
 
-          <SellHelpSection icon="💸" title="일괄 매도">
+          <HelpSection tone="rose" icon="💸" title="일괄 매도">
             <p>
               버튼을 누르면 수량 &gt; 0인 모든 종목을 한 번에 매도해요. 체결 후 수량은 자동으로 리셋됩니다.
             </p>
             <p>
               <strong>매도 수익</strong>이 현재 현금에 더해진 <strong>매도 후 예상 현금</strong>이 미리 표시돼요.
             </p>
-          </SellHelpSection>
+          </HelpSection>
 
           {/* 팁 */}
           <div className="mt-4 px-4 py-3 rounded-lg border border-rose-500/30 bg-rose-500/5 text-xs text-rose-200 font-mono leading-relaxed">
             <strong className="text-rose-100">💡 TIP</strong> · <strong>종목분석</strong>에서 차트와 지표를 확인한 뒤 종목을 매도하는 흐름으로 진행하세요.
           </div>
-        </div>
-
-        {/* 하단 닫기 안내 */}
-        <p className="mt-5 text-center text-xs text-rose-300/50 font-mono tracking-wider">
-          화면 바깥쪽을 클릭하면 닫혀요
-        </p>
-      </div>
-    </div>
+    </HelpOverlayShell>
   )
 }
 
@@ -600,7 +542,7 @@ function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClos
           )}
 
           {/* 콘텐츠 영역 — 좌측 그리드 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
-          <div className="absolute" style={MODAL_CONTENT_BOUNDS}>
+          <div className="absolute" style={ANALYSIS_CONTENT_BOUNDS}>
             <StockAnalysisPanel
               stocks={activeStocks}
               prices={prices}
@@ -648,7 +590,7 @@ function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClos
           )}
 
           {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
-          <div className="absolute" style={SELL_MODAL_CONTENT_BOUNDS}>
+          <div className="absolute" style={TRADE_CONTENT_BOUNDS}>
             <BulkBuyPanel
               stocks={activeStocks}
               prices={prices}
@@ -692,7 +634,7 @@ function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClos
           )}
 
           {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 제외) */}
-          <div className="absolute" style={SELL_MODAL_CONTENT_BOUNDS}>
+          <div className="absolute" style={TRADE_CONTENT_BOUNDS}>
             <BulkSellPanel
               stocks={activeStocks}
               prices={prices}
@@ -749,11 +691,9 @@ function StockAnalysisPanel({
   const selectedStock = stocks.find((s) => s.id === selectedStockId)
   const currentPrice = selectedStock ? (prices[selectedStock.id] ?? selectedStock.price) : 0
   // 헤더의 변동 표시도 저번 주 종가 기준 — 사이드바·매수·매도 모달과 동일
-  const selectedEntry = selectedStock ? stockData.stocks.find((s) => s.realTicker === selectedStock.id) : null
-  const selectedPregame = selectedEntry?.pregame_prices ?? []
-  const selectedGamePrices = (selectedEntry?.prices ?? []).slice(0, turn)
-  const selectedCloses = [...selectedPregame, ...selectedGamePrices].map((c) => c.close)
-  const headerPrevWeekClose = selectedCloses.length >= 2 ? selectedCloses[selectedCloses.length - 2] : currentPrice
+  // (selectedCloses는 N 제한 없이 전체를 사용하지만 마지막 2개만 필요하므로 그냥 2개만 조회)
+  const selectedRecent = selectedStock ? getRecentCloses(selectedStock.id, turn, 2) : []
+  const headerPrevWeekClose = selectedRecent.length >= 2 ? selectedRecent[0] : currentPrice
   const priceDiff = selectedStock ? currentPrice - headerPrevWeekClose : 0
   const changePct = selectedStock && headerPrevWeekClose !== 0 ? (priceDiff / headerPrevWeekClose) * 100 : 0
   const headerMood = friendlyChange(changePct)
@@ -770,10 +710,7 @@ function StockAnalysisPanel({
           {stocks.map((stock) => {
             const stockPrice = prices[stock.id] ?? stock.price
             // 전주 종가 기준으로 등락률 % 계산 (매수·매도 모달과 동기)
-            const stockEntry = stockData.stocks.find((s) => s.realTicker === stock.id)
-            const pregame = stockEntry?.pregame_prices ?? []
-            const gamePrices = (stockEntry?.prices ?? []).slice(0, turn)
-            const recentCloses = [...pregame, ...gamePrices].slice(-8).map((c) => c.close)
+            const recentCloses = getRecentCloses(stock.id, turn, 8)
             const prevWeekClose = recentCloses.length >= 2 ? recentCloses[recentCloses.length - 2] : stockPrice
             const stockChange = prevWeekClose !== 0 ? ((stockPrice - prevWeekClose) / prevWeekClose) * 100 : 0
             const mood = friendlyChange(stockChange)
@@ -985,11 +922,8 @@ function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
           const stockHeld = portfolio[stock.id] || 0
           const subTotal = stockPrice * qty
 
-          // 최근 8주 종가 — 스파크라인용 (pregame 끝 + 현재 턴까지의 게임 데이터)
-          const stockEntry = stockData.stocks.find((s) => s.realTicker === stock.id)
-          const pregame = stockEntry?.pregame_prices ?? []
-          const gamePrices = (stockEntry?.prices ?? []).slice(0, turn)
-          const recentCloses = [...pregame, ...gamePrices].slice(-8).map((c) => c.close)
+          // 최근 8주 종가 — 스파크라인 + 전주대비 계산용
+          const recentCloses = getRecentCloses(stock.id, turn, 8)
 
           // 전주대비 — 지난 주 종가 기준으로 % 및 절대 변동량 계산
           const prevWeekClose = recentCloses.length >= 2 ? recentCloses[recentCloses.length - 2] : stockPrice
@@ -1254,10 +1188,7 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
             const subTotal = stockPrice * qty
 
             // 최근 8주 종가 + 전주대비
-            const stockEntry = stockData.stocks.find((s) => s.realTicker === stock.id)
-            const pregame = stockEntry?.pregame_prices ?? []
-            const gamePrices = (stockEntry?.prices ?? []).slice(0, turn)
-            const recentCloses = [...pregame, ...gamePrices].slice(-8).map((c) => c.close)
+            const recentCloses = getRecentCloses(stock.id, turn, 8)
 
             // 전주대비 — 지난 주 종가 기준으로 % 및 절대 변동량 계산
             const prevWeekClose = recentCloses.length >= 2 ? recentCloses[recentCloses.length - 2] : stockPrice

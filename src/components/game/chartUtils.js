@@ -1,5 +1,17 @@
 // 기술 지표 계산 유틸리티 — indicatorsPurchased 시 StockChart에서 사용
 
+import stockData from '../../data/stockData.json'
+
+// 종목의 최근 N주 종가 추출 — pregame + 현재 턴까지의 게임 데이터를 합쳐 마지막 N개
+// 스파크라인·전주대비 계산용 (사이드바 / BulkBuyPanel / BulkSellPanel 공통 사용)
+export function getRecentCloses(stockId, turn, n = 8) {
+  const stockEntry = stockData.stocks.find((s) => s.realTicker === stockId)
+  if (!stockEntry) return []
+  const pregame = stockEntry.pregame_prices ?? []
+  const gamePrices = (stockEntry.prices ?? []).slice(0, turn)
+  return [...pregame, ...gamePrices].slice(-n).map((c) => c.close)
+}
+
 // 이동 평균 — 표준은 period-1 인덱스까지 null이지만, pregame 데이터가 짧은 우리 게임에선
 // 차트 좌측이 비어 보임. 워밍업 동안엔 사용 가능한 만큼만 평균내는 "확장 평균(expanding MA)"
 // 방식으로 변경 → 인덱스 0부터 값이 채워져 라인이 전 폭에 그려짐
