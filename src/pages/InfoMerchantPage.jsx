@@ -6,7 +6,7 @@
 // 클릭 영역(핫스팟) — 모두 1920×1080 기준 % 좌표
 //   · 좌측 지구본: 국제 뉴스 팝업
 //   · 중앙 서류가방: 기업 뉴스 팝업 (섹터별 뉴스 목록)
-//   · 우측 태블릿: 추천 종목 팝업 (현재 뉴스 섹터 매칭 자동 추천)
+//   · 우측 태블릿: 내부 정보 팝업 (총 자산 10% 수수료 → 다음 주 최고 상승 종목 공개)
 //   · 우상단: 도움말 / 메인 버튼
 //   · 우하단: 거래소 / 기술상 버튼 (기술상은 10턴 해금)
 //
@@ -39,6 +39,12 @@ export default function InfoMerchantPage() {
     currentGlobalNews,
     activeStocks,
     prices,
+    cash,
+    portfolio,
+    turn,
+    totalTurns,
+    insiderTip,
+    purchaseInsiderInfo,
   } = useGameStore()
 
   const [activePopup, setActivePopup] = useState(null) // 'globalNews' | 'companyNews' | 'recommendation'
@@ -58,22 +64,17 @@ export default function InfoMerchantPage() {
     [activeStocks],
   )
 
-  // 추천 종목 — currentNews 섹터에 해당하는 활성 종목 매칭
-  // 가격 변동률 ≥ 0 → 매수 / < 0 → 매도 권유
-  const recommendations = useMemo(() => {
-    const newsList = currentNews || []
-    if (newsList.length === 0) return []
-    const result = []
-    newsList.forEach((news) => {
-      const matched = (activeStocks || []).filter((s) => s.sector === news.sector)
-      matched.forEach((stock) => {
-        const currentPrice = prices[stock.id] ?? stock.price
-        const change = ((currentPrice - stock.price) / stock.price) * 100
-        result.push({ stock, news, currentPrice, change })
-      })
-    })
-    return result
-  }, [currentNews, activeStocks, prices])
+  // 총 자산의 10% 수수료 계산
+  const insiderFee = useMemo(() => {
+    const stockValue = (activeStocks || []).reduce((sum, s) => {
+      return sum + (prices[s.id] ?? s.price ?? 0) * (portfolio[s.id] || 0)
+    }, 0)
+    return Math.floor((cash + stockValue) * 0.05)
+  }, [activeStocks, prices, cash, portfolio])
+
+  const isLastTurn    = turn >= totalTurns
+  const alreadyBought = insiderTip?.purchasedAtTurn === turn
+  const canAfford     = insiderFee <= cash
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden animate-page-enter">
@@ -184,8 +185,13 @@ export default function InfoMerchantPage() {
           currentGlobalNews={currentGlobalNews}
           currentNews={currentNews}
           sectors={sectors}
-          recommendations={recommendations}
           onClose={() => setActivePopup(null)}
+          insiderTip={insiderTip}
+          insiderFee={insiderFee}
+          isLastTurn={isLastTurn}
+          alreadyBought={alreadyBought}
+          canAfford={canAfford}
+          onPurchaseInsiderInfo={purchaseInsiderInfo}
         />
       )}
     </div>
@@ -252,7 +258,10 @@ function ObjectGlow({ style, label, onClick, glowColor = 'cyan' }) {
 // ─────────────────────────────────────────────────────────
 // 팝업 컨테이너 — 국제뉴스/기업뉴스/추천종목 공통 모달
 // ─────────────────────────────────────────────────────────
-function PopupOverlay({ activePopup, currentGlobalNews, currentNews, sectors, recommendations, onClose }) {
+function PopupOverlay({
+  activePopup, currentGlobalNews, currentNews, sectors, onClose,
+  insiderTip, insiderFee, isLastTurn, alreadyBought, canAfford, onPurchaseInsiderInfo,
+}) {
   const title = {
     globalNews: '국제 뉴스',
     companyNews: '기업 뉴스',
@@ -281,7 +290,16 @@ function PopupOverlay({ activePopup, currentGlobalNews, currentNews, sectors, re
 
         {activePopup === 'globalNews' && <GlobalNewsView news={currentGlobalNews} />}
         {activePopup === 'companyNews' && <CompanyNewsView sectors={sectors} currentNews={currentNews} />}
-        {activePopup === 'recommendation' && <RecommendationView recommendations={recommendations} />}
+        {activePopup === 'recommendation' && (
+          <RecommendationView
+            insiderTip={insiderTip}
+            insiderFee={insiderFee}
+            isLastTurn={isLastTurn}
+            alreadyBought={alreadyBought}
+            canAfford={canAfford}
+            onPurchase={onPurchaseInsiderInfo}
+          />
+        )}
       </div>
     </div>
   )
@@ -339,52 +357,98 @@ function CompanyNewsView({ sectors, currentNews }) {
   )
 }
 
-// 추천 종목 — currentNews 섹터 매칭 자동 추천
-function RecommendationView({ recommendations }) {
-  if (recommendations.length === 0) {
+// 내부 정보 구매 — 총 자산 10% 수수료로 다음 주 최고 상승 종목 공개
+function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought, canAfford, onPurchase }) {
+  const [error, setError] = useState(null)
+
+  const handlePurchase = () => {
+    setError(null)
+    const result = onPurchase()
+    if (!result.ok) {
+      if (result.reason === 'insufficient_cash')
+        setError(`현금 부족 (필요: ${result.fee.toLocaleString()}원 / 보유 현금: ${result.cash.toLocaleString()}원) — 주식을 일부 매도하세요`)
+      else if (result.reason === 'last_turn')
+        setError('마지막 라운드에는 구매할 수 없습니다.')
+      else if (result.reason === 'already_purchased')
+        setError('이번 라운드에 이미 구매하셨습니다.')
+      else
+        setError('데이터를 불러올 수 없습니다.')
+    }
+  }
+
+  // 구매 완료 — 결과 표시
+  if (alreadyBought && insiderTip) {
+    const isPositive = insiderTip.nextRatio >= 0
     return (
-      <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-4 text-center">
-        <p className="text-cyan-300/60 text-sm font-mono">이번 주는 추천할 종목이 없습니다.</p>
-        <p className="text-cyan-300/40 text-xs mt-2">기업 뉴스가 발생하면 관련 종목이 자동 추천됩니다.</p>
+      <div className="space-y-3">
+        <p className="text-xs text-emerald-400/80 font-mono mb-1">
+          🔒 내부 정보 — {insiderTip.feePaid.toLocaleString()}원 지불 완료
+        </p>
+        <div className="bg-slate-800/70 border border-emerald-500/50 rounded-lg p-4 shadow-[0_0_20px_rgba(52,211,153,0.15)]">
+          <p className="text-xs text-emerald-300/60 mb-2 font-mono">다음 주 최고 상승 예상 종목</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-bold text-emerald-200">{insiderTip.name}</p>
+              <p className="text-xs text-cyan-300/60 mt-0.5">
+                현재가 {insiderTip.currentClose.toLocaleString()}원
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold tabular-nums text-emerald-300 tracking-widest">???</p>
+              <p className="text-xs mt-1 text-cyan-300/50">등락률 비공개</p>
+            </div>
+          </div>
+        </div>
+        <p className="text-[10px] text-cyan-300/40 font-mono text-center">
+          다음 라운드가 되면 새 정보를 구매할 수 있습니다.
+        </p>
       </div>
     )
   }
+
+  // 구매 전 — 잠금 UI
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-cyan-300/60 font-mono mb-2">📡 이번 주 뉴스 기반 자동 추천</p>
-      {recommendations.map((rec, idx) => {
-        const isPositive = rec.change >= 0
-        return (
-          <div
-            key={`${rec.stock.id}-${idx}`}
-            className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3 flex items-center justify-between gap-3"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-bold text-sm text-cyan-100">{rec.stock.name}</span>
-                <span className="text-[10px] text-cyan-300/60 bg-cyan-900/40 px-1.5 py-0.5 rounded">
-                  {rec.stock.sector}
-                </span>
-              </div>
-              <p className="text-[11px] text-cyan-300/70 truncate" title={rec.news.headline}>
-                {rec.news.headline}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="font-bold text-cyan-100 tabular-nums text-sm">
-                {rec.currentPrice.toLocaleString()}원
-              </p>
-              <p
-                className={`text-xs tabular-nums font-bold ${
-                  isPositive ? 'text-rise' : 'text-fall'
-                }`}
-              >
-                {isPositive ? '▲ 매수' : '▼ 매도'}
-              </p>
-            </div>
-          </div>
-        )
-      })}
+    <div className="space-y-3">
+      <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-5 text-center">
+        <p className="text-3xl mb-2">🔒</p>
+        <p className="font-bold text-cyan-100 mb-1">내부 정보 구매</p>
+        <p className="text-sm text-cyan-300/70 leading-relaxed">
+          다음 주에{' '}
+          <span className="text-emerald-300 font-bold">가장 큰 폭으로 오를 종목 1개</span>를
+          <br />단독으로 알려드립니다.
+        </p>
+      </div>
+
+      <div className="bg-slate-900/60 border border-cyan-500/20 rounded-lg p-3 flex items-center justify-between">
+        <span className="text-xs text-cyan-300/70 font-mono">수수료 (총 자산의 5%)</span>
+        <span className="text-base font-bold text-yellow-300 tabular-nums">
+          {insiderFee.toLocaleString()}원
+        </span>
+      </div>
+
+      {isLastTurn && (
+        <p className="text-xs text-red-400/80 font-mono text-center">마지막 라운드에는 구매할 수 없습니다.</p>
+      )}
+      {!isLastTurn && !canAfford && (
+        <p className="text-xs text-red-400/80 font-mono text-center">현금 부족 — 주식을 일부 매도하세요</p>
+      )}
+      {error && <p className="text-xs text-red-400/80 font-mono text-center">{error}</p>}
+
+      <button
+        onClick={handlePurchase}
+        disabled={isLastTurn || !canAfford}
+        className={`w-full py-3 rounded-lg font-bold text-sm transition-all duration-150
+          ${isLastTurn || !canAfford
+            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.5)]'
+          }`}
+      >
+        {insiderFee.toLocaleString()}원 지불하고 정보 구매
+      </button>
+
+      <p className="text-[10px] text-cyan-300/40 font-mono text-center">
+        구매 후 취소 불가 · 이번 라운드 1회 한정
+      </p>
     </div>
   )
 }
@@ -415,8 +479,8 @@ function HelpOverlay({ onClose }) {
 
       {/* 태블릿 (좌 누적 -210px) */}
       <HelpBubble style={{ top: '58%', left: 'calc(79% - 12.500%)', transform: 'translateX(-50%)' }} arrow="down">
-        <strong className="text-emerald-300 text-base block">📈 추천 종목</strong>
-        <p className="text-xs mt-1 text-cyan-100">뉴스 섹터 기반<br />자동 매수/매도 권유</p>
+        <strong className="text-emerald-300 text-base block">📈 내부 정보</strong>
+        <p className="text-xs mt-1 text-cyan-100">총 자산의 5% 수수료로<br />다음 주 최고 상승 종목을<br />단독 공개 (라운드당 1회)</p>
       </HelpBubble>
     </div>
   )
