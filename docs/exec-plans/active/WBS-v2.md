@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.4.37~1.4.43 추가 — MarketPage 3종 모달 KRX 디지털 보드 풀 리뉴얼: 종목분석 16:9 + 멀티 패널 차트(메인/MACD/OBV 동시 노출, 네온 글로우, 워밍업 X축 재구성) + 주식구매 BulkBuyPanel(종목별 수량 자동 매수, 시장 분위기·매수 후 잔액, 합계 가독성 text-shadow) + 주식판매 BulkSellPanel(로즈 톤, 보유 종목만 매도 수량 max=보유) + chartUtils 확장 평균(MA20/볼린저 좌측부터 표시) + calcOBV 시그니처 버그 수정 + 등락률 4곳 저번 주 대비 통일 + gameStore purchaseRounds 추가 + 3개 도움말 오버레이(분석/매수/매도) + 시안/로즈 스크롤바 + number input 스피너 숨김)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.4.37~1.4.45 추가 — MarketPage 3종 모달 KRX 디지털 보드 풀 리뉴얼 + PR #44 리뷰 후속 + 데드 코드 정리. 종목분석 16:9 + 멀티 패널 차트(메인/MACD/OBV 동시 노출, 네온 글로우, 워밍업 X축 재구성) + 주식구매 BulkBuyPanel + 주식판매 BulkSellPanel + chartUtils 확장 평균 + calcOBV 시그니처 수정 + 등락률 4곳 저번 주 대비 통일 + gameStore purchaseRounds 추가 + 3개 도움말 오버레이 + 시안/로즈 스크롤바 + number input 스피너 숨김 + PR 리뷰 후속 4건(MACD 매핑 주석/StockChart useMemo/HOTSPOT 상수/PopupOverlay props drilling 14→4) + 데드 코드 정리(SignalBadge·signal 계산·WeekInfoPanel·StatCard·미사용 import + macdArr 잠재 TypeError 동시 해결))
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -32,12 +32,12 @@
 | 1.1 분석/기획 | 3 | 3 | 100% |
 | 1.2 설계 | 3 | 3 | 100% |
 | 1.3 P0 기반 구축 | 7 | 7 | 100% |
-| 1.4 P1 핵심 기능 | 43 | 40 | 93.0% (3개 대체됨) |
+| 1.4 P1 핵심 기능 | 45 | 42 | 93.3% (3개 대체됨) |
 | 1.5 P1 통합 | 8 | 8 | 100% |
 | 1.6 P2 QA + 배포 | 6 | 4 | 66.7% |
 | 1.7 버퍼 | 2 | 0 | 0% |
 | 1.8 추가 작업 | 7 | 5 | 71.4% |
-| **전체** | **79** | **70** | **88.6%** |
+| **전체** | **81** | **72** | **88.9%** |
 
 ---
 
@@ -140,6 +140,8 @@
 | 1.4.41 | [Front] 등락률·변동 표시 저번 주 대비로 통일 — 사이드바/BulkBuyPanel/BulkSellPanel/분석 모달 헤더 4곳 모두 `stockChange = (weekDiff/prevWeekClose) × 100`. 헤더 텍스트 `시작가와 거의 같아요` → `지난 주와 거의 같아요`. `friendlyChange` 이모지 🔺🔻➖ → 유니코드 ▲▼— (CSS color 적용). `TONE_CLASS` 한국 증시 컨벤션(up=빨강/down=파랑/flat=흰색). MACD 히스토그램도 동일 적용 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx, src/components/game/StockChart.jsx | P1 |
 | 1.4.42 | [공용] gameStore `purchaseRounds` 필드 추가 — 종목별 최초 매수 라운드 기록(`{stockId: turn}`). `buyStock`은 보유 0→>0 첫 진입 시에만 현재 turn 기록(추가 매수 시 유지). `sellStock`은 전량 매도 시 삭제. `startGame`/`resetGame` 초기화 + `persist` partialize 포함. 매도 모달 "이번 주 매수 종목" 안내용으로 도입했으나 후속 변경으로 미사용 — 추후 평가손익 정확 구현·보유 기간 표시 등 재활용 가능 | 배영환·송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/store/gameStore.js, src/pages/MarketPage.jsx | P2 |
 | 1.4.43 | [Front] 공통 UI 폴리시 — `.scrollbar-cyan`/`.scrollbar-rose` 커스텀 스크롤바(6px, 색상 thumb + 글로우, hover 밝아짐). `input[type='number']` 기본 스피너 숨김(Webkit `::-webkit-inner/outer-spin-button` + Firefox `-moz-appearance: textfield`) — 자체 +/− 버튼 중복 제거. 3개 모달 hotspot 픽셀 단위 미세조정 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/index.css, src/pages/MarketPage.jsx | P2 |
+| 1.4.44 | [Front] PR #44 리뷰 후속 — 코드 품질 4건 반영: (1) `chartUtils.js` MACD 인덱스 매핑(`signalSlice[j] → result[firstMacd + j]`) 함수 위 + 인라인 주석으로 부분 배열 변환 흐름 명시 (2) `StockChart.jsx` 캔들 배열·OHLCV·MA/볼린저/MACD/OBV 지표·Y축 min/max 스케일을 `useMemo`로 묶음(deps: stockEntry/turn/4개 구매 플래그) + `CANDLE_H`/`SUB_H` 모듈 상수로 외부 이동 → 종목 전환·매수·매도 외 재계산 차단 (3) `MarketPage.jsx` 핫스팟 좌표 `HOTSPOT` 상수 객체로 추출(market/analysis/buy/sell 4그룹) + `MODAL_CONTENT_BOUNDS`/`SELL_MODAL_CONTENT_BOUNDS` 콘텐츠 영역 상수 → 모든 hotspot 호출부 `style={HOTSPOT.section.label}` 단순화 (4) `PopupOverlay` props 14 → 4(activePopup/selectedStockId/setSelectedStockId/onClose), store 의존 데이터 10개(activeStocks/prices/portfolio/cash/buyStock/sellStock/4 구매 플래그)는 `useGameStore((s) => s.X)` 셀렉터로 내부 직접 구독 → 부모-자식 props 거리 단축. MarketPage 본체 destructure도 `navigateTo`만 남김 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/components/game/chartUtils.js, src/components/game/StockChart.jsx, src/pages/MarketPage.jsx | P2 |
+| 1.4.45 | [Front] 데드 코드 정리 — `StockChart.jsx`: `SignalBadge` 컴포넌트 + `maSignal`/`bollSignal`/`macdSignal`/`obvSignal` 계산 4줄 제거(SignalBadge 렌더 제거 후 잔존), `getMaSignal`/`getBollingerSignal`/`getMacdSignal`/`getObvSignal` import 4개 제거, useMemo 반환에서 미사용 필드(`highs`/`lows`/`closes`/`bollArr`/`macdArr`) 제거. `MarketPage.jsx`: `WeekInfoPanel` + `StatCard` 함수 제거(`StockAnalysisPanel` 멀티 패널 재설계 후 호출처 없음). **부수 효과**: `macdSignal = getMacdSignal(macdArr)` 라인에서 `macdArr`이 useMemo destructure 누락으로 `undefined`였던 잠재 TypeError 버그 자연 해결. 보존: `gameStore.purchaseRounds` 필드(향후 평가손익·보유 기간 표시 재활용 가능) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/components/game/StockChart.jsx, src/pages/MarketPage.jsx | P2 |
 
 ---
 
