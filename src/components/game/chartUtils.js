@@ -1,10 +1,14 @@
 // 기술 지표 계산 유틸리티 — indicatorsPurchased 시 StockChart에서 사용
 
+// 이동 평균 — 표준은 period-1 인덱스까지 null이지만, pregame 데이터가 짧은 우리 게임에선
+// 차트 좌측이 비어 보임. 워밍업 동안엔 사용 가능한 만큼만 평균내는 "확장 평균(expanding MA)"
+// 방식으로 변경 → 인덱스 0부터 값이 채워져 라인이 전 폭에 그려짐
 export function calcMA(closes, period) {
   return closes.map((_, i) => {
-    if (i < period - 1) return null
-    const slice = closes.slice(i - period + 1, i + 1)
-    return slice.reduce((a, b) => a + b, 0) / period
+    const start = Math.max(0, i - period + 1)
+    const slice = closes.slice(start, i + 1)
+    if (slice.length === 0) return null
+    return slice.reduce((a, b) => a + b, 0) / slice.length
   })
 }
 
@@ -19,12 +23,16 @@ function calcEMA(closes, period) {
   return result
 }
 
+// 볼린저밴드 — calcMA의 확장 방식과 동기. 표본이 1개일 땐 std=0이라 band 폭이 0
+// (좌측 끝에서 시작해 데이터가 쌓이며 자연스럽게 벌어짐 — funnel 형태)
 export function calcBollinger(closes, period = 20) {
   const ma = calcMA(closes, period)
   return closes.map((_, i) => {
     if (ma[i] === null) return { upper: null, middle: null, lower: null }
-    const slice = closes.slice(i - period + 1, i + 1)
-    const variance = slice.reduce((sum, v) => sum + (v - ma[i]) ** 2, 0) / period
+    const start = Math.max(0, i - period + 1)
+    const slice = closes.slice(start, i + 1)
+    if (slice.length < 2) return { upper: ma[i], middle: ma[i], lower: ma[i] }
+    const variance = slice.reduce((sum, v) => sum + (v - ma[i]) ** 2, 0) / slice.length
     const std = Math.sqrt(variance)
     return { upper: ma[i] + 2 * std, middle: ma[i], lower: ma[i] - 2 * std }
   })
