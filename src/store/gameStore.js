@@ -319,7 +319,7 @@ export const useGameStore = create(
       },
     }),
     {
-      name: 'k-stock-merchant',
+      name: 'ddeoksang-rush',
       partialize: (state) => ({
         page: state.page,
         nickname: state.nickname,
