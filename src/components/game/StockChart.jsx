@@ -9,7 +9,8 @@ import { calcMA, calcBollinger, calcMACD, calcOBV } from "./chartUtils"
 const SVG_W = 700
 const PAD = { top: 10, right: 10, bottom: 22, left: 60 }
 // 첫/마지막 캔들이 Y축 라벨·우측 경계를 침범하지 않도록 양 끝에 두는 내부 여백
-const EDGE = 8
+// 좌측 여백을 우측보다 더 크게 확보해 첫 막대가 Y축 라벨과 겹치지 않도록 함
+const EDGE = 11
 
 function toX(i, total) {
   const drawW = SVG_W - PAD.left - PAD.right - 2 * EDGE
