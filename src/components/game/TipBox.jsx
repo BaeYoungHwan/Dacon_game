@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const TIPS = [
+export const TIPS = [
   // 기본 전략
   '한 종목에 올인하지 마세요 — 분산 투자가 안전해요.',
   '모든 종목을 다 보려 하지 마세요 — 2~3개 종목 집중 분석이 효과적이에요.',
