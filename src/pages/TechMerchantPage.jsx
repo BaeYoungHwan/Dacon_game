@@ -12,7 +12,7 @@
 // ⚠️ 잠금 규칙: turn < TECH_MERCHANT_UNLOCK_TURN 이면 두 기능 클릭 시
 //   "10턴 이후 사용 가능" 안내 팝업만 표시 (실제 구매 UI 비활성)
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
 
@@ -58,7 +58,8 @@ const INDICATOR_UNLOCK_TURN = { ma: 10, bollinger: 20, macd: 30, obv: 15 }
 // ─────────────────────────────────────────────────────────
 const HOTSPOT = {
   popup: {
-    close:    { top: '6.5%', right: '3.5%', width: '6.5%', height: '7.5%' },
+    // close right +8px: 좌측으로 8px 미세조정 (배경 X 버튼과 정렬)
+    close:    { top: '6.5%', right: 'calc(3.5% + 8px)', width: '6.5%', height: '7.5%' },
     topFrame: { top: '14%',  left: '6%',    right: '6%',   height: '48%'  },
     midFrame: { top: '63%',  left: '6%',    right: '6%',   height: '10.5%' },
     button:   { top: '74%',  left: '6%',    right: '6%',   height: '15%'  },
@@ -92,11 +93,30 @@ export default function TechMerchantPage() {
     else setActivePopup(popupKey)
   }
 
+  // 반응형 스케일 — 1920×1080 고정 캔버스를 컨테이너 너비에 맞춰 transform: scale
+  // 화면 축소 시 PageNav 버튼·ObjectGlow가 배경과 함께 비례 축소되어 비율 깨짐 방지
+  // (GamePage 동일 패턴 — useLayoutEffect로 첫 paint부터 정확한 scale 적용)
+  const containerRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      const w = el.clientWidth
+      if (w > 0) setScale(w / 1920)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden animate-page-enter">
       {/* 16:9 배경 컨테이너 */}
       <div
-        className="relative aspect-[16/9]"
+        ref={containerRef}
+        className="relative aspect-[16/9] overflow-hidden"
         style={{
           width: 'min(100vw, calc(100vh * 16 / 9))',
           height: 'min(100vh, calc(100vw * 9 / 16))',
@@ -105,40 +125,51 @@ export default function TechMerchantPage() {
           backgroundPosition: 'center',
         }}
       >
-        {/* 좌측 차트 화면 — 차트 지표 구매 (ObjectGlow) */}
-        <ObjectGlow
-          label="차트 지표 구매"
+        {/* 스케일 래퍼 — 1920×1080 고정 좌표로 모든 absolute 요소 그리고, 컨테이너 너비에 맞춰 비례 축소 */}
+        <div
+          className="absolute top-0 left-0"
           style={{
-            top: '15%',
-            left: '2%',
-            width: '32%',
-            height: '60%',
+            width: '1920px',
+            height: '1080px',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
           }}
-          glowColor="cyan"
-          onClick={() => handleFeatureClick('indicators')}
-        />
+        >
+          {/* 좌측 차트 화면 — 차트 지표 구매 (ObjectGlow) */}
+          <ObjectGlow
+            label="차트 지표 구매"
+            style={{
+              top: '15%',
+              left: '2%',
+              width: '32%',
+              height: '60%',
+            }}
+            glowColor="cyan"
+            onClick={() => handleFeatureClick('indicators')}
+          />
 
-        {/* 우측 로봇 — 깜짝 종목 판매상 (ObjectGlow) */}
-        <ObjectGlow
-          label="깜짝 종목 판매상"
-          style={{
-            top: '18%',
-            left: '70%',
-            width: '26%',
-            height: '60%',
-          }}
-          glowColor="blue"
-          onClick={() => handleFeatureClick('hiddenStocks')}
-        />
+          {/* 우측 로봇 — 깜짝 종목 판매상 (ObjectGlow) */}
+          <ObjectGlow
+            label="깜짝 종목 판매상"
+            style={{
+              top: '18%',
+              left: '70%',
+              width: '26%',
+              height: '60%',
+            }}
+            glowColor="blue"
+            onClick={() => handleFeatureClick('hiddenStocks')}
+          />
 
-        {/* 우상단: 도움말 / 설정 / 메인 — PageNav 통일 스타일 */}
-        <TopRightNav onHelp={() => setOpenHelp(true)} navigateTo={navigateTo} />
+          {/* 우상단: 도움말 / 설정 / 메인 — PageNav 통일 스타일 */}
+          <TopRightNav onHelp={() => setOpenHelp(true)} navigateTo={navigateTo} />
 
-        {/* 우하단: 다른 페이지 이동 (거래소 / 정보상) */}
-        <BottomRightNav current="techMerchant" navigateTo={navigateTo} />
+          {/* 우하단: 다른 페이지 이동 (거래소 / 정보상) */}
+          <BottomRightNav current="techMerchant" navigateTo={navigateTo} />
 
-        {/* 도움말 오버레이 */}
-        {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
+          {/* 도움말 오버레이 */}
+          {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
+        </div>
       </div>
 
       {/* 팝업 */}
@@ -244,15 +275,15 @@ function PopupOverlay({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* X 버튼 — 좌표는 HOTSPOT.popup.close (수동 미세조정 가능) */}
-        <button
+        {/* X 버튼 — 좌표는 HOTSPOT.popup.close
+            ObjectGlow의 soft halo 패턴 (MarketPage 매수/매도 닫기와 동일 톤): cyan 박스 윤곽 대신 부드러운 광채
+            깜짝종목판매상은 blue 톤, 그 외(차트지표·잠금)는 cyan 톤 */}
+        <ObjectGlow
+          label="닫기"
+          style={HOTSPOT.popup.close}
+          glowColor={activePopup === 'hiddenStocks' ? 'blue' : 'cyan'}
           onClick={onClose}
-          aria-label="닫기"
-          style={{ outline: 'none', position: 'absolute', ...HOTSPOT.popup.close }}
-          className="group focus:outline-none cursor-pointer rounded-md"
-        >
-          <span className="absolute inset-0 rounded-md border-2 border-transparent group-hover:border-cyan-300 group-hover:shadow-[inset_0_0_15px_rgba(34,211,238,0.4),0_0_15px_rgba(34,211,238,0.4)] transition-all duration-150 pointer-events-none" />
-        </button>
+        />
 
         {/* 상단 큰 프레임 — 본문 */}
         <div
