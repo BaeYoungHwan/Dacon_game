@@ -34,10 +34,13 @@ export default function Marquee({ items, leftLabel = '📢 TIPS' }) {
         {leftLabel}
       </span>
 
-      {/* 스크롤 영역 — 절대 위치 자식이 우측→좌측으로 한 번 가로지름 */}
+      {/* 스크롤 영역 — 절대 위치 자식이 우측→좌측으로 한 번 가로지름
+          key에 items[idx] 포함: 외부에서 items가 바뀔 때(예: turn 변경으로 새 팁 주입)
+          idx가 그대로 0이어도 React가 remount → CSS 애니메이션 재시작. 미포함 시
+          애니메이션이 forwards로 화면 밖에 멈춘 상태에서 텍스트만 갈아치워져 안 보임. */}
       <div className="relative flex-1 overflow-hidden h-full">
         <div
-          key={idx}
+          key={`${idx}-${items[idx]}`}
           className="animate-marquee-single whitespace-nowrap text-xs text-cyan-100 font-mono tracking-wider"
         >
           {items[idx]}
