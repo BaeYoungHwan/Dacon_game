@@ -49,23 +49,37 @@ describe('progressTurn — KOSPI 계산', () => {
 })
 
 describe('progressTurn — 뉴스 처리', () => {
-  it('turn=1(2025-05-29) → 전체 뉴스만 있어 news=null, globalNews 존재', () => {
-    const { news, globalNews } = progressTurn(1, allStocks)
-    expect(news).toBeNull()
+  it('모든 턴에서 기업 뉴스는 3~5개로 보장', () => {
+    for (let t = 1; t <= 50; t++) {
+      const { news } = progressTurn(t, allStocks)
+      expect(news).not.toBeNull()
+      expect(news.length).toBeGreaterThanOrEqual(3)
+      expect(news.length).toBeLessThanOrEqual(5)
+      news.forEach(n => expect(n.sector).not.toBe('전체'))
+    }
+  })
+
+  it('기업 뉴스 결과는 라운드 내 ID 중복 없음', () => {
+    const { news } = progressTurn(7, allStocks)
+    const ids = news.map(n => n.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('같은 turn 호출은 결정적(같은 결과)', () => {
+    const a = progressTurn(15, allStocks).news.map(n => n.id)
+    const b = progressTurn(15, allStocks).news.map(n => n.id)
+    expect(a).toEqual(b)
+  })
+
+  it('날짜 매칭 뉴스가 우선 포함됨 (turn=2→n01)', () => {
+    const { news } = progressTurn(2, allStocks)
+    expect(news.map(n => n.id)).toContain('n01')
+  })
+
+  it('turn=1(2025-05-29) → globalNews 존재 (sector=전체)', () => {
+    const { globalNews } = progressTurn(1, allStocks)
     expect(globalNews).not.toBeNull()
     expect(globalNews.sector).toBe('전체')
-  })
-
-  it('turn=2(2025-06-05) → 기업 뉴스 존재, sector!=="전체"', () => {
-    const { news } = progressTurn(2, allStocks)
-    expect(news).not.toBeNull()
-    expect(Array.isArray(news)).toBe(true)
-    news.forEach(n => expect(n.sector).not.toBe('전체'))
-  })
-
-  it('turn=2 → globalNews null (해당 날짜 전체 뉴스 없음)', () => {
-    const { globalNews } = progressTurn(2, allStocks)
-    expect(globalNews).toBeNull()
   })
 
   it('newExchangeRate → 항상 null', () => {

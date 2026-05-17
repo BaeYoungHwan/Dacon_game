@@ -8,6 +8,18 @@ const dataByTicker = Object.fromEntries(
   stockData.stocks.map(s => [s.realTicker, s])
 )
 
+// 턴 번호를 시드로 받아 결정적(deterministic) 난수 생성기 반환 (mulberry32)
+function makeSeededRandom(seed) {
+  let s = (seed * 2654435761) >>> 0
+  return function () {
+    s = (s + 0x6D2B79F5) >>> 0
+    let t = s
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 /**
  * 주봉 턴 진행 — stockData.json 실제 주봉 데이터 재생
  *
@@ -29,15 +41,64 @@ export function progressTurn(turn, allStocks) {
   const kospiChangePct = stockData.kospi[idx] ?? 0
   const newKospi = Math.round(KOSPI_BASE * (1 + kospiChangePct / 100))
 
-  // 뉴스 — 날짜 기준 매칭 후 기업뉴스(배열)/국제뉴스(단일)로 분리
+  // 뉴스 — 날짜 기준 매칭 + 부족 시 보충 (기업뉴스 3~5개 보장)
   const currentDate = stockData.meta.dates[idx]
-  const matched = newsEvents.filter(n => n.date === currentDate)
-  const companyMatched = matched.filter(n => n.sector !== '전체')
-  const globalMatched  = matched.filter(n => n.sector === '전체')
-  const news       = companyMatched.length > 0 ? companyMatched : null
-  const globalNews = globalMatched.length > 0
-    ? globalMatched[Math.floor(Math.random() * globalMatched.length)]
-    : null
+
+  const rand = makeSeededRandom(turn)
+  const shuffleSeeded = (arr) => {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1))
+      ;[a[i], a[j]] = [a[j], a[i]]
+    }
+    return a
+  }
+
+  const matched      = newsEvents.filter(n => n.date === currentDate)
+  const exactCompany = matched.filter(n => n.sector !== '전체')
+  const globalMatched = matched.filter(n => n.sector === '전체')
+
+  // 기업뉴스 3~5개 보장: 날짜 매칭 우선, 부족 시 ±4턴 윈도우 → 전체 pool 순으로 보충
+  const MIN_COMPANY = 3
+  const MAX_COMPANY = 5
+  const targetCount = MIN_COMPANY + Math.floor(rand() * (MAX_COMPANY - MIN_COMPANY + 1))
+  const usedIds = new Set(exactCompany.map(n => n.id))
+  const companyPool = newsEvents.filter(n => n.sector !== '전체')
+
+  const sectorsPresent = new Set(exactCompany.map(n => n.sector))
+  const nearby = companyPool.filter(n => {
+    if (usedIds.has(n.id)) return false
+    const dIdx = stockData.meta.dates.indexOf(n.date)
+    return dIdx >= 0 && Math.abs(dIdx - idx) <= 4
+  })
+  const nearbyRanked = [
+    ...nearby.filter(n => sectorsPresent.has(n.sector)),
+    ...nearby.filter(n => !sectorsPresent.has(n.sector)),
+  ]
+  const rest = companyPool.filter(n => !usedIds.has(n.id))
+  const filler = [...shuffleSeeded(nearbyRanked), ...shuffleSeeded(rest)]
+
+  const supplemented = [...exactCompany]
+  for (const n of filler) {
+    if (supplemented.length >= targetCount) break
+    if (usedIds.has(n.id)) continue
+    supplemented.push(n)
+    usedIds.add(n.id)
+  }
+  const news = supplemented.length > 0 ? supplemented.slice(0, MAX_COMPANY) : null
+
+  // 글로벌뉴스: 날짜 매칭 우선, 없으면 ±4턴 윈도우에서 1개 보충
+  let globalNews = null
+  if (globalMatched.length > 0) {
+    globalNews = globalMatched[Math.floor(rand() * globalMatched.length)]
+  } else {
+    const globalPool = newsEvents.filter(n => n.sector === '전체')
+    const nearbyGlobal = globalPool.filter(n => {
+      const dIdx = stockData.meta.dates.indexOf(n.date)
+      return dIdx >= 0 && Math.abs(dIdx - idx) <= 4
+    })
+    if (nearbyGlobal.length > 0) globalNews = shuffleSeeded(nearbyGlobal)[0]
+  }
 
   // 환율 — 실제 데이터 없으므로 null 반환 (gameStore에서 현재값 유지)
   return { newPrices, news, globalNews, newKospi, newExchangeRate: null }
