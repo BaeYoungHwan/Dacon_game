@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { useAudioStore } from '../store/audioStore'
 import * as audioManager from '../lib/audioManager'
+import { KOSPI_CHART_RETURN } from '../lib/grade'
 
 // page → 트랙 매핑 (result는 수익률로 결정)
 const PAGE_TRACK = {
@@ -19,8 +20,9 @@ export default function AudioController() {
 
   // 페이지 변경 → 트랙 전환
   useEffect(() => {
+    // KOSPI 수익률을 이겼을 때(스마트개미 이상)만 win, 개미·흑우·벼락거지는 lose
     const track = page === 'result'
-      ? (getReturnMultiple() >= 1 ? 'win' : 'lose')
+      ? (getReturnMultiple() - 1 >= KOSPI_CHART_RETURN ? 'win' : 'lose')
       : PAGE_TRACK[page]
     if (track) audioManager.play(track)
   }, [page])
