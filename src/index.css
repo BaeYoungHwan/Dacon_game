@@ -49,7 +49,7 @@
   position: absolute;
   top: 50%;
   margin-top: -0.5rem;
-  animation: marquee-single 18s linear forwards;
+  animation: marquee-single 12s linear forwards;
 }
 .animate-marquee-pause:hover .animate-marquee-single {
   animation-play-state: paused;
@@ -125,16 +125,13 @@ input[type='number'] {
 
 /* 접근성 — WCAG 2.3.3 Animation from Interactions
    사용자가 OS에서 "동작 줄이기"를 켰을 때 큰 화면 전환·회전·블러 애니메이션을 비활성화한다.
-   marquee는 핵심 콘텐츠(라운드 팁)라 정지 대신 매우 느리게 표시. */
+   marquee는 핵심 콘텐츠(라운드 팁)이므로 의도된 12s 속도를 유지(접근성 override 제외). */
 @media (prefers-reduced-motion: reduce) {
   .animate-page-enter,
   .animate-turn-transition,
   .animate-week-text,
   .animate-clock-spin {
     animation: none !important;
-  }
-  .animate-marquee-single {
-    animation-duration: 60s !important;
   }
 }
 

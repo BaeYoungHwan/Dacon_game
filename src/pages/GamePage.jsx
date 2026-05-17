@@ -233,40 +233,73 @@ export default function GamePage() {
             transformOrigin: 'top left',
           }}
         >
-          {/* 좌측(수직 중앙): ROUND + 자산 + HOLDINGS — PopupOverlay와 통일된 그라데이션 톤 */}
-          <div className="absolute top-1/2 left-4 -translate-y-1/2 bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur rounded-xl px-6 py-6 text-slate-100 z-10 border-2 border-cyan-500/60 shadow-[0_0_40px_rgba(34,211,238,0.2)] w-80">
-            {/* ROUND — LED 인디케이터 헤더 (다른 페이지 PopupOverlay 패턴) */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-              <span className="text-cyan-300 text-sm font-mono tracking-[0.25em]">ROUND</span>
-            </div>
-            <p className="text-4xl font-bold leading-tight mb-4 text-cyan-100 font-mono tabular-nums">{turn} / {totalTurns}</p>
+          {/* 좌측(수직 중앙): ROUND 헤더 + TOTAL ASSET 히어로 + 보조 자산 + HOLDINGS
+              정보 계층: ROUND(헤더) → 총자산(히어로·가장 눈에 띔) → 현금/평가액(보조) → HOLDINGS(리스트)
+              모서리 L자 deco — KospiChart / 다음 주 버튼과 동일한 HTS 디지털 보드 시그니처 */}
+          <div className="absolute top-1/2 left-[46px] -translate-y-1/2 bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur rounded-xl px-5 py-5 text-slate-100 z-10 border-2 border-cyan-500/60 shadow-[0_0_40px_rgba(34,211,238,0.2)] w-80">
+            <span className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400 rounded-tl-xl pointer-events-none" />
+            <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-400 rounded-tr-xl pointer-events-none" />
+            <span className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-400 rounded-bl-xl pointer-events-none" />
+            <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400 rounded-br-xl pointer-events-none" />
 
-            {/* 자산 정보 — 현금 / 주식 평가액(전라운드 대비 ▲▼) / 총 자산 */}
-            <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3 space-y-2">
-              <AssetRow label="현금"        value={cash}        cacheKey="game-cash" />
-              <AssetRow label="주식 평가액" value={stockValue}  trend={stockValueTrend} cacheKey="game-stock-value" />
-              <div className="border-t border-cyan-500/20 pt-2">
-                <AssetRow
-                  label="총 자산"
-                  value={totalAssets}
-                  highlight
-                  trend={totalAssetsTrend}
-                  deltaPct={totalAssetsDeltaPct}
-                  deltaAmount={totalAssetsDelta}
-                  cacheKey="game-total-assets"
-                />
+            {/* ROUND — 상단 컴팩트 헤더 (LED + 라벨 + 주차 표시 한 줄) */}
+            <div className="flex items-center justify-between pb-2 border-b border-cyan-500/25">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                <span className="text-cyan-300 text-[11px] font-mono tracking-[0.3em]">ROUND</span>
               </div>
+              <span className="text-cyan-100 font-mono tabular-nums text-sm font-bold tracking-wider">
+                {String(turn).padStart(2, '0')} <span className="text-cyan-500/60">/</span> {totalTurns}
+              </span>
             </div>
 
-            {/* HOLDINGS — 보유 종목 리스트 (LED 인디케이터 헤더) */}
-            <div className="flex items-center gap-2 mt-4 mb-2">
-              <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
-              <span className="text-cyan-300 text-[10px] font-mono tracking-[0.25em]">HOLDINGS</span>
+            {/* TOTAL ASSET — 히어로 영역 (가장 눈에 띔, 글로우 강화) */}
+            <div className="mt-4 mb-4">
+              <span className="text-cyan-300/80 text-[10px] font-mono tracking-[0.3em] block mb-1">TOTAL ASSET</span>
+              <p
+                className="text-[2rem] font-bold text-cyan-100 font-mono tabular-nums leading-none"
+                style={{ textShadow: '0 0 14px rgba(34,211,238,0.5)' }}
+              >
+                <AnimatedNumber value={totalAssets} cacheKey="game-total-assets" />
+                <span className="text-base ml-1 text-cyan-300/80 font-normal">원</span>
+              </p>
+              {/* 직전 라운드 대비 증감 — 0.005% 미만이면 숨김 */}
+              {totalAssetsDeltaPct !== null && Math.abs(totalAssetsDeltaPct) >= 0.005 && (() => {
+                const isUp = totalAssetsDelta > 0
+                return (
+                  <div className="flex items-baseline gap-2 mt-1.5 font-mono tabular-nums">
+                    <span className={`text-sm font-bold ${isUp ? 'text-red-400' : 'text-blue-400'}`}>
+                      {isUp ? '▲' : '▼'} {isUp ? '+' : ''}<AnimatedNumber value={Math.abs(totalAssetsDeltaPct)} decimals={2} />%
+                    </span>
+                    <span className={`text-xs ${isUp ? 'text-red-300/70' : 'text-blue-300/70'}`}>
+                      ({isUp ? '+' : '-'}<AnimatedNumber value={Math.abs(totalAssetsDelta)} />원)
+                    </span>
+                  </div>
+                )
+              })()}
             </div>
-            <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-2">
+
+            {/* 현금 / 평가액 — 히어로 보조 (작게, 디바이더로 분리) */}
+            <div className="space-y-1.5 pb-3 border-b border-cyan-500/25">
+              <AssetRow label="💵 현금"   value={cash}       cacheKey="game-cash" />
+              <AssetRow label="📈 평가액" value={stockValue} trend={stockValueTrend} cacheKey="game-stock-value" />
+            </div>
+
+            {/* HOLDINGS — 보유 종목 리스트 (LED + 종목 수 한 줄) */}
+            <div className="flex items-center justify-between mt-3 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
+                <span className="text-cyan-300 text-[10px] font-mono tracking-[0.3em]">HOLDINGS</span>
+              </div>
+              <span className="text-cyan-300/70 text-[10px] font-mono tabular-nums">{holdings.length}종목</span>
+            </div>
+            {/* 고정 높이 14rem + scrollbar-cyan — 종목 개수와 무관하게 카드 크기 통일,
+                4종목 이상부터 카드 내부 스크롤 (시안 글로우 스크롤바, index.css 정의) */}
+            <div className="bg-slate-800/50 border border-cyan-500/30 rounded-lg p-2 h-[14rem] overflow-y-auto scrollbar-cyan">
               {holdings.length === 0 ? (
-                <p className="text-xs text-slate-400 italic text-center py-1 font-mono">보유 종목 없음</p>
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-xs text-slate-400 italic font-mono">보유 종목 없음</p>
+                </div>
               ) : (
                 <div className="divide-y divide-cyan-500/15">
                   {holdings.map((s) => {
@@ -332,21 +365,17 @@ export default function GamePage() {
             <Marquee items={[currentTip]} leftLabel="📢 TIPS" />
           </div>
 
-          {/* 상단 중앙: KOSPI 지수 차트 — 클릭 시 확대 모달 (작은 차트 위치에서 출발하는 애니메이션, X축 중앙 정렬) */}
+          {/* 상단 중앙: KOSPI 축약 ticker — 수치+변동률만 표시, 클릭 시 ChartExpandModal에서 풀 차트
+              hover 시 살짝 확대(scale 1.03) + cursor-pointer로 클릭 가능 시각 단서 제공 */}
           <button
             ref={chartButtonRef}
             type="button"
             onClick={handleChartOpen}
             style={{ top: 'calc(0.75rem + 150px)', left: '50%', outline: 'none' }}
-            className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10 group cursor-pointer focus:outline-none transition-transform duration-150 hover:scale-[1.02]"
+            className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10 cursor-pointer focus:outline-none transition-transform duration-150 hover:scale-[1.03]"
             aria-label="KOSPI 차트 확대"
           >
-            {/* 메인 화면 미니 차트 — 클릭 시 ChartExpandModal에서 풀 차트 표시 */}
             <KospiChart compact />
-            {/* hover 시 확대 아이콘 — 차트 우상단 inside */}
-            <span className="absolute top-3 right-3 text-[10px] text-cyan-200 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none bg-slate-900/90 px-2 py-0.5 rounded border border-cyan-500/60 font-mono tracking-wider">
-              🔍 EXPAND
-            </span>
           </button>
 
           {/* 우상단: 도움말 / 설정 / 종료 (hover 시 라벨) */}
@@ -430,9 +459,9 @@ export default function GamePage() {
           )}
 
           {/* NPC 클릭 영역 — 좌표는 상단 HOTSPOT.npc 상수에서 관리 (배경 캐릭터 위치 미세조정) */}
-          <NPCHotspot {...HOTSPOT.npc.market}       label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} />
+          <NPCHotspot {...HOTSPOT.npc.market}       label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} hoverBubbleTop="28px" />
           <NPCHotspot {...HOTSPOT.npc.infoMerchant} label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} />
-          <NPCHotspot {...HOTSPOT.npc.techMerchant} label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} />
+          <NPCHotspot {...HOTSPOT.npc.techMerchant} label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} hoverBubbleTop="9px" />
 
           {/* 도움말 오버레이 — 각 UI 옆에 설명 풍선, 배경 클릭 시 닫힘 */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
@@ -589,45 +618,27 @@ function ChartExpandModal({ onClose, startRect }) {
 // 내부 헬퍼 컴포넌트 — props만 받음 (명세 v2 §8 컴포넌트 원칙)
 // ─────────────────────────────────────────────────────────
 
-// 좌측 카드 자산 한 줄 — 라벨 + (▲/▼ 아이콘) + 카운트 애니메이션 금액
-// highlight=true   → 총 자산 강조
-// trend='up|down'  → 전라운드 대비 변동 아이콘
-// deltaPct·deltaAmount → 있으면 두 번째 줄에 ▲ +X.XX% (+27,000원) 표시
+// 좌측 카드 보조 자산 한 줄 — 라벨 + (▲/▼ 아이콘) + 카운트 애니메이션 금액
+// trend='up|down'  → 전라운드 대비 변동 아이콘 (평가액 전용)
 // cacheKey         → 페이지 전환 후에도 직전 값 보존 (sessionStorage)
-function AssetRow({ label, value, highlight, trend, deltaPct, deltaAmount, cacheKey }) {
-  // 소수점 2자리 반올림 기준 — ±0.005% 미만이면 "변동 없음"으로 두 번째 줄 숨김
-  const hasDelta = deltaPct !== undefined && deltaPct !== null && Math.abs(deltaPct) >= 0.005
-  const isUp = (deltaPct ?? 0) > 0
-
+// 총자산 강조(히어로)/증감률 표시는 카드 상단에서 별도 처리 — 이 컴포넌트는 작은 보조 행 전용
+function AssetRow({ label, value, trend, cacheKey }) {
   return (
-    <div>
-      <div className="flex justify-between items-baseline">
-        <span className={`text-sm ${highlight ? 'text-cyan-300 font-bold' : 'text-cyan-300/70'}`}>{label}</span>
-        <span className={`font-bold flex items-baseline gap-1 tabular-nums ${highlight ? 'text-xl text-cyan-100' : 'text-base text-slate-100'}`}>
-          {trend === 'up'   && <span className="text-red-400 text-xs">▲</span>}
-          {trend === 'down' && <span className="text-blue-400 text-xs">▼</span>}
-          <AnimatedNumber value={value} cacheKey={cacheKey} />원
-        </span>
-      </div>
-      {hasDelta && (
-        <div className="flex justify-end items-baseline mt-0.5 gap-1.5 font-mono tabular-nums text-xs">
-          <span className={isUp ? 'text-red-400' : 'text-blue-400'}>
-            {isUp ? '▲' : '▼'} <AnimatedNumber value={Math.abs(deltaPct)} decimals={2} />%
-          </span>
-          {deltaAmount !== undefined && deltaAmount !== null && (
-            <span className={isUp ? 'text-red-300/70' : 'text-blue-300/70'}>
-              ({isUp ? '+' : '-'}<AnimatedNumber value={Math.abs(deltaAmount)} />원)
-            </span>
-          )}
-        </div>
-      )}
+    <div className="flex justify-between items-baseline">
+      <span className="text-sm text-cyan-300/70">{label}</span>
+      <span className="font-bold flex items-baseline gap-1 tabular-nums text-base text-slate-100">
+        {trend === 'up'   && <span className="text-red-400 text-xs">▲</span>}
+        {trend === 'down' && <span className="text-blue-400 text-xs">▼</span>}
+        <AnimatedNumber value={value} cacheKey={cacheKey} />원
+      </span>
     </div>
   )
 }
 
 // NPC 클릭 영역 — 시안 광채 + 머리 위 라벨 풍선
 // 좌표(left/top/width/height)는 호출부에서 HOTSPOT.npc.* 스프레드로 주입
-function NPCHotspot({ left, top, width, height, label, subLabel, onClick }) {
+// hoverBubbleTop — 호버 풍선 Y 오프셋 (기본 0 = 핫스팟 상단 위, NPC별 미세조정용)
+function NPCHotspot({ left, top, width, height, label, subLabel, onClick, hoverBubbleTop = 0 }) {
   return (
     <button
       onClick={onClick}
@@ -649,9 +660,10 @@ function NPCHotspot({ left, top, width, height, label, subLabel, onClick }) {
       <span
         style={{
           left: '50%',
+          top: hoverBubbleTop,
           transform: 'translate(-50%, -100%)',
         }}
-        className="absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
+        className="absolute opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
       >
         {/* HelpBubble과 동일한 톤: slate-900/95 + cyan-400 border + 글로우 + font-mono */}
         <span className="block whitespace-nowrap bg-slate-900/95 text-cyan-100 font-bold text-xs px-3 py-1.5 rounded-lg border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] font-mono tracking-wider">
@@ -713,18 +725,19 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
-      {/* KOSPI 차트 설명 — 차트 위쪽에서 아래로 +60px 이동, arrow="down"으로 아래 차트를 가리킴 */}
-      <HelpBubble style={{ top: 'calc(0.75rem + 85px)', left: 'calc(50% + 200px)', transform: 'translateX(-50%)' }} arrow="down">
+      {/* KOSPI 축약 ticker 설명 — 압축된 ticker 우측 영역(가격·배지)을 가리킴
+          위로 5%(~46px) 이동: 85px → 39px */}
+      <HelpBubble style={{ top: 'calc(0.75rem + 39px)', left: 'calc(50% + 200px)', transform: 'translateX(-50%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">📈 KOSPI 지수</strong>
         <p className="text-xs mt-1 text-cyan-100">
           한국 주식 시장 전체 평균값
-          <br />올라가면 시장 분위기가 좋아요
+          <br />빨강▲ 상승 · 파랑▼ 하락
           <br />클릭하면 큰 차트로 볼 수 있어요
         </p>
       </HelpBubble>
 
-      {/* 좌측 카드 옆 (카드: left-4 w-80) */}
-      <HelpBubble style={{ top: '50%', left: 'calc(1rem + 20rem + 0.75rem)', transform: 'translateY(-50%)' }}>
+      {/* 좌측 카드 옆 (카드: left-[46px] w-80) — 카드 오른쪽 끝 + 0.75rem 갭 */}
+      <HelpBubble style={{ top: '50%', left: 'calc(46px + 20rem + 0.75rem)', transform: 'translateY(-50%)' }}>
         <strong className="text-cyan-300 text-base block">💼 내 자산 현황</strong>
         <p className="text-xs mt-1 text-cyan-100">
           내 돈이 얼마인지 한눈에 확인
@@ -752,8 +765,11 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
-      {/* 거래소 NPC (왼쪽, left 35%+7%=42%) — 머리 위 */}
-      <HelpBubble style={{ top: '38%', left: '42%', transform: 'translate(-50%, -100%)' }} arrow="down">
+      {/* NPC 머리 위 풍선 — HOTSPOT.npc.* 좌표(center=left+4%)에 맞춰 정렬, NPC 머리(top:28%) 위에 위치
+          top:35% — NPC 얼굴 영역과 정렬되도록 25%→30%→35%로 단계적으로 아래 조정 */}
+
+      {/* 거래소 NPC — HOTSPOT.market center = calc(46.5% - 190px) */}
+      <HelpBubble style={{ top: '35%', left: 'calc(46.5% - 190px)', transform: 'translate(-50%, -100%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">🏛️ 거래소</strong>
         <p className="text-xs mt-1 text-cyan-100">
           주식을 사고파는 곳
@@ -761,8 +777,8 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
-      {/* 정보상 NPC (가운데, left 48%+7%=55%) — 도움말 풍선 50px 우측 이동 */}
-      <HelpBubble style={{ top: '38%', left: 'calc(55% + 50px)', transform: 'translate(-50%, -100%)' }} arrow="down">
+      {/* 정보상 NPC — HOTSPOT.infoMerchant center = calc(52% - 50px) */}
+      <HelpBubble style={{ top: '35%', left: 'calc(52% - 50px)', transform: 'translate(-50%, -100%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">📰 정보상</strong>
         <p className="text-xs mt-1 text-cyan-100">
           뉴스에 따라 주가가 움직여요
@@ -771,8 +787,8 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
-      {/* 기술상 NPC (오른쪽, left 62%+7%=69%) — 도움말 풍선 100px 우측 이동 */}
-      <HelpBubble style={{ top: '38%', left: 'calc(69% + 100px)', transform: 'translate(-50%, -100%)' }} arrow="down">
+      {/* 기술상 NPC — HOTSPOT.techMerchant center = 61%, 풍선만 +3% 우측 오프셋(64%) */}
+      <HelpBubble style={{ top: '35%', left: '64%', transform: 'translate(-50%, -100%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">🔧 기술상</strong>
         <p className="text-xs mt-1 text-cyan-100">
           숨겨진 종목 공개 (고위험·고수익)
