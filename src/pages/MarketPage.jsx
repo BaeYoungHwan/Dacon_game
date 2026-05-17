@@ -1078,7 +1078,7 @@ function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
               ? <>📦 {selectedCount}종목 · 총 <span className="text-cyan-100 font-bold">{totalQty}</span>주</>
               : <span className="text-cyan-300/50">수량을 입력하면 매수 대상이 됩니다</span>}
           </span>
-          <div className="text-right">
+          <div className="text-right mr-[15px]">
             <p className="text-sm text-cyan-300/80 font-mono tracking-[0.15em] [text-shadow:_0_0_4px_rgba(0,0,0,0.9)]">합계</p>
             <p className={`text-2xl font-bold font-mono tabular-nums [text-shadow:_0_0_5px_rgba(0,0,0,0.95),_0_0_12px_rgba(0,0,0,0.7)] ${canAfford ? 'text-cyan-50' : 'text-rise'}`}>
               {totalCost.toLocaleString()}
@@ -1091,7 +1091,7 @@ function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
         {selectedCount > 0 && (
           <div className="flex items-baseline justify-between gap-3 text-sm font-mono pl-2 border-l-2 border-cyan-500/30">
             <span className="text-cyan-300/80 tracking-[0.1em] [text-shadow:_0_0_4px_rgba(0,0,0,0.9)]">매수 후 예상 잔액</span>
-            <span className={`tabular-nums font-bold [text-shadow:_0_0_4px_rgba(0,0,0,0.95),_0_0_10px_rgba(0,0,0,0.7)] ${canAfford ? 'text-cyan-200' : 'text-rise'}`}>
+            <span className={`tabular-nums font-bold mr-[15px] [text-shadow:_0_0_4px_rgba(0,0,0,0.95),_0_0_10px_rgba(0,0,0,0.7)] ${canAfford ? 'text-cyan-200' : 'text-rise'}`}>
               {remainingCash.toLocaleString()}<span className="text-cyan-300/80 text-xs ml-0.5">원</span>
             </span>
           </div>
@@ -1357,7 +1357,7 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
               ? <>📦 {selectedCount}종목 · 총 <span className="text-rose-100 font-bold">{totalQty}</span>주</>
               : <span className="text-rose-300/50">매도할 수량을 입력하세요</span>}
           </span>
-          <div className="text-right">
+          <div className="text-right mr-[15px]">
             <p className="text-sm text-rose-300/80 font-mono tracking-[0.15em] [text-shadow:_0_0_4px_rgba(0,0,0,0.9)]">매도 수익</p>
             <p className="text-2xl font-bold font-mono tabular-nums text-rose-50 [text-shadow:_0_0_5px_rgba(0,0,0,0.95),_0_0_12px_rgba(0,0,0,0.7)]">
               {totalProceeds.toLocaleString()}
@@ -1370,7 +1370,7 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
         {selectedCount > 0 && (
           <div className="flex items-baseline justify-between gap-3 text-sm font-mono pl-2 border-l-2 border-rose-500/30">
             <span className="text-rose-300/80 tracking-[0.1em] [text-shadow:_0_0_4px_rgba(0,0,0,0.9)]">매도 후 예상 현금</span>
-            <span className="tabular-nums font-bold text-rose-200 [text-shadow:_0_0_4px_rgba(0,0,0,0.95),_0_0_10px_rgba(0,0,0,0.7)]">
+            <span className="tabular-nums font-bold text-rose-200 mr-[15px] [text-shadow:_0_0_4px_rgba(0,0,0,0.95),_0_0_10px_rgba(0,0,0,0.7)]">
               {remainingCash.toLocaleString()}<span className="text-rose-300/80 text-xs ml-0.5">원</span>
             </span>
           </div>
