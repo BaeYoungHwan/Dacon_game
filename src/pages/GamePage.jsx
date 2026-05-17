@@ -21,22 +21,10 @@ import stockData from '../data/stockData.json'
 import KospiChart from '../components/game/KospiChart'
 import AnimatedNumber from '../components/ui/AnimatedNumber'
 import Marquee from '../components/ui/Marquee'
+import { TIPS } from '../components/game/TipBox'
 import SettingsModal from '../components/game/SettingsModal'
 import { IconButton, HelpIcon, SettingsIcon, ExitIcon } from '../components/game/PageNav'
 
-// 전광판에 흘러갈 게임플레이 팁 — 정적 (라운드 무관)
-// Marquee가 한 팁씩 우→좌로 흐르고 끝나면 다음 팁으로 자동 순환
-const GAMEPLAY_TIPS = [
-  '💡 정보상에서 뉴스를 미리 사면 다음 라운드 시장 변동을 엿볼 수 있다',
-  '🔧 기술상은 비공개된 10종목을 유료로 공개해 거래 기회를 늘려준다',
-  '📊 좌측 카드에서 현금·평가액·총자산을 실시간 확인하라',
-  '📈 빨강은 상승 · 파랑은 하락 — 한국 주식 표준 색상',
-  '🎯 50주 동안 자산을 늘려 코스피 지수 수익률을 이겨라',
-  '🔍 KOSPI 차트를 클릭하면 큰 화면으로 자세히 볼 수 있다',
-  '⏰ 다음 주 버튼은 되돌릴 수 없다 — 신중히 결정하라',
-  '💰 매도 시 평균 매수가 대비 손익이 확정된다 — 타이밍이 중요',
-  '🎲 비공개 종목은 정보상 추천을 보고 공개 여부를 결정하라',
-]
 
 // stocks.json의 id(realTicker)로 stockData에서 라운드별 가격 배열 찾기 위한 인덱스
 const stockDataByTicker = Object.fromEntries(
@@ -77,6 +65,7 @@ export default function GamePage() {
   const [transitioningWeek, setTransitioningWeek] = useState(1)
   const chartButtonRef = useRef(null)
   const [chartStartRect, setChartStartRect] = useState(null)
+  const [currentTip, setCurrentTip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)])
 
   // 첫 진입 시 도움말 자동 오픈 (인트로 완료 후 조작법 안내)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,6 +75,10 @@ export default function GamePage() {
       clearFirstPlay()
     }
   }, [])
+
+  useEffect(() => {
+    setCurrentTip(TIPS[Math.floor(Math.random() * TIPS.length)])
+  }, [turn])
 
   // 반응형 스케일 — 1695×928 기준 wrapper를 컨테이너 너비에 맞춰 transform: scale
   // viewport가 작아지면 모든 absolute 요소가 비례 축소되어 레이아웃이 깨지지 않음
@@ -369,7 +362,7 @@ export default function GamePage() {
             style={{ top: 'calc(0.75rem + 115px)', left: '50%' }}
             className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10"
           >
-            <Marquee items={GAMEPLAY_TIPS} leftLabel="📢 TIPS" />
+            <Marquee items={[currentTip]} leftLabel="📢 TIPS" />
           </div>
 
           {/* 상단 중앙: KOSPI 축약 ticker — 수치+변동률만 표시, 클릭 시 ChartExpandModal에서 풀 차트
