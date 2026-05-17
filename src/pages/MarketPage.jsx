@@ -20,6 +20,7 @@ import { useState, useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import StockChart from '../components/game/StockChart'
 import { getRecentCloses } from '../components/game/chartUtils'
+import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
 
 // 도움말 자동 표시 여부 기억용 sessionStorage 키 — 한 게임당 1회 자동 노출
 const MARKET_HELP_SEEN_KEY = 'market-help-seen'
@@ -31,14 +32,11 @@ const MARKET_HELP_SEEN_KEY = 'market-help-seen'
 // ─────────────────────────────────────────────────────────
 const HOTSPOT = {
   // 거래소 메인 — 배경 이미지의 키오스크·NPC·홀로그램 영역 핫스팟
+  // (도움말/메인/정보상/기술상은 PageNav 컴포넌트로 분리)
   market: {
     analysis: { top: 'calc(8% + 1.481%)', left: 'calc(28% - 0.060%)', width: 'calc(42% + 1.845%)', height: 'calc(58% + 6.138%)' },
     buy:      { top: '55%', left: 'calc(15% - 7.738%)', width: '16%', height: '35%' },
     sell:     { top: '55%', right: 'calc(15% - 5.952%)', width: '16%', height: '35%' },
-    help:     { top: '3%', right: 'calc(14.5% - 2.202%)', width: 'calc(10% - 0.357%)', height: 'calc(8% - 2.116%)' },
-    main:     { top: '3%', right: 'calc(2% - 0.179%)', width: 'calc(11% - 1.190%)', height: 'calc(8% - 2.116%)' },
-    infoMerchant: { right: 'calc(15% - 1.786%)', bottom: 'calc(2% - 0.529%)', width: '11%', height: 'calc(7% - 1.270%)' },
-    techMerchant: { right: 'calc(2% - 0.595%)', bottom: 'calc(2% - 0.741%)', width: 'calc(12% - 1.071%)', height: 'calc(7% - 1.058%)' },
   },
   // 분석 모달 — 그려진 우상단 버튼 위 hotspot
   analysis: {
@@ -118,17 +116,11 @@ export default function MarketPage() {
           <Hotspot label="주식 판매" className="absolute rounded-xl"
             style={HOTSPOT.market.sell} glowColor="red" onClick={() => setActivePopup('sell')} />
 
-          <Hotspot label="도움말" className="absolute rounded-[8.5px]"
-            style={HOTSPOT.market.help} onClick={() => setOpenHelp(true)} />
+          {/* 우상단: 도움말 / 설정 / 메인 — PageNav 통일 스타일 */}
+          <TopRightNav onHelp={() => setOpenHelp(true)} navigateTo={navigateTo} />
 
-          <Hotspot label="메인으로" className="absolute rounded-[8.5px]"
-            style={HOTSPOT.market.main} onClick={() => navigateTo('main')} />
-
-          <Hotspot label="정보상" className="absolute rounded-lg"
-            style={HOTSPOT.market.infoMerchant} onClick={() => navigateTo('infoMerchant')} />
-
-          <Hotspot label="기술상" className="absolute rounded-[10px]"
-            style={HOTSPOT.market.techMerchant} onClick={() => navigateTo('techMerchant')} />
+          {/* 우하단: 다른 페이지 이동 (정보상 / 기술상) */}
+          <BottomRightNav current="market" navigateTo={navigateTo} />
 
           {/* 도움말 오버레이 (배경 클릭 시 닫힘) */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}

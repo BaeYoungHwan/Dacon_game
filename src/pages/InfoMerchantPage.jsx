@@ -16,6 +16,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
 
 // 새 게임 시작당 1회 자동 도움말 노출용 sessionStorage 키
 const INFO_HELP_SEEN_KEY = 'info-merchant-help-seen'
@@ -28,15 +29,11 @@ const INFO_HELP_SEEN_KEY = 'info-merchant-help-seen'
 //   recommendPopup: 4:3 추천종목 팝업의 그려진 X + 3-zone(상단 정보 / 중단 수수료 / 하단 그린 버튼)
 // ─────────────────────────────────────────────────────────
 const HOTSPOT = {
-  // 정보상 메인 — 책상 위 3개 오브젝트 + 우상/우하 네비 핫스팟
+  // 정보상 메인 — 책상 위 3개 오브젝트만 (도움말/메인/거래소/기술상은 PageNav로 분리)
   infoMerchant: {
-    globe:        { top: 'calc(41.7% - 2.646%)', left: 'calc(8.7% + 2.976%)',  width: '13.6%',             height: '29.6%' },             // 좌측 지구본 (위 -25px, 우 +50px)
-    briefcase:    { top: 'calc(72% - 7.407%)',   left: 'calc(32% - 11.905%)',  width: '32%',               height: '23%' },               // 중앙 서류가방 (위 -70px, 좌 -200px)
-    tablet:       { top: 'calc(76% - 2.646%)',   left: 'calc(69% - 11.905%)',  width: '20%',               height: '17%' },               // 우측 태블릿 (위 -25px, 좌 -200px)
-    help:         { top: '3%',                   right: 'calc(14.5% - 2.202%)', width: 'calc(10% - 0.357%)', height: 'calc(8% - 2.116%)' }, // 우상단 도움말
-    main:         { top: '3%',                   right: 'calc(2% - 0.179%)',    width: 'calc(11% - 1.190%)', height: 'calc(8% - 2.116%)' }, // 우상단 메인으로
-    market:       { right: 'calc(15% - 2.381%)', bottom: 'calc(2% + 2.434%)',  width: 'calc(11% - 0.595%)', height: 'calc(7% - 0.212%)' }, // 우하단 거래소 (+40px 우, +23px 위)
-    techMerchant: { right: 'calc(2% - 0.178%)',  bottom: 'calc(2% + 2.434%)',  width: 'calc(12% - 1.488%)', height: 'calc(7% - 0.106%)' }, // 우하단 기술상 (+30px 위)
+    globe:     { top: 'calc(41.7% - 2.646%)', left: 'calc(8.7% + 2.976%)',  width: '13.6%', height: '29.6%' }, // 좌측 지구본
+    briefcase: { top: 'calc(72% - 7.407%)',   left: 'calc(32% - 11.905%)',  width: '32%',   height: '23%'   }, // 중앙 서류가방
+    tablet:    { top: 'calc(76% - 2.646%)',   left: 'calc(69% - 11.905%)',  width: '20%',   height: '17%'   }, // 우측 태블릿
   },
   // 국제뉴스 팝업 (16:9)
   globalPopup: {
@@ -131,13 +128,11 @@ export default function InfoMerchantPage() {
         <ObjectGlow label="기업 뉴스" style={HOTSPOT.infoMerchant.briefcase} glowColor="amber"   onClick={() => setActivePopup('companyNews')} />
         <ObjectGlow label="추천 종목" style={HOTSPOT.infoMerchant.tablet}    glowColor="emerald" onClick={() => setActivePopup('recommendation')} />
 
-        {/* 우상단 도움말 / 메인 */}
-        <Hotspot label="도움말"   className="absolute rounded-[8.5px]" style={HOTSPOT.infoMerchant.help} onClick={() => setOpenHelp(true)} />
-        <Hotspot label="메인으로" className="absolute rounded-[8.5px]" style={HOTSPOT.infoMerchant.main} onClick={() => navigateTo('main')} />
+        {/* 우상단: 도움말 / 설정 / 메인 — PageNav 통일 스타일 */}
+        <TopRightNav onHelp={() => setOpenHelp(true)} navigateTo={navigateTo} />
 
-        {/* 우하단 네비 — 거래소 / 기술상 */}
-        <Hotspot label="거래소" className="absolute rounded-lg"      style={HOTSPOT.infoMerchant.market}       onClick={() => navigateTo('market')} />
-        <Hotspot label="기술상" className="absolute rounded-[10px]"  style={HOTSPOT.infoMerchant.techMerchant} onClick={() => navigateTo('techMerchant')} />
+        {/* 우하단: 다른 페이지 이동 (거래소 / 기술상) */}
+        <BottomRightNav current="infoMerchant" navigateTo={navigateTo} />
 
         {/* 도움말 오버레이 */}
         {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
