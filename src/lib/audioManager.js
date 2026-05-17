@@ -1,10 +1,12 @@
 // 페이지별 배경음악 재생·페이드 관리 모듈
 const TRACKS = {
-  intro:  '/music/kornevmusic-upbeat-happy-corporate-487426.mp3',
-  main:   '/music/the_mountain-upbeat-background-483308.mp3',
-  market: '/music/paulyudin-tension-tension-music-491416.mp3',
-  win:    '/music/nastelbom-success-success-music-436867.mp3',
-  lose:   '/music/leberch-dark-cinematic-509801.mp3',
+  intro:        '/music/kornevmusic-upbeat-happy-corporate-487426.mp3',
+  main:         '/music/the_mountain-upbeat-background-483308.mp3',
+  market:       '/music/paulyudin-tension-tension-music-491416.mp3',
+  infoMerchant: '/music/alexgrohl-dark-mystery-trailer-taking-our-time-131566.mp3',
+  techMerchant: '/music/alexgrohl-synthwave-393606.mp3',
+  win:          '/music/nastelbom-success-success-music-436867.mp3',
+  lose:         '/music/leberch-dark-cinematic-509801.mp3',
 }
 
 const FADE_STEPS = 20
@@ -112,7 +114,7 @@ function sfxGain() { return 0.2 * sfxVolume }
 export function setSfxVolume(vol) { sfxVolume = vol }
 
 export function playSfx(type) {
-  if (isMuted) return
+  if (sfxVolume <= 0) return
   const ctx = getSfxCtx()
   if (!ctx) return
   try {
