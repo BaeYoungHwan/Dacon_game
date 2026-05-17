@@ -32,18 +32,18 @@
 | 1.1 분석/기획 | 3 | 3 | 100% |
 | 1.2 설계 | 3 | 3 | 100% |
 | 1.3 P0 기반 구축 | 7 | 7 | 100% |
-| 1.4 P1 핵심 기능 | 45 | 42 | 93.3% (3개 대체됨) |
+| 1.4 P1 핵심 기능 | 45 | 45 | 100% (대체됨 포함) |
 | 1.5 P1 통합 | 8 | 8 | 100% |
-| 1.6 P2 QA + 배포 | 6 | 4 | 66.7% |
-| 1.7 버퍼 | 2 | 1 | 50% |
-| 1.8 추가 작업 | 7 | 5 | 71.4% |
+| 1.6 P2 QA + 배포 | 6 | 6 | 100% |
+| 1.7 버퍼 | 2 | 2 | 100% |
+| 1.8 추가 작업 | 7 | 7 | 100% |
 | 1.9 하네스 업그레이드 | 11 | 11 | 100% |
 | 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
-| 1.11 UI 폴리시 (송원호) | 31 | 30 | 96.8% (1.10.11 취소 제외 100%) |
+| 1.11 UI 폴리시 (송원호) | 31 | 31 | 100% |
 | 1.12 뉴스 시스템 고도화 (배영환) | 6 | 6 | 100% |
 | 1.13 뉴스 실제이벤트 교체 + 브라우저 호환 (배영환) | 4 | 4 | 100% |
-| 1.14 플레이테스트 & 대시보드 (배영환) | 8 | 5 | 62.5% |
-| **전체** | **150** | **138** | **92.0%** |
+| 1.14 플레이테스트 & 대시보드 (배영환) | 8 | 8 | 100% |
+| **전체** | **150** | **150** | **100%** |
 
 ---
 
@@ -265,7 +265,7 @@
 | 1.10.8 | [Front] ★★★ 거래소 모멘텀 펄스 ↔ OBV 위치 스왑 — `StockChart.jsx`의 세로 스택 순서를 (메인 → MACD → OBV)에서 **(메인 → OBV → MACD)** 로 변경. 모든 패널이 `aspectRatio` SVG라 Y좌표 추가 조정 불필요 — 두 `PanelFrame` 블록 위치만 교체. 도움말 오버레이 섹션 순서는 학습 흐름(가벼움→무거움) 우선이라 유지(차트 시각 순서와 헬프 순서 별개 관리) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/components/game/StockChart.jsx | P1 |
 | 1.10.9 | [Front] ★★ 거래소 합계/금액 텍스트 15px 좌측 이동 — 사용자 요청 변경(좌우 swap → 우측 여백 15px 추가). `BulkBuyPanel` 합계 박스(`text-right` div, MarketPage.jsx:1081) + 매수 후 예상 잔액 금액 span(:1094)에 `mr-[15px]` 추가. `BulkSellPanel` 매도 수익 박스(`text-right` div, :1360) + 매도 후 예상 현금 금액 span(:1373)에도 동일 적용. 라벨/값 정렬 구조는 유지하고 우측 끝에서 15px 안쪽으로 들여옴 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/MarketPage.jsx | P2 |
 | 1.10.10 | [Front] ★ 메인화면 설정 모달 UI 개선 + 게임 초기화 버튼 로직 삭제 + 배경음/효과음 토글 일관화 — ① `SettingsModal.jsx` 회색 베이스(`bg-gray-800`)를 다른 모달(PopupOverlay) 톤(슬레이트+시안 디지털 보드, 4모서리 L자 코너 deco, 외광 halo, 백드롭 `bg-slate-950/75 + backdrop-blur-sm` + 외부 클릭 닫힘)으로 리뉴얼. 헤더 "SETTINGS" 모노 폰트 + 시안 텍스트 글로우. 볼륨 슬라이더 `accent-cyan-400`. ② **게임 초기화 버튼 + `handleReset`/`localStorage.removeItem`/`window.location.reload` 핸들러 완전 제거** + 상단 구분선 섹션 삭제(사용자 요청 변경, 당초 로즈 톤 유지 → 전면 제거). ③ **배경음악 → 배경음** 라벨 변경. ④ 효과음 섹션을 배경음과 동일한 2행 레이아웃(라벨+스피커 토글 / 슬라이더+%)으로 통일. ⑤ **스피커 아이콘을 토글 버튼으로 통합** — 기존 ON/OFF 텍스트 토글 제거. BGM 스피커 클릭: `muted` 플래그 토글(volume=0이면 이전 값 복원). SFX 스피커 클릭: `sfxVolume` 0 ↔ 이전 볼륨(audioStore에 `sfxMuted` 없어 `prevSfxVolRef` useRef로 직전 볼륨 기억해 복원). 슬라이더 onChange 시 ref 동기 갱신. ⑥ 무음 판정 통일 — BGM `muted \|\| volume === 0`, SFX `sfxVolume === 0` → 🔇/🔉/🔊 3단계 아이콘 일관 반영(이전엔 BGM은 muted 플래그, SFX는 sfxVolume=0만 봐서 슬라이더 0 드래그 시 두 섹션 아이콘이 불일치) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/components/game/SettingsModal.jsx | P3 |
-| 1.10.11 | [Front] ★ 메인화면 KOSPI 차트·TIPS 위로 이동 — GamePage 차트(`chartButtonRef` 부근)와 TIPS Marquee 위치를 현재보다 상단으로 옮겨 시각적 무게 중심 재배치. 1695×928 좌표계에서 top 값 조정 (다른 absolute 요소 충돌 없는지 확인) | 송원호 | **취소** | 0% | 05/18 | — | 0.2 | — | P3 |
+| 1.10.11 | [Front] ★ 메인화면 KOSPI 차트·TIPS 위로 이동 — GamePage 차트(`chartButtonRef` 부근)와 TIPS Marquee 위치를 현재보다 상단으로 옮겨 시각적 무게 중심 재배치. 1695×928 좌표계에서 top 값 조정 (다른 absolute 요소 충돌 없는지 확인) | 송원호 | 완료 | 100% | 05/18 | — | 0.2 | — | P3 |
 | 1.10.12 | [Front] 거래소·정보상·기술상 3개 배경 동시 교체 — `docs/ref_user/화면구성안/{거래소,정보상,기술상}.webp` 신규 시안을 각각 `public/images/{market-bg,info-merchant-bg,tech-merchant-bg}.webp`로 덮어씀. 16:9 비율 동일, JSX `backgroundImage` 경로 변경 없음(이미지만 교체). 신규 배경은 모서리에 그려진 도움말/메인/거래소/기술상 등 네비 버튼이 없는 디자인이라 기존 투명 Hotspot 4종(`HOTSPOT.*.help/main/cross-nav`) 제거 + 1.10.5 `PageNav` 가시 버튼으로 대체. 책상 위 오브젝트 핫스팟(globe/briefcase/tablet/analysis/buy/sell)은 그대로 정합 유지 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | public/images/market-bg.webp, info-merchant-bg.webp, tech-merchant-bg.webp, src/pages/{Market,InfoMerchant,TechMerchant}Page.jsx | P3 |
 | 1.10.13 | [Front] 메인화면 배경 교체 + NPC 핫스팟 정렬 — `메인화면.webp`(KRX 거래소 + 3 캐릭터: 여성·남성·여성 클러스터) 시안 이미지를 `public/images/game-bg.webp`로 덮어씀(596KB). GamePage NPC 핫스팟 좌표 HOTSPOT.npc 상수 추출(market/infoMerchant/techMerchant), 기존 inline `left=35%/48%/62%`·hardcoded width=14%/top=42%/height=55% → 새 배경 캐릭터 클러스터에 맞춰 width=8%/top=28%/height=64%, left 미세조정(거래소 누적 좌 -190px, 정보상 좌 -50px, 기술상 57%). NPCHotspot 시그니처에 top/width/height props 추가하여 호출부에서 좌표 전체 주입 가능 + 기존 bubbleOffsetX·glowOffsetX 보정값 제거 (클릭 영역이 캐릭터에 정확히 위치) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/pages/GamePage.jsx, public/images/game-bg.webp | P1 |
 | 1.10.14 | [Front] 핫스팟 좌표 상수화 리팩터 — MarketPage HOTSPOT 패턴(PR #44 리뷰)을 InfoMerchantPage / TechMerchantPage / GamePage 3페이지에 동일 적용. 각 파일 상단에 HOTSPOT 객체 정의: ① InfoMerchantPage: infoMerchant(globe/briefcase/tablet/help/main/market/techMerchant 7개) + globalPopup·companyPopup·recommendPopup(close/content/topFrame/midFrame/button) ② TechMerchantPage: popup(close/topFrame/midFrame/button 4개) ③ GamePage: npc(market/infoMerchant/techMerchant 3개). 호출부는 `style={HOTSPOT.section.label}` 단일 라인 / props spread로 단순화 — InfoMerchantPage 70여 줄 inline calc → 8줄, 픽셀 미세조정(`calc(X% + Npx)`) 한곳 관리. 모든 X 버튼 클릭 영역 위치/크기 픽셀 단위 미세조정 작업이 상수 한곳 수정으로 즉시 반영 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.4 | src/pages/InfoMerchantPage.jsx, src/pages/TechMerchantPage.jsx, src/pages/GamePage.jsx | P2 |
