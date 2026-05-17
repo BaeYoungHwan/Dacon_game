@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 추가 — Vitest QA 환경 구축 + 단위·통합 테스트 66개 작성 + getBollingerSignal 제로 밴드 NaN 버그 수정 + PR #48 머지. 1.4.37~1.4.45 추가 — MarketPage 3종 모달 KRX 디지털 보드 풀 리뉴얼 + PR #44 리뷰 후속 + 데드 코드 정리. 종목분석 16:9 + 멀티 패널 차트(메인/MACD/OBV 동시 노출, 네온 글로우, 워밍업 X축 재구성) + 주식구매 BulkBuyPanel + 주식판매 BulkSellPanel + chartUtils 확장 평균 + calcOBV 시그니처 수정 + 등락률 4곳 저번 주 대비 통일 + gameStore purchaseRounds 추가 + 3개 도움말 오버레이 + 시안/로즈 스크롤바 + number input 스피너 숨김 + PR 리뷰 후속 4건(MACD 매핑 주석/StockChart useMemo/HOTSPOT 상수/PopupOverlay props drilling 14→4) + 데드 코드 정리(SignalBadge·signal 계산·WeekInfoPanel·StatCard·미사용 import + macdArr 잠재 TypeError 동시 해결))
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 QA 자동화 — Vitest 단위·통합 테스트 66개 + getBollingerSignal NaN 버그 수정 + PR #48 머지. 1.11 신규 — 송원호 UI 폴리시 12건 배치. ★★★★★ 메인화면 호버·기술상 컨텐츠 UI / ★★★★ 거래소 매수매도 max버튼·정보상 뉴스 갱신 애니메이션·정보상 3종 UI·공용 버튼 톤 통일·각 화면별 설정 추가 / ★★★ 모멘텀펄스 라이너 교체·MACD↔OBV 위치 스왑 / ★★ 거래소 합계 금액 텍스트 좌측 정렬 / ★ 메인화면 설정 모달 UI 개선·KOSPI 차트·TIPS 위로 이동·거래소 배경 교체)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -37,7 +37,10 @@
 | 1.6 P2 QA + 배포 | 6 | 4 | 66.7% |
 | 1.7 버퍼 | 2 | 0 | 0% |
 | 1.8 추가 작업 | 7 | 5 | 71.4% |
-| **전체** | **81** | **72** | **88.9%** |
+| 1.9 하네스 업그레이드 | 11 | 11 | 100% |
+| 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
+| 1.11 UI 폴리시 (송원호) | 12 | 0 | 0% |
+| **전체** | **113** | **92** | **81.4%** |
 
 ---
 
@@ -241,6 +244,29 @@
 
 ---
 
+## 1.11 UI 폴리시 (송원호 — 2026-05-17 추가 배치)
+
+> 기간: 2026-05-17 ~ 2026-05-18 | 담당: 송원호 | 출처: 사용자 직접 요청 (별표 우선순위)
+> 우선순위 표기: ★★★★★(P0) / ★★★★(P1) / ★★★(P1-) / ★★(P2) / ★(P3)
+> 영역: 모두 `src/pages/`, `src/components/` — 송원호 담당 영역 내부
+
+| WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
+|-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
+| 1.11.1 | [Front] ★★★★★ 메인화면 호버 작업 — GamePage NPC 3인 / 좌측 자산 카드 / KOSPI 차트 / 우상단 IconButton / 다음 주 버튼 / TIPS Marquee 호버 인터랙션 보강 (현재 22건 group-hover 존재하나 시안 글로우 톤·라벨 풍선·커서·트랜지션 일관성 점검 + 부족한 영역 호버 피드백 추가) | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.5 | src/pages/GamePage.jsx | P0 |
+| 1.11.2 | [Front] ★★★★★ 기술상 컨텐츠 UI 개선 — TechMerchantPage PopupOverlay(`indicators` / `hiddenStocks` / `locked` 3종) 콘텐츠 영역 디자인 리뉴얼. MarketPage 3종 모달(StockAnalysis / BulkBuy / BulkSell)과 일관된 16:9 디지털 보드 톤 + 정보 위계 강화(지표 카드 그리드 / 깜짝 종목 카드 / 잠금 안내 일러스트) | 송원호 | 대기 | 0% | 05/17 | 05/17 | 1 | src/pages/TechMerchantPage.jsx | P0 |
+| 1.11.3 | [Front] ★★★★ 거래소 매수/매도 max 버튼 추가 — `BulkBuyPanel` 종목 행의 수량 컨트롤에 `MAX` 버튼 신설(현재 보유 현금으로 살 수 있는 최대 주수 자동 계산: `Math.floor(cash / price)`). `BulkSellPanel`은 보유 수량(`stockHeld`)을 자동 입력. 기존 `+ / -` 컨트롤 옆에 시안/로즈 톤 작은 버튼으로 배치 | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx | P1 |
+| 1.11.4 | [Front] ★★★★ 정보상 3종 팝업 UI 개선 + 뉴스 갱신 애니메이션 — 국제뉴스/기업뉴스/추천종목 팝업의 콘텐츠 영역 디자인 정돈(여백·계층·아이콘). 새 라운드 진입 시 뉴스 카드가 **위에서 아래로 슬라이드 인** (CSS keyframe `slide-down-fade-in` + stagger delay) — `useEffect([turn])` 감지해 트리거 | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.7 | src/pages/InfoMerchantPage.jsx, src/index.css | P1 |
+| 1.11.5 | [Front] ★★★★ 공용 버튼 UI 통일 — 현재 페이지마다 산재한 버튼 스타일을 `bg-transparent + border-cyan-500/* + hover:border-cyan-300` 패턴(배경 없는 라인 버튼)으로 통일. `src/components/ui/Button.jsx` 변형 추가하거나 새 컴포넌트(예: `LineButton`) 도입 후 GamePage / MarketPage / InfoMerchantPage / TechMerchantPage / SettingsModal / ExitConfirmModal 일괄 교체 | 송원호 | 대기 | 0% | 05/17 | 05/18 | 0.5 | src/components/ui/Button.jsx, 5개 페이지·모달 | P1 |
+| 1.11.6 | [Front] ★★★★ 각 화면별 설정 버튼 추가 — 현재 GamePage 우상단에만 있는 설정 모달을 MarketPage / InfoMerchantPage / TechMerchantPage에도 추가(우상단 핫스팟 옆 또는 공통 슬롯). `SettingsModal` 재사용 + `audioStore` 그대로 사용 | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx, InfoMerchantPage.jsx, TechMerchantPage.jsx | P1 |
+| 1.11.7 | [Front] ★★★ 모멘텀 펄스 차트 → 라인 차트로 교체 — `StockChart.jsx`의 MACD 패널이 현재 히스토그램 막대(0 중심 대칭). 이를 MACD 라인 + Signal 라인 + Histogram(연한 배경) 조합 또는 단일 라이너로 교체. `calcMACD` 반환값(`{macd, signal, histogram}`)에서 macd/signal 라인 활용 | 송원호 | 대기 | 0% | 05/17 | 05/18 | 0.4 | src/components/game/StockChart.jsx | P1 |
+| 1.11.8 | [Front] ★★★ 거래소 모멘텀 펄스 ↔ OBV 위치 스왑 — `StockChart.jsx`의 세로 스택 순서를 (메인 → MACD → OBV)에서 (메인 → OBV → MACD)로 변경. 패널 렌더 순서 + Y좌표 계산 + 도움말 오버레이 섹션 순서 동시 조정 | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.2 | src/components/game/StockChart.jsx, src/pages/MarketPage.jsx | P1 |
+| 1.11.9 | [Front] ★★ 거래소 합계/금액 텍스트 좌측 정렬 — `BulkBuyPanel` 하단 요약 라인의 `합계` 박스(현재 `text-right` + 우측 정렬) / `BulkSellPanel` 매도 수익 박스를 좌측으로 이동. flex `justify-between` 좌우 swap 또는 두 영역 순서 교체 | 송원호 | 대기 | 0% | 05/18 | 05/18 | 0.2 | src/pages/MarketPage.jsx | P2 |
+| 1.11.10 | [Front] ★ 메인화면 설정 모달 UI 개선 — `SettingsModal.jsx` 현재 회색 베이스(`bg-gray-800`)를 다른 모달(PopupOverlay)과 일관된 슬레이트+시안 디지털 보드 톤으로 리뉴얼. 볼륨 슬라이더 시안 accent, 게임 초기화 버튼 로즈 톤, X 닫기 버튼 일관성 | 송원호 | 대기 | 0% | 05/18 | 05/18 | 0.3 | src/components/game/SettingsModal.jsx | P3 |
+| 1.11.11 | [Front] ★ 메인화면 KOSPI 차트·TIPS 위로 이동 — GamePage 차트(`chartButtonRef` 부근)와 TIPS Marquee 위치를 현재보다 상단으로 옮겨 시각적 무게 중심 재배치. 1695×928 좌표계에서 top 값 조정 (다른 absolute 요소 충돌 없는지 확인) | 송원호 | 대기 | 0% | 05/18 | 05/18 | 0.2 | src/pages/GamePage.jsx | P3 |
+| 1.11.12 | [Front] ★ 거래소 배경 교체 — `public/images/market-bg.webp` 새 배경 이미지로 교체. 16:9 비율 유지 + 핫스팟 좌표(HOTSPOT.market.* 5종)와 NPC·오브젝트 위치 정합 확인 후 필요 시 픽셀 미세조정 | 송원호 | 대기 | 0% | 05/18 | 05/18 | 0.3 | public/images/market-bg.webp, src/pages/MarketPage.jsx | P3 |
+
+---
+
 ## 브랜치 전략
 
 | 브랜치 | 담당자 | 연결 태스크 |
@@ -255,6 +281,7 @@
 | `feature/p1-integration` | 배영환 | 1.5.1~1.5.4, 1.5.7 |
 | `feature/p1-ui-result` | 송원호 | 1.5.5~1.5.6 |
 | `feature/p2-polish` | 송원호 | 1.6.2~1.6.3 |
+| `WOHNO` (현재) / `feature/ui-polish-1.10` | 송원호 | 1.10.1~1.10.12 |
 
 > PR 규칙: 송원호 → master PR 생성 → 배영환 리뷰 후 merge
 
