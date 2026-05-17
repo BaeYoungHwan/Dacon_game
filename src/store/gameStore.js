@@ -95,6 +95,7 @@ export const useGameStore = create(
       exchangeRate: INITIAL_EXCHANGE_RATE,
       currentNews: null,
       currentGlobalNews: null,
+      assetHistory: [],
       insiderTip: null,
 
       setNickname: (name) => set({ nickname: name }),
@@ -134,12 +135,14 @@ export const useGameStore = create(
           currentGlobalNews: initialTurn.globalNews,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
+          assetHistory: [],
           insiderTip: null,
         })
       },
 
       nextTurn: ({ newPrices, news, globalNews, newKospi, newExchangeRate }) => {
-        const { turn, totalTurns, exchangeRate, prices: prevPrices } = get()
+        const { turn, totalTurns, exchangeRate, prices: prevPrices, assetHistory } = get()
+        const snapshot = get().getFinalAssets()
         const next = turn + 1
         const isLast = next > totalTurns
         set({
@@ -149,6 +152,7 @@ export const useGameStore = create(
           currentGlobalNews: globalNews,
           kospi: newKospi,
           exchangeRate: newExchangeRate ?? exchangeRate,
+          assetHistory: [...assetHistory, snapshot],
           page: isLast ? 'result' : 'main',
         })
       },
@@ -309,6 +313,7 @@ export const useGameStore = create(
           currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
+          assetHistory: [],
           insiderTip: null,
         })
       },
@@ -337,6 +342,7 @@ export const useGameStore = create(
         exchangeRate: state.exchangeRate,
         currentNews: state.currentNews,
         currentGlobalNews: state.currentGlobalNews,
+        assetHistory: state.assetHistory,
         // nextClose·nextRatio는 미래 정보 — localStorage 노출 방지
         insiderTip: state.insiderTip
           ? (({ nextClose: _nc, nextRatio: _nr, ...safe }) => safe)(state.insiderTip)
