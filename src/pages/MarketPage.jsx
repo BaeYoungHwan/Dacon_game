@@ -22,6 +22,7 @@ import StockChart from '../components/game/StockChart'
 import { getRecentCloses } from '../components/game/chartUtils'
 import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
 import ScaledPanel from '../components/ui/ScaledPanel'
+import { useEscapeKey } from '../components/hooks/useEscapeKey'
 
 // 도움말 자동 표시 여부 기억용 sessionStorage 키 — 한 게임당 1회 자동 노출
 const MARKET_HELP_SEEN_KEY = 'market-help-seen'
@@ -259,6 +260,7 @@ const HELP_TONE = {
 }
 
 function HelpOverlayShell({ title = '도움말', tone = 'cyan', onClose, children }) {
+  useEscapeKey(onClose)
   const t = HELP_TONE[tone] ?? HELP_TONE.cyan
   return (
     <div
@@ -545,6 +547,7 @@ function SellHelpOverlay({ onClose }) {
 // 팝업 컨테이너 — 분석/매수/매도 공통 모달
 // ─────────────────────────────────────────────────────────
 function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClose }) {
+  useEscapeKey(onClose)
   // store 의존 데이터는 부모(MarketPage)에서 prop drilling 대신 직접 구독
   const activeStocks       = useGameStore((s) => s.activeStocks)
   const prices             = useGameStore((s) => s.prices)
@@ -1444,6 +1447,7 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
 // 도움말 오버레이 — 각 핫스팟에 풍선으로 설명 표시
 // ─────────────────────────────────────────────────────────
 function HelpOverlay({ onClose }) {
+  useEscapeKey(onClose)
   return (
     <div className="absolute inset-0 z-20" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />

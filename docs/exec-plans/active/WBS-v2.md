@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10.23~1.10.28 반응형 스케일 통일: 트레이드 페이지 3종 1920×1080 scale 래퍼 + ScaledPanel 신설 + 거래소 모달 내부 비례 축소 + NPC 호버 풍선 역보정 + 모달 닫기 hotspot soft halo 통일 / 이전: 1.10.22 정보상 국제뉴스 팝업 상하 흐름 전환)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-18 (1.10.29 전 모달·페이지 키보드 단축키 — ESC 닫기 16개 + 장소별 메인/종료 ESC + 다음 주·종료 모달 Enter 확인 + 트리거 버튼 blur 픽스 / 이전: 1.10.23~1.10.28 반응형 스케일 통일)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -39,10 +39,10 @@
 | 1.8 추가 작업 | 7 | 5 | 71.4% |
 | 1.9 하네스 업그레이드 | 11 | 11 | 100% |
 | 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
-| 1.11 UI 폴리시 (송원호) | 21 | 12 | 57.1% |
+| 1.11 UI 폴리시 (송원호) | 22 | 13 | 59.1% |
 | 1.12 뉴스 시스템 고도화 (배영환) | 6 | 6 | 100% |
 | 1.13 뉴스 실제이벤트 교체 + 브라우저 호환 (배영환) | 4 | 4 | 100% |
-| **전체** | **132** | **115** | **87.1%** |
+| **전체** | **133** | **116** | **87.2%** |
 
 ---
 
@@ -282,6 +282,7 @@
 | 1.10.26 | [Front] ★★ 거래소 매수 모달 닫기/도움말 hotspot soft halo 통일 — 매수 모달의 닫기/도움말 hotspot이 `Hotspot` 컴포넌트 기본값(`glowColor='cyan'`) 사용 시 박스 윤곽(border + inset shadow) 효과로 그려져 배경의 X/? 버튼과 겹치지 않고 어색하게 보이는 문제. `glowColor="emerald"` 추가 → 매도(`glowColor='red'`)와 동일한 soft halo 패턴(radial-gradient + blur), 색상은 매수 톤(emerald)에 맞춤. 메인 화면 매수 핫스팟(`HOTSPOT.market.buy`, emerald)과 톤 일관 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.05 | src/pages/MarketPage.jsx | P2 |
 | 1.10.27 | [Front] ★★ 기술상 모달 X 닫기 hotspot ObjectGlow 교체 + 좌측 8px 미세조정 — TechMerchantPage `PopupOverlay`의 X 버튼이 인라인 `<button>` + cyan 박스 윤곽(border + inset shadow)으로 그려져 매수/매도 soft halo와 톤 불일치 + 배경 X 버튼 위치와 미세 어긋남. 변경: ① 인라인 button을 같은 파일의 `<ObjectGlow>` 컴포넌트로 교체 (radial-gradient blur halo). ② `activePopup`에 따라 톤 분기 — `hiddenStocks` → **blue** (메인 ObjectGlow 깜짝종목 톤), `indicators`/`locked` → **cyan**. ③ `HOTSPOT.popup.close.right` `3.5%` → `calc(3.5% + 8px)` (사용자 2회 미세조정: +5px → +3px 누적, 좌측으로 8px 이동하여 배경 X 버튼과 정렬) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/TechMerchantPage.jsx | P2 |
 | 1.10.28 | [Front] ★★ 정보상 3종 모달 X 닫기 hotspot ObjectGlow 교체 + 톤 분기 — InfoMerchantPage `PopupOverlay`의 X 버튼이 인라인 `<button>` + cyan 박스 윤곽으로 그려지던 것을 같은 파일의 `<ObjectGlow>`로 교체 (soft halo). `activePopup`에 따라 메인 화면 책상 위 ObjectGlow와 동일 톤 분기 — `globalNews`(지구본) → **cyan**, `companyNews`(서류가방) → **amber**, `recommendation`(태블릿) → **emerald**. 한 곳 수정으로 3개 팝업 X 버튼 모두 적용 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/InfoMerchantPage.jsx | P2 |
+| 1.10.29 | [Front] ★★★★ 전 모달·페이지 키보드 단축키 — ESC 닫기 / 메인 / 종료 + Enter 확인 + 트리거 버튼 blur 픽스 — ① **공용 훅 신설**(`src/components/hooks/useEscapeKey.js` + `useEnterKey.js`): 스택 기반 키 핸들러. 가장 최근 마운트된 핸들러만 호출되어 중첩 모달(예: 매수 모달 안 도움말 오버레이) 시 ESC 1번 → 도움말만, 2번 → 매수 모달 닫힘. `enabled` 인자로 인라인 팝오버(상태 토글로 마운트되는 비-컴포넌트 모달)에도 대응. ② **ESC 닫기 — 16개 모달/오버레이 적용**: `HelpModal` / `SettingsModal` / GamePage 4종(`ExitConfirmModal` / `ChartExpandModal` / `ModalContainer` / `HelpOverlay`) + 인라인 다음 주 확인 팝오버 / InfoMerchantPage(`PopupOverlay` 3종 + `HelpOverlay`) / TechMerchantPage(`PopupOverlay` 3종 + `HelpOverlay`) / MarketPage(`PopupOverlay` 3종 + `HelpOverlayShell` 3종 + `HelpOverlay`). ③ **장소별 메인 버튼 ESC**(`PageNav.jsx` `TopRightNav`): `useEscapeKey(() => navigateTo('main'))` — 거래소·정보상·기술상에서 페이지에 모달이 떠 있을 땐 스택상 모달 핸들러 먼저 닫히고, 모달이 없을 땐 ESC가 메인으로 이동. ④ **메인화면 종료 ESC**(`GamePage.jsx`): `useEscapeKey(() => setOpenExit(true))` — 모달 없을 때 ESC = 종료 버튼 클릭(확인 모달 오픈). 토글 동작: 확인 모달이 열린 상태에서 ESC 다시 누르면 모달 ESC 핸들러(cancel)가 우선. ⑤ **Enter 확인**(`ExitConfirmModal` `useEnterKey(onConfirm)` + 다음 주 팝오버 부모 `useEnterKey(confirmNextTurn, 활성 조건)`): 종료 모달 Enter = "종료", 다음 주 팝오버 Enter = "진행 ▶". Tab으로 "취소" 버튼 잡고 Enter 시 그 버튼만 실행되도록 글로벌 Enter 훅은 `<button>`/`<input>`/`<textarea>`/`<select>` 포커스 시 스킵. ⑥ **버그 수정 — 트리거 버튼 blur**(`handleNextTurn` / `handleExit`): "다음 주" / "종료" 버튼이 클릭 후 포커스를 유지한 상태로 모달이 열려, Enter를 누르면 브라우저가 그 포커스된 버튼의 click을 발생시켜 `handleNextTurn` 토글이 다시 실행(off) → 모달만 꺼지던 버그. 상태 변경 직전 `document.activeElement?.blur?.()` 호출로 포커스를 body로 빼서 글로벌 Enter 훅이 정상 작동. ⑦ 빌드 검증 3회(ESC 1차 / 메인·종료 추가 / Enter 추가 + blur 픽스) 모두 Vite 프로덕션 빌드 통과 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.3 | src/components/hooks/useEscapeKey.js, src/components/hooks/useEnterKey.js, src/components/game/HelpModal.jsx, SettingsModal.jsx, PageNav.jsx, src/pages/GamePage.jsx, MarketPage.jsx, InfoMerchantPage.jsx, TechMerchantPage.jsx | P1 |
 
 ---
 

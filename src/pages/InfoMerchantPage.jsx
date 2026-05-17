@@ -18,6 +18,7 @@ import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
 import StockChart from '../components/game/StockChart'
+import { useEscapeKey } from '../components/hooks/useEscapeKey'
 
 // 새 게임 시작당 1회 자동 도움말 노출용 sessionStorage 키
 const INFO_HELP_SEEN_KEY = 'info-merchant-help-seen'
@@ -261,6 +262,7 @@ function PopupOverlay({
   activePopup, currentGlobalNews, currentNews, sectors, onClose,
   insiderTip, insiderFee, isLastTurn, alreadyBought, canAfford, onPurchaseInsiderInfo,
 }) {
+  useEscapeKey(onClose)
   const { bg, aspect, hotspot } = POPUP_CONFIG[activePopup]
   const isLandscape = aspect === '16/9'
 
@@ -653,6 +655,7 @@ function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought,
 // 도움말 오버레이 — 각 핫스팟에 풍선으로 설명
 // ─────────────────────────────────────────────────────────
 function HelpOverlay({ onClose }) {
+  useEscapeKey(onClose)
   return (
     <div className="absolute inset-0 z-20" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
