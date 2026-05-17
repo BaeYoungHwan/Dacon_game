@@ -12,6 +12,13 @@
     "test:cover": "vitest run --coverage",
     "test:3": "vitest run && vitest run && vitest run"
   },
+  "browserslist": [
+    "Chrome >= 90",
+    "Edge >= 79",
+    "Firefox >= 88",
+    "Safari >= 14",
+    "not IE 11"
+  ],
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "react": "^18.3.1",
