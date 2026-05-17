@@ -378,7 +378,9 @@ function CompanyNewsView({ sectors, currentNews }) {
             <span className="shrink-0 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-0.5 md:px-2.5 md:py-1 rounded bg-cyan-900/70 border border-cyan-500/50 text-cyan-200 font-mono tracking-[0.15em] sm:tracking-[0.2em]">
               {n.sector}
             </span>
-            <p className="font-bold text-xs sm:text-sm md:text-base lg:text-lg text-cyan-50 leading-snug drop-shadow-[0_0_6px_rgba(34,211,238,0.3)] truncate">
+            {/* flex-1 min-w-0: flex 자식 기본 min-width(min-content) 때문에 긴 헤드라인이 truncate되지 않고
+                컨테이너를 늘리던 문제 방지 — 명시적으로 0까지 줄어들 수 있게 해야 truncate 동작 */}
+            <p className="flex-1 min-w-0 font-bold text-xs sm:text-sm md:text-base lg:text-lg text-cyan-50 leading-snug drop-shadow-[0_0_6px_rgba(34,211,238,0.3)] truncate">
               📰 {n.headline}
             </p>
           </div>
@@ -468,8 +470,9 @@ function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought,
                   {/* 종목명 + 현재가 (이전 자물쇠 자리) */}
                   <div className="flex flex-col items-center text-center gap-2 md:gap-2.5">
                     {/* break-words: 긴 한글 종목명("삼성바이오로직스" 등)도 우측 컨테이너 폭 안에서 자동 줄바꿈
-                        leading-tight: 줄바꿈 시 줄간격 보정 / min-w-0: flex 자식이 부모 폭 초과 방지 */}
-                    <p className="min-w-0 max-w-full text-lg md:text-xl lg:text-2xl font-bold text-emerald-50 drop-shadow-[0_0_12px_rgba(52,211,153,0.7)] leading-tight break-words">
+                        leading-tight: 줄바꿈 시 줄간격 보정 / min-w-0: flex 자식이 부모 폭 초과 방지
+                        font-sans: 상위 카드의 font-mono 상속을 무효화 — 한글이 monospace로 렌더돼 자간이 어색해지는 문제 해결 */}
+                    <p className="min-w-0 max-w-full text-lg md:text-xl lg:text-2xl font-sans font-bold text-emerald-50 drop-shadow-[0_0_12px_rgba(52,211,153,0.7)] leading-tight break-words">
                       {insiderTip.name}
                     </p>
                     <span aria-hidden="true" className="w-2/3 h-px bg-gradient-to-r from-emerald-500/0 via-emerald-400/65 to-emerald-500/0" />
