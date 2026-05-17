@@ -8,6 +8,7 @@
 
 import { useRef } from 'react'
 import { useAudioStore } from '../../store/audioStore'
+import { useEscapeKey } from '../hooks/useEscapeKey'
 
 // 4모서리 L자 코너 deco — PageNav의 "다음 주" 버튼과 동일한 톤
 function CornerDeco() {
@@ -23,6 +24,7 @@ function CornerDeco() {
 }
 
 export default function SettingsModal({ onClose }) {
+  useEscapeKey(onClose)
   const { muted, volume, toggleMuted, setVolume, sfxVolume, setSfxVolume } = useAudioStore()
 
   // 음소거 직전 볼륨 기억 — 스피커 토글로 음소거 해제 시 복원

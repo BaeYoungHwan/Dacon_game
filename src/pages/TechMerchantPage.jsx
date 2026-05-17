@@ -15,6 +15,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
+import { useEscapeKey } from '../components/hooks/useEscapeKey'
 
 const TECH_MERCHANT_UNLOCK_TURN = 10
 
@@ -254,6 +255,7 @@ function PopupOverlay({
   packageStocks, unlockPackageStock, buyIndicator,
   onClose,
 }) {
+  useEscapeKey(onClose)
   const isLocked = activePopup === 'locked'
   const remaining = TECH_MERCHANT_UNLOCK_TURN - turn
 
@@ -471,6 +473,7 @@ function HiddenStocksView({ cash, packageStocks, unlockPackageStock }) {
 // 도움말 오버레이 — 각 핫스팟에 풍선으로 설명
 // ─────────────────────────────────────────────────────────
 function HelpOverlay({ onClose }) {
+  useEscapeKey(onClose)
   return (
     <div className="absolute inset-0 z-20" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />

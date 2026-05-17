@@ -24,6 +24,8 @@ import Marquee from '../components/ui/Marquee'
 import { TIPS } from '../components/game/TipBox'
 import SettingsModal from '../components/game/SettingsModal'
 import { IconButton, HelpIcon, SettingsIcon, ExitIcon } from '../components/game/PageNav'
+import { useEscapeKey } from '../components/hooks/useEscapeKey'
+import { useEnterKey } from '../components/hooks/useEnterKey'
 
 
 // stocks.json의 id(realTicker)로 stockData에서 라운드별 가격 배열 찾기 위한 인덱스
@@ -80,6 +82,12 @@ export default function GamePage() {
     setCurrentTip(TIPS[Math.floor(Math.random() * TIPS.length)])
   }, [turn])
 
+  // ESC = 종료 버튼 클릭과 동일 (다른 모달이 열려 있으면 스택상 그 모달이 먼저 닫힘)
+  useEscapeKey(() => setOpenExit(true))
+  // 인라인 '다음 주' 확인 팝오버 ESC 닫기 / Enter = 진행 (모달 컴포넌트가 아니라 부모에서 처리)
+  useEscapeKey(() => setOpenNextTurn(false), openNextTurn && !isTurnTransition)
+  useEnterKey(() => confirmNextTurn(), openNextTurn && !isTurnTransition)
+
   // 반응형 스케일 — 1695×928 기준 wrapper를 컨테이너 너비에 맞춰 transform: scale
   // viewport가 작아지면 모든 absolute 요소가 비례 축소되어 레이아웃이 깨지지 않음
   // clientWidth=0(마운트 직후·display:none) 가드 — scale=0이 되면 화면 사라지는 버그 방지
@@ -108,8 +116,10 @@ export default function GamePage() {
   }
 
   // 다음 주 버튼 클릭 — 즉시 진행 X, 먼저 확인 popover 표시
+  // blur: 트리거 버튼이 포커스를 유지하면 popover 열린 뒤 Enter가 이 버튼을 재토글해버려 모달만 꺼지는 버그 방지
   const handleNextTurn = () => {
     if (isTurnTransition) return
+    if (typeof document !== 'undefined') document.activeElement?.blur?.()
     setOpenNextTurn((prev) => !prev) // 토글
   }
 
@@ -137,7 +147,11 @@ export default function GamePage() {
     }, 1000)
   }
 
-  const handleExit = () => setOpenExit(true)
+  // blur: 트리거 버튼이 포커스를 유지하면 모달 열린 뒤 Enter가 이 버튼을 재트리거해 글로벌 Enter 핸들러가 동작 안 함
+  const handleExit = () => {
+    if (typeof document !== 'undefined') document.activeElement?.blur?.()
+    setOpenExit(true)
+  }
 
   const confirmExit = () => {
     setOpenExit(false)
@@ -506,6 +520,8 @@ export default function GamePage() {
 
 // 게임 종료 확인 모달 — PopupOverlay 패턴 (font-mono 헤더 + ✕ + slate-800/70 카드)
 function ExitConfirmModal({ onConfirm, onCancel }) {
+  useEscapeKey(onCancel)
+  useEnterKey(onConfirm)
   return (
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -555,6 +571,7 @@ function ExitConfirmModal({ onConfirm, onCancel }) {
 // KOSPI 차트 확대 모달 — startRect(작은 차트 화면 좌표)에서 시작해서 화면 중앙으로 확장
 // mount 직후 200ms ease-out transition: 위치+사이즈+불투명도 동시 보간
 function ChartExpandModal({ onClose, startRect }) {
+  useEscapeKey(onClose)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -690,6 +707,7 @@ function NPCHotspot({ left, top, width, height, label, subLabel, onClick, hoverB
 // ─────────────────────────────────────────────────────────
 
 function ModalContainer({ title, children, onClose }) {
+  useEscapeKey(onClose)
   return (
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
@@ -716,6 +734,7 @@ function ModalContainer({ title, children, onClose }) {
 // 도움말 오버레이 — 각 UI 옆에 도움말 풍선 표시 (모달 대신 onboarding 스타일)
 // 배경 클릭 시 onClose 호출되어 닫힘
 function HelpOverlay({ onClose }) {
+  useEscapeKey(onClose)
   return (
     <div className="absolute inset-0 z-20" onClick={onClose}>
       {/* 반투명 어두운 배경 — 풍선들이 도드라지게 */}

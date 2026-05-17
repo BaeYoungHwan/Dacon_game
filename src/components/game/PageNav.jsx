@@ -12,6 +12,7 @@
 
 import { useState } from 'react'
 import SettingsModal from './SettingsModal'
+import { useEscapeKey } from '../hooks/useEscapeKey'
 
 // 페이지 키 ↔ 한글 라벨
 const PAGE_LABELS = {
@@ -117,6 +118,8 @@ export function LocationButton({ icon, label, onClick }) {
 // ─────────────────────────────────────────────────────────
 export function TopRightNav({ onHelp, navigateTo }) {
   const [openSettings, setOpenSettings] = useState(false)
+  // ESC = 메인 버튼 클릭과 동일 (페이지에 모달이 떠 있으면 스택상 그 모달이 먼저 닫힘)
+  useEscapeKey(() => navigateTo('main'))
   return (
     <>
       {/* 칩 사이 halo 번짐 여유 */}
