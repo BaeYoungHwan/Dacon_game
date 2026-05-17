@@ -14,6 +14,7 @@
 
 import { useState, useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
 
 const TECH_MERCHANT_UNLOCK_TURN = 10
 
@@ -130,53 +131,11 @@ export default function TechMerchantPage() {
           onClick={() => handleFeatureClick('hiddenStocks')}
         />
 
-        {/* 우상단: 도움말 / 메인 (둘 다 아래로 +4px / 945 기준) */}
-        <Hotspot
-          label="도움말"
-          className="absolute rounded-[8.5px]"
-          style={{
-            top: 'calc(3% + 0.741%)',          /* +7px */
-            right: 'calc(14.2% - 1.071%)',     /* 우측 +2px + 우측확장 16px / 1680 기준 */
-            width: 'calc(9.6% + 0.952%)',      /* 가로 +16px (우측 확장) */
-            height: 'calc(6.2% + 0.741%)',     /* 세로 +7px (아래 확장 / 945 기준) */
-          }}
-          onClick={() => setOpenHelp(true)}
-        />
-        <Hotspot
-          label="메인으로"
-          className="absolute rounded-[8.5px]"
-          style={{
-            top: 'calc(3% + 0.741%)',          /* +7px */
-            right: 'calc(2.2% + 0.238%)',      /* 우측 +12px - 우측축소 16px / 1680 기준 */
-            width: 'calc(10.4% - 0.952%)',     /* 가로 -16px (우측 축소) */
-            height: 'calc(6.2% + 0.741%)',     /* 세로 +7px (아래 확장 / 945 기준) */
-          }}
-          onClick={() => navigateTo('main')}
-        />
+        {/* 우상단: 도움말 / 설정 / 메인 — PageNav 통일 스타일 */}
+        <TopRightNav onHelp={() => setOpenHelp(true)} navigateTo={navigateTo} />
 
-        {/* 우하단: 거래소 / 정보상 (거래소: 누적 좌 +82px, 정보상: 누적 좌 +40px / 1680 기준) */}
-        <Hotspot
-          label="거래소"
-          className="absolute rounded-[8.5px]"
-          style={{
-            bottom: 'calc(5% - 0.423%)',          /* 아래로 +4px (3 + 1 / 945 기준) */
-            right: 'calc(14.2% + 2.500%)',        /* 누적 좌 +42px (62 - 20, 우측 이동) */
-            width: 'calc(10.2% + 2.381%)',        /* 가로 +40px (30 + 10 / 1680 기준) */
-            height: 'calc(6.4% + 1.058%)',        /* 세로 +10px (위 6 + 아래 4 / 945 기준) */
-          }}
-          onClick={() => navigateTo('market')}
-        />
-        <Hotspot
-          label="정보상"
-          className="absolute rounded-[8.5px]"
-          style={{
-            bottom: 'calc(5% - 0.423%)',          /* 아래로 +4px (2 + 2 / 945 기준) */
-            right: 'calc(2.2% + 1.190%)',         /* 누적 좌 +20px (50 - 30, 우측 확장 반영) */
-            width: 'calc(10.4% + 1.786%)',        /* 가로 +30px (오른쪽 확장 / 1680 기준) */
-            height: 'calc(6.4% + 1.058%)',        /* 세로 +10px (위 6 + 아래 4 / 945 기준) */
-          }}
-          onClick={() => navigateTo('infoMerchant')}
-        />
+        {/* 우하단: 다른 페이지 이동 (거래소 / 정보상) */}
+        <BottomRightNav current="techMerchant" navigateTo={navigateTo} />
 
         {/* 도움말 오버레이 */}
         {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
