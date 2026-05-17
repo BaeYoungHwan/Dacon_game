@@ -27,7 +27,7 @@ export default function StartPage() {
       <div
         className="relative w-full max-w-[1600px] aspect-[1678/937]"
         style={{
-          backgroundImage: "url('/images/start-bg.jpg')",
+          backgroundImage: "url('/images/start-bg.webp')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
