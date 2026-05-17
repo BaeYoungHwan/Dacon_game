@@ -482,7 +482,7 @@ export default function GamePage() {
                     }}
                     className="flex-1 py-3 bg-gradient-to-b from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border-2 border-cyan-300 rounded-lg text-base font-bold text-slate-900 transition-all duration-150 focus:outline-none font-mono tracking-wider"
                   >
-                    {isLastTurn ? '결과 보기 🏁' : '진행 ▶'}
+                    {isLastTurn ? '결과 보기' : '진행'}
                   </button>
                 </div>
               </div>
@@ -803,11 +803,14 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
-      {/* 우하단 다음 주 버튼 위 */}
+      {/* 우하단 다음 주 / 결과 집계 버튼 위
+          50주차에 버튼 라벨이 "결과 집계 🏁"로 바뀌므로 풍선에 두 동작을 함께 안내
+          (turn별 분기 대신 상시 동일 카피 — 도움말이 라운드마다 달라지지 않게) */}
       <HelpBubble style={{ bottom: '6rem', right: '1rem' }}>
-        <strong className="text-cyan-300 text-base block">▶ 다음 주로</strong>
+        <strong className="text-cyan-300 text-base block">▶ 다음 주 / 결과 집계</strong>
         <p className="text-xs mt-1 text-cyan-100">
-          한 주를 보내고 주가 갱신
+          한 주 보내고 주가 갱신
+          <br />50주차: 최종 결과 화면으로 이동
           <br />⚠️ 누르면 되돌릴 수 없어요
         </p>
       </HelpBubble>
