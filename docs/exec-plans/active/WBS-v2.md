@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-18 (1.10.30~1.10.31 Leaderboard 재설계 + ResultPage 오버레이 개선 + 1.14.8 leaderboardStore submitted 버그 수정 / 이전: 1.14.7 KODEX 200 StockChart KOSPI 추종 수정 추가 + 1.10.11 취소 / 이전: 1.14.3 플레이테스트 대시보드 + report.html UI 버그 3건 추가 / 이전: 1.10.29 전 모달·페이지 키보드 단축키 — ESC 닫기 16개 + 장소별 메인/종료 ESC + 다음 주·종료 모달 Enter 확인 + 트리거 버튼 blur 픽스 / 이전: 1.10.23~1.10.28 반응형 스케일 통일)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-18 (1.15.6 InfoMerchantPage GlobalNewsView 모서리 deco 스크롤 동기화 버그 수정 — 외부 래퍼/내부 스크롤 div 분리로 deco 4개 카드 모서리 고정 / 이전: 1.10.30~1.10.31 Leaderboard 재설계 + ResultPage 오버레이 개선 + 1.14.8 leaderboardStore submitted 버그 수정 / 이전: 1.14.7 KODEX 200 StockChart KOSPI 추종 수정 추가 + 1.10.11 취소 / 이전: 1.14.3 플레이테스트 대시보드 + report.html UI 버그 3건 추가 / 이전: 1.10.29 전 모달·페이지 키보드 단축키 — ESC 닫기 16개 + 장소별 메인/종료 ESC + 다음 주·종료 모달 Enter 확인 + 트리거 버튼 blur 픽스 / 이전: 1.10.23~1.10.28 반응형 스케일 통일)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -43,8 +43,8 @@
 | 1.12 뉴스 시스템 고도화 (배영환) | 6 | 6 | 100% |
 | 1.13 뉴스 실제이벤트 교체 + 브라우저 호환 (배영환) | 4 | 4 | 100% |
 | 1.14 플레이테스트 & 대시보드 (배영환) | 8 | 5 | 62.5% |
-| 1.15 QA 시나리오·후속 정리 (송원호) | 5 | 5 | 100% |
-| **전체** | **155** | **143** | **92.3%** |
+| 1.15 QA 시나리오·후속 정리 (송원호) | 6 | 6 | 100% |
+| **전체** | **156** | **144** | **92.3%** |
 
 ---
 
@@ -348,6 +348,7 @@
 | 1.15.3 | [Cleanup] HelpModal.jsx 데드코드 삭제 + README 동기화 — `src/components/game/HelpModal.jsx` import 0건 데드코드. 실제 도움말은 `GamePage` 내부 `HelpOverlay`로 대체됨. 추가로 `2배 이상 — 레전드 / 1.5배 — 마스터` 옛 단순 배수 기반 등급 설명이 stale 상태로 남아있어(실제는 `src/lib/grade.js`의 KOSPI 대비 초과수익률 6단계) 향후 오용 위험 → 파일 삭제 + `README.md:184` 폴더 트리에서 해당 줄 제거 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.1 | src/components/game/HelpModal.jsx (삭제), README.md | P2 |
 | 1.15.4 | [UI] 다음 주 popover 확인 버튼 ENTER 통일 + 사이즈 확대 — `GamePage.jsx:479` 확인 버튼 라벨 `{isLastTurn ? '결과 보기' : '진행'}` → `ENTER`로 통일(일반 라운드/50주차 분기 제거, popover 본문 카피가 맥락 제공). 1.10.32에서 "결과 보기 🏁/진행 ▶ → 결과 보기/진행"로 1차 단순화 후 단축키 자체를 노출하는 방향으로 추가 단순화. 사용자 요청으로 ENTER 버튼만 `text-base/tracking-wider → text-2xl/tracking-widest`로 확대해 primary action 시각 우선순위 강조 (취소 버튼은 그대로) | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.05 | src/pages/GamePage.jsx | P3 |
 | 1.15.5 | [UI] ExitConfirmModal UI 재설계 — SettingsModal 디자인 시스템 통일 (4모서리 L자 deco 4개 span 추가 / 백드롭 `bg-black/70` → `bg-slate-950/75` / 패널 `border-cyan-500/60 rounded-xl` → `border-cyan-300/80 rounded-lg` + 폭 `max-w-sm` → `max-w-md` / boxShadow outer만 → outer+inset 2겹 cyan glow / 헤더 라벨 `게임 종료` → `GAME EXIT` 영문 + `font-mono tracking-widest` + textShadow glow / X 닫기 평면 텍스트 → 원형 chip border+glow / 본문 카드 `bg-slate-800/70 border-cyan-500/30 rounded-lg` → `rounded-md border-cyan-400/20 bg-slate-900/60` / 본문 텍스트 sans-serif → font-mono tracking-wider). 취소/종료 버튼 색(슬레이트/빨강) 및 동작은 destructive 의미 보존 위해 유지 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.1 | src/pages/GamePage.jsx | P3 |
+| 1.15.6 | [Fix] InfoMerchantPage GlobalNewsView 모서리 deco 스크롤 동기화 버그 수정 — 카드 컨테이너에 `overflow-y-auto` + `absolute` 모서리 L자 deco 4개가 함께 걸려있어 사용자가 카드 내부를 세로 스크롤하면 deco가 콘텐츠 좌표계와 함께 움직여 뷰포트 모서리에서 벗어나던 문제. **원인**: `overflow-y-auto` 컨테이너의 `position: absolute` 자식은 스크롤 콘텐츠와 동일 좌표계에 묶여 `top-0`/`bottom-0`이 뷰포트가 아닌 스크롤 영역 끝을 기준으로 잡힘. **수정**: 한 컨테이너의 두 책임(스크롤·deco)을 분리 — 외부 래퍼는 `overflow-hidden`만 유지하고 모서리 deco 4개를 그 위에 `absolute + z-10`으로 고정. 패딩(`p-3 sm:p-4 md:p-5 lg:p-7`)과 `overflow-y-auto overflow-x-hidden scrollbar-cyan`은 신설 내부 div로 이전. 콘텐츠 길이와 무관하게 4모서리 deco가 항상 카드 모서리에 박혀 표시되며 스크롤은 내부 div만 담당. 1.10.22의 `break-keep`·`scrollbar-cyan`·상하 여백 균형(top 14% / bottom 11%)은 유지. CompanyNewsView는 카드 자체가 스크롤하지 않는 구조라 동일 패턴 적용 불필요(영향 없음) | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.05 | src/pages/InfoMerchantPage.jsx | P2 |
 
 ---
 
