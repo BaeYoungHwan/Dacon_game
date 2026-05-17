@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 5건 완료: 기술상 3종 팝업 추천종목.webp 프레임 + 3-zone / 정보상 3종 팝업 배경+내부 디자인 / 메인화면 KRX 배경 교체 + NPC 핫스팟 정렬 / HOTSPOT 좌표 상수화 3페이지 / StockChart 캔들·거래량 Y축 라벨 겹침 수정)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 QA 자동화 — Vitest 단위·통합 테스트 66개 + getBollingerSignal NaN 버그 수정 + PR #48 머지. 1.11 신규 — 송원호 UI 폴리시 12건 배치. ★★★★★ 메인화면 호버·기술상 컨텐츠 UI / ★★★★ 거래소 매수매도 max버튼·정보상 뉴스 갱신 애니메이션·정보상 3종 UI·공용 버튼 톤 통일·각 화면별 설정 추가 / ★★★ 모멘텀펄스 라이너 교체·MACD↔OBV 위치 스왑 / ★★ 거래소 합계 금액 텍스트 좌측 정렬 / ★ 메인화면 설정 모달 UI 개선·KOSPI 차트·TIPS 위로 이동·거래소 배경 교체)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -38,8 +38,9 @@
 | 1.7 버퍼 | 2 | 0 | 0% |
 | 1.8 추가 작업 | 7 | 5 | 71.4% |
 | 1.9 하네스 업그레이드 | 11 | 11 | 100% |
-| 1.10 UI 폴리시 (송원호) | 15 | 5 | 33.3% |
-| **전체** | **107** | **88** | **82.2%** |
+| 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
+| 1.11 UI 폴리시 (송원호) | 12 | 0 | 0% |
+| **전체** | **113** | **92** | **81.4%** |
 
 ---
 
@@ -227,7 +228,23 @@
 
 ---
 
-## 1.10 UI 폴리시 (송원호 — 2026-05-17 추가 배치)
+## 1.10 QA 자동화 — Vitest 단위·통합 테스트 (배영환)
+
+| ID | 작업 | 담당 | 상태 | 완료% | 시작 | 종료 | 예상h | 산출물 | 우선순위 |
+|----|------|------|------|--------|------|------|--------|--------|---------|
+| 1.10.1 | [QA] Vitest + jsdom 환경 설정 — vite.config.js test 블록, package.json scripts(test/test:watch/test:cover/test:3) | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | vite.config.js, package.json | P0 |
+| 1.10.2 | [QA] src/__tests__/setup.js — @testing-library/jest-dom 초기화 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/__tests__/setup.js | P0 |
+| 1.10.3 | [QA] grade.test.js — calcExcessPp 3케이스, getGrade 경계값 10케이스, GRADES 내림차순 검증 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/lib/grade.test.js | P1 |
+| 1.10.4 | [QA] gameLogic.test.js — progressTurn 가격·KOSPI·뉴스 7케이스 (실제 JSON 사용, mock 없음) | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/lib/gameLogic.test.js | P1 |
+| 1.10.5 | [QA] gameStore.test.js — buyStock·sellStock·unlockStock·unlockPackageStock·buyIndicator·purchaseInsiderInfo·localStorage 보안·getFinalAssets 23케이스 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 1 | src/__tests__/store/gameStore.test.js | P0 |
+| 1.10.6 | [QA] chartUtils.test.js — calcMA·calcBollinger·calcMACD·calcOBV·신호감지 5종·getRecentCloses 20케이스 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 1 | src/__tests__/components/chartUtils.test.js | P1 |
+| 1.10.7 | [QA] gameTurnFlow.test.js — gameStore+progressTurn 통합 4케이스, pass^3 검증 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/integration/gameTurnFlow.test.js | P1 |
+| 1.10.8 | [QA] qa-report.md — 테스트 결과·커버리지·갭 분석 리포트 작성 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.3 | docs/ref/qa-report.md | P2 |
+| 1.10.9 | [fix] getBollingerSignal 제로 밴드 NaN 버그 수정 — bandWidth===0 시 pctB=0.5 고정 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/components/game/chartUtils.js:113 | P1 |
+
+---
+
+## 1.11 UI 폴리시 (송원호 — 2026-05-17 추가 배치)
 
 > 기간: 2026-05-17 ~ 2026-05-18 | 담당: 송원호 | 출처: 사용자 직접 요청 (별표 우선순위)
 > 우선순위 표기: ★★★★★(P0) / ★★★★(P1) / ★★★(P1-) / ★★(P2) / ★(P3)
