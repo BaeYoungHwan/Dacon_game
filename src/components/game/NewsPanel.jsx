@@ -1,4 +1,3 @@
-// TODO(신입): 뉴스 이벤트 UI 구현
 // Props:
 //   companyNews - 기업 뉴스 배열 [{ id, date, sector, headline, detail }] | null
 //   globalNews  - 국제 뉴스 단일 항목 { id, date, sector, headline, detail } | null
@@ -9,7 +8,6 @@ export default function NewsPanel({ companyNews, globalNews }) {
 
   return (
     <div className="mt-4 space-y-2">
-      {/* TODO(신입): 뉴스 애니메이션 추가 (fade-in) */}
       {globalNews && (
         <div className="p-4 rounded-lg border-l-4 border-yellow-500 bg-yellow-950/30">
           <div className="flex items-center gap-2 mb-1">

@@ -8,6 +8,11 @@ const dataByTicker = Object.fromEntries(
   stockData.stocks.map(s => [s.realTicker, s])
 )
 
+// 날짜 → 인덱스 맵 (O(1) 조회, indexOf 반복 호출 방지)
+const dateIndexMap = new Map(
+  stockData.meta.dates.map((d, i) => [d, i])
+)
+
 // 턴 번호를 시드로 받아 결정적(deterministic) 난수 생성기 반환 (mulberry32)
 function makeSeededRandom(seed) {
   let s = (seed * 2654435761) >>> 0
@@ -66,16 +71,20 @@ export function progressTurn(turn, allStocks) {
   const companyPool = newsEvents.filter(n => n.sector !== '전체')
 
   const sectorsPresent = new Set(exactCompany.map(n => n.sector))
+  const nearbyIds = new Set()
   const nearby = companyPool.filter(n => {
     if (usedIds.has(n.id)) return false
-    const dIdx = stockData.meta.dates.indexOf(n.date)
-    return dIdx >= 0 && Math.abs(dIdx - idx) <= 4
+    const dIdx = dateIndexMap.get(n.date) ?? -1
+    if (dIdx < 0 || Math.abs(dIdx - idx) > 4) return false
+    nearbyIds.add(n.id)
+    return true
   })
   const nearbyRanked = [
     ...nearby.filter(n => sectorsPresent.has(n.sector)),
     ...nearby.filter(n => !sectorsPresent.has(n.sector)),
   ]
-  const rest = companyPool.filter(n => !usedIds.has(n.id))
+  // nearbyRanked 항목은 제외하여 filler 내 중복 방지
+  const rest = companyPool.filter(n => !usedIds.has(n.id) && !nearbyIds.has(n.id))
   const filler = [...shuffleSeeded(nearbyRanked), ...shuffleSeeded(rest)]
 
   const supplemented = [...exactCompany]
@@ -94,7 +103,7 @@ export function progressTurn(turn, allStocks) {
   } else {
     const globalPool = newsEvents.filter(n => n.sector === '전체')
     const nearbyGlobal = globalPool.filter(n => {
-      const dIdx = stockData.meta.dates.indexOf(n.date)
+      const dIdx = dateIndexMap.get(n.date) ?? -1
       return dIdx >= 0 && Math.abs(dIdx - idx) <= 4
     })
     if (nearbyGlobal.length > 0) globalNews = shuffleSeeded(nearbyGlobal)[0]

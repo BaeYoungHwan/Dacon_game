@@ -60,9 +60,11 @@ describe('progressTurn — 뉴스 처리', () => {
   })
 
   it('기업 뉴스 결과는 라운드 내 ID 중복 없음', () => {
-    const { news } = progressTurn(7, allStocks)
-    const ids = news.map(n => n.id)
-    expect(new Set(ids).size).toBe(ids.length)
+    for (const t of [1, 7, 16, 25, 49]) {
+      const { news } = progressTurn(t, allStocks)
+      const ids = news.map(n => n.id)
+      expect(new Set(ids).size).toBe(ids.length)
+    }
   })
 
   it('같은 turn 호출은 결정적(같은 결과)', () => {
@@ -80,6 +82,14 @@ describe('progressTurn — 뉴스 처리', () => {
     const { globalNews } = progressTurn(1, allStocks)
     expect(globalNews).not.toBeNull()
     expect(globalNews.sector).toBe('전체')
+  })
+
+  it('모든 턴에서 globalNews는 null이 아니며 sector=전체', () => {
+    for (let t = 1; t <= 50; t++) {
+      const { globalNews } = progressTurn(t, allStocks)
+      expect(globalNews).not.toBeNull()
+      expect(globalNews.sector).toBe('전체')
+    }
   })
 
   it('newExchangeRate → 항상 null', () => {
