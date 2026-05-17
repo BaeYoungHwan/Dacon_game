@@ -40,14 +40,14 @@ export default function StartPage() {
           onKeyDown={(e) => e.key === 'Enter' && handleStart()}
           maxLength={12}
           placeholder="투자자명을 입력하고 입성하십시오"
-          className="absolute bottom-[11%] left-1/2 -translate-x-1/2 w-[36%] px-4 py-1.5 bg-gradient-to-b from-stone-800 to-stone-900 text-amber-100 placeholder-amber-200/80 border-2 border-amber-700 rounded text-center text-xs sm:text-sm md:text-base shadow-2xl focus:outline-none focus:border-amber-400 transition-all duration-150"
+          className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[36%] px-4 py-1.5 bg-gradient-to-b from-stone-800 to-stone-900 text-amber-100 placeholder-amber-200/80 border-2 border-amber-700 rounded text-center text-xs sm:text-sm md:text-base shadow-2xl focus:outline-none focus:border-amber-400 transition-all duration-150"
         />
 
         {/* 버튼 — 인풋 바로 아래 (컨테이너 하단에서 2% 위) */}
         <button
           onClick={handleStart}
           disabled={!nicknameInput.trim()}
-          className="absolute bottom-[2%] left-1/2 -translate-x-1/2 w-[26%] py-1.5 bg-gradient-to-b from-stone-800 to-stone-900 hover:from-stone-700 hover:to-stone-800 disabled:opacity-50 disabled:cursor-not-allowed text-amber-100 border-2 border-amber-700 rounded shadow-2xl transition-all duration-150"
+          className="absolute bottom-[8%] left-1/2 -translate-x-1/2 w-[26%] py-1.5 bg-gradient-to-b from-stone-800 to-stone-900 hover:from-stone-700 hover:to-stone-800 disabled:opacity-50 disabled:cursor-not-allowed text-amber-100 border-2 border-amber-700 rounded shadow-2xl transition-all duration-150"
         >
           <p className="text-sm sm:text-base md:text-lg font-bold tracking-widest leading-tight">GAME START</p>
           <p className="text-[9px] sm:text-[10px] md:text-xs text-amber-200/80 leading-tight">게임 시작</p>
