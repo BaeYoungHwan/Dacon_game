@@ -67,7 +67,9 @@ export default function GamePage() {
   const [transitioningWeek, setTransitioningWeek] = useState(1)
   const chartButtonRef = useRef(null)
   const [chartStartRect, setChartStartRect] = useState(null)
-  const [currentTip, setCurrentTip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)])
+  // TIPS를 매 게임마다 셔플해서 Marquee에 통째로 넘김 → 한 팁(12s) 끝나면 다음 팁 자동 cycle
+  // 단일 팁만 넘기면 Marquee 내부 setInterval이 안 걸려서 한 번 흐른 뒤 빈 화면이 됨
+  const [shuffledTips] = useState(() => [...TIPS].sort(() => Math.random() - 0.5))
 
   // 첫 진입 시 도움말 자동 오픈 (인트로 완료 후 조작법 안내)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,10 +79,6 @@ export default function GamePage() {
       clearFirstPlay()
     }
   }, [])
-
-  useEffect(() => {
-    setCurrentTip(TIPS[Math.floor(Math.random() * TIPS.length)])
-  }, [turn])
 
   // ESC = 종료 버튼 클릭과 동일 (다른 모달이 열려 있으면 스택상 그 모달이 먼저 닫힘)
   useEscapeKey(() => setOpenExit(true))
@@ -145,12 +143,6 @@ export default function GamePage() {
       nextTurn(result)
       setIsTurnTransition(false)
     }, 1000)
-  }
-
-  // blur: 트리거 버튼이 포커스를 유지하면 모달 열린 뒤 Enter가 이 버튼을 재트리거해 글로벌 Enter 핸들러가 동작 안 함
-  const handleExit = () => {
-    if (typeof document !== 'undefined') document.activeElement?.blur?.()
-    setOpenExit(true)
   }
 
   const confirmExit = () => {
@@ -223,6 +215,9 @@ export default function GamePage() {
     ? null
     : totalAssetsDelta > 0 ? 'up' : 'down'
 
+  // 마지막 라운드 — "다음 주" 대신 "결과 집계" 톤으로 분기 (버튼 라벨·popover 카피·확인 버튼)
+  const isLastTurn = turn >= totalTurns
+
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-stone-900 overflow-hidden animate-page-enter">
       {/* viewport에 맞춰 1695:928 비율 컨테이너 (다른 페이지와 동일 패턴) */}
@@ -260,16 +255,16 @@ export default function GamePage() {
             <div className="flex items-center justify-between pb-2 border-b border-cyan-500/25">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                <span className="text-cyan-300 text-[11px] font-mono tracking-[0.3em]">ROUND</span>
+                <span className="text-cyan-300 text-lg font-mono tracking-[0.3em] font-bold">ROUND</span>
               </div>
-              <span className="text-cyan-100 font-mono tabular-nums text-sm font-bold tracking-wider">
+              <span className="text-cyan-100 font-mono tabular-nums text-lg font-bold tracking-wider">
                 {String(turn).padStart(2, '0')} <span className="text-cyan-500/60">/</span> {totalTurns}
               </span>
             </div>
 
             {/* TOTAL ASSET — 히어로 영역 (가장 눈에 띔, 글로우 강화) */}
             <div className="mt-4 mb-4">
-              <span className="text-cyan-300/80 text-[10px] font-mono tracking-[0.3em] block mb-1">TOTAL ASSET</span>
+              <span className="text-cyan-300/80 text-sm font-mono tracking-[0.3em] font-bold block mb-1">TOTAL ASSET</span>
               <p
                 className="text-[2rem] font-bold text-cyan-100 font-mono tabular-nums leading-none"
                 style={{ textShadow: '0 0 14px rgba(34,211,238,0.5)' }}
@@ -303,9 +298,9 @@ export default function GamePage() {
             <div className="flex items-center justify-between mt-3 mb-2">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
-                <span className="text-cyan-300 text-[10px] font-mono tracking-[0.3em]">HOLDINGS</span>
+                <span className="text-cyan-300 text-sm font-mono tracking-[0.3em] font-bold">HOLDINGS</span>
               </div>
-              <span className="text-cyan-300/70 text-[10px] font-mono tabular-nums">{holdings.length}종목</span>
+              <span className="text-cyan-300/70 text-sm font-mono tabular-nums font-bold">{holdings.length}종목</span>
             </div>
             {/* 고정 높이 14rem + scrollbar-cyan — 종목 개수와 무관하게 카드 크기 통일,
                 4종목 이상부터 카드 내부 스크롤 (시안 글로우 스크롤바, index.css 정의) */}
@@ -376,7 +371,7 @@ export default function GamePage() {
             style={{ top: 'calc(0.75rem + 115px)', left: '50%' }}
             className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10"
           >
-            <Marquee items={[currentTip]} leftLabel="📢 TIPS" />
+            <Marquee items={shuffledTips} leftLabel="📢 TIPS" />
           </div>
 
           {/* 상단 중앙: KOSPI 축약 ticker — 수치+변동률만 표시, 클릭 시 ChartExpandModal에서 풀 차트
@@ -392,11 +387,19 @@ export default function GamePage() {
             <KospiChart compact />
           </button>
 
-          {/* 우상단: 도움말 / 설정 / 종료 (hover 시 라벨) */}
-          <div className="absolute top-3 right-3 flex gap-2 z-10">
-            <IconButton icon={<HelpIcon />}     label="도움말" onClick={() => setOpenHelp(true)} />
-            <IconButton icon={<SettingsIcon />} label="설정"   onClick={() => setOpenSettings(true)} />
-            <IconButton icon={<ExitIcon />}     label="종료"   onClick={handleExit} />
+          {/* 우상단: 도움말 / 설정 / 종료 (hover 시 라벨)
+              · 다른 페이지(TopRightNav: 거래소/정보상/기술상)와 시각 사이즈·간격 통일
+              · GamePage 캔버스(1695×928)는 다른 페이지(1920×1080)보다 약 13% 업스케일되어
+                같은 w-14 아이콘이 더 크게 렌더됨 → counter-scale(1695/1920)로 보정 */}
+          <div
+            className="absolute top-4 right-4 z-10"
+            style={{ transform: `scale(${1695 / 1920})`, transformOrigin: 'top right' }}
+          >
+            <div className="flex gap-3">
+              <IconButton icon={<HelpIcon />}     label="도움말" onClick={() => setOpenHelp(true)} />
+              <IconButton icon={<SettingsIcon />} label="설정"   onClick={() => setOpenSettings(true)} />
+              <IconButton icon={<ExitIcon />}     label="종료"   onClick={() => setOpenExit(true)} />
+            </div>
           </div>
 
           {/* 우하단: 다음 주 버튼 — HTS 디지털 보드 톤 (슬레이트 + 시안 글로우 + 모서리 deco) */}
@@ -419,7 +422,7 @@ export default function GamePage() {
               className="text-2xl font-bold tracking-widest font-mono"
               style={{ textShadow: '0 0 12px rgba(34,211,238,0.7)' }}
             >
-              다음 주 ▶
+              {isLastTurn ? '결과 집계 🏁' : '다음 주 ▶'}
             </p>
           </button>
 
@@ -433,19 +436,29 @@ export default function GamePage() {
                 <span className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none" />
                 <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none" />
 
-                {/* LED 인디케이터 라벨 — KospiChart의 LIVE 헤더와 통일 */}
+                {/* LED 인디케이터 라벨 — KospiChart의 LIVE 헤더와 통일
+                    마지막 라운드엔 FINAL RESULT로 라벨 전환 */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                  <span className="text-cyan-300 text-[10px] font-mono tracking-[0.25em]">NEXT TURN</span>
+                  <span
+                    className="text-cyan-300 font-mono tracking-[0.25em] font-bold text-base"
+                    style={{ textShadow: '0 0 10px rgba(34,211,238,0.6)' }}
+                  >
+                    {isLastTurn ? 'FINAL RESULT' : 'NEXT TURN'}
+                  </span>
                 </div>
 
                 <p
                   className="text-cyan-100 font-bold text-lg mb-2 font-mono"
                   style={{ textShadow: '0 0 8px rgba(34,211,238,0.4)' }}
                 >
-                  다음 주로 이동하시겠습니까?
+                  {isLastTurn ? '최종 결과를 집계하시겠습니까?' : '다음 주로 이동하시겠습니까?'}
                 </p>
-                <p className="text-cyan-300/70 text-sm mb-5 font-mono">⚠️ 진행 후엔 되돌릴 수 없습니다.</p>
+                <p className="text-cyan-300/70 text-sm mb-5 font-mono">
+                  {isLastTurn
+                    ? `🏁 ${totalTurns}주 게임 끝. 결과 화면으로 이동합니다.`
+                    : '⚠️ 진행 후엔 되돌릴 수 없습니다.'}
+                </p>
 
                 <div className="flex gap-3">
                   <button
@@ -461,9 +474,9 @@ export default function GamePage() {
                       outline: 'none',
                       boxShadow: '0 0 20px rgba(34,211,238,0.5), inset 0 0 10px rgba(34,211,238,0.15)',
                     }}
-                    className="flex-1 py-3 bg-gradient-to-b from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border-2 border-cyan-300 rounded-lg text-base font-bold text-slate-900 transition-all duration-150 focus:outline-none font-mono tracking-wider"
+                    className="flex-1 py-3 bg-gradient-to-b from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border-2 border-cyan-300 rounded-lg text-2xl font-bold text-slate-900 transition-all duration-150 focus:outline-none font-mono tracking-widest"
                   >
-                    진행 ▶
+                    ENTER
                   </button>
                 </div>
               </div>
@@ -518,35 +531,64 @@ export default function GamePage() {
   )
 }
 
-// 게임 종료 확인 모달 — PopupOverlay 패턴 (font-mono 헤더 + ✕ + slate-800/70 카드)
+// 게임 종료 확인 모달 — SettingsModal과 동일한 디자인 시스템 (4모서리 L자 deco + 영문 헤더 + cyan glow)
+// destructive 모달이라 Enter 단축키는 의도적으로 묶지 않음 — ESC로 취소만 가능,
+// 종료는 마우스 클릭 또는 Tab+Enter로만 확정 (실수 방지)
 function ExitConfirmModal({ onConfirm, onCancel }) {
   useEscapeKey(onCancel)
-  useEnterKey(onConfirm)
+  // 모달 마운트 시 외부 트리거 버튼(종료 아이콘 등)의 포커스를 떼어둠.
+  // 그렇지 않으면 Enter 키가 트리거 버튼을 재클릭해 App.jsx 전역 click 리스너가
+  // playSfx('click')을 재생하는 부작용 발생 (게임 종료는 안 되지만 효과음만 남음)
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.activeElement?.blur?.()
+  }, [])
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
-        className="relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/60 rounded-xl p-6 max-w-sm w-full shadow-[0_0_40px_rgba(34,211,238,0.2)]"
         onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md rounded-lg border-2 border-cyan-300/80 bg-gradient-to-b from-slate-900 to-slate-950 p-6"
+        style={{
+          boxShadow: '0 0 32px rgba(34,211,238,0.45), inset 0 0 24px rgba(34,211,238,0.10)',
+        }}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-cyan-300 font-mono tracking-wider">게임 종료</h2>
+        {/* 4모서리 L자 deco — SettingsModal CornerDeco와 동일 패턴 */}
+        <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-300/80 rounded-tl-md pointer-events-none" />
+        <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-300/80 rounded-tr-md pointer-events-none" />
+        <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-300/80 rounded-bl-md pointer-events-none" />
+        <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-300/80 rounded-br-md pointer-events-none" />
+
+        {/* 헤더 — SettingsModal과 동일 톤 (영문 라벨 + glow + 원형 X) */}
+        <div className="mb-5 flex items-center justify-between">
+          <h2
+            className="font-mono text-lg font-bold tracking-widest text-cyan-100"
+            style={{ textShadow: '0 0 10px rgba(34,211,238,0.7)' }}
+          >
+            GAME EXIT
+          </h2>
           <button
             onClick={onCancel}
-            style={{ outline: 'none' }}
-            className="text-cyan-300 hover:text-cyan-100 text-xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
+            aria-label="닫기"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-300/60 text-cyan-200 transition-all duration-150 hover:border-cyan-200 hover:bg-cyan-400/15 hover:text-white"
+            style={{ boxShadow: '0 0 10px rgba(34,211,238,0.25)' }}
           >
             ✕
           </button>
         </div>
 
-        <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-4 mb-4">
-          <p className="text-sm text-cyan-100 mb-2">게임을 종료하고 초기 화면으로 돌아가시겠습니까?</p>
-          <p className="text-xs text-cyan-300/60 font-mono">⚠️ 현재 진행 상황은 모두 사라집니다.</p>
-        </div>
+        {/* 본문 카드 — SettingsModal 섹션 카드 톤 */}
+        <section className="mb-5 space-y-2 rounded-md border border-cyan-400/20 bg-slate-900/60 p-4">
+          <p className="font-mono text-sm tracking-wider text-cyan-100">
+            게임을 종료하고 초기 화면으로 돌아가시겠습니까?
+          </p>
+          <p className="font-mono text-xs tracking-wider text-cyan-300/60">
+            ⚠️ 현재 진행 상황은 모두 사라집니다.
+          </p>
+        </section>
 
+        {/* 버튼 — 취소(슬레이트) / 종료(빨강 destructive) */}
         <div className="flex gap-2">
           <button
             onClick={onCancel}
@@ -557,8 +599,8 @@ function ExitConfirmModal({ onConfirm, onCancel }) {
           </button>
           <button
             onClick={onConfirm}
-            style={{ outline: 'none' }}
-            className="flex-1 py-2 bg-red-700 hover:bg-red-600 border-2 border-red-400/60 text-white rounded-lg font-bold font-mono tracking-wider transition-all duration-150 focus:outline-none shadow-[0_0_15px_rgba(248,113,113,0.3)]"
+            style={{ outline: 'none', boxShadow: '0 0 15px rgba(248,113,113,0.3)' }}
+            className="flex-1 py-2 bg-red-700 hover:bg-red-600 border-2 border-red-400/60 text-white rounded-lg font-bold font-mono tracking-wider transition-all duration-150 focus:outline-none"
           >
             종료
           </button>
@@ -784,11 +826,14 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
-      {/* 우하단 다음 주 버튼 위 */}
+      {/* 우하단 다음 주 / 결과 집계 버튼 위
+          50주차에 버튼 라벨이 "결과 집계 🏁"로 바뀌므로 풍선에 두 동작을 함께 안내
+          (turn별 분기 대신 상시 동일 카피 — 도움말이 라운드마다 달라지지 않게) */}
       <HelpBubble style={{ bottom: '6rem', right: '1rem' }}>
-        <strong className="text-cyan-300 text-base block">▶ 다음 주로</strong>
+        <strong className="text-cyan-300 text-base block">▶ 다음 주 / 결과 집계</strong>
         <p className="text-xs mt-1 text-cyan-100">
-          한 주를 보내고 주가 갱신
+          한 주 보내고 주가 갱신
+          <br />50주차: 최종 결과 화면으로 이동
           <br />⚠️ 누르면 되돌릴 수 없어요
         </p>
       </HelpBubble>

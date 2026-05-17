@@ -338,15 +338,16 @@ function GlobalNewsView({ news }) {
   }
   return (
     <div className="h-full w-full">
-      <div className="relative w-full h-full bg-slate-900/55 border border-cyan-400/50 rounded-xl p-3 sm:p-4 md:p-5 lg:p-7 backdrop-blur-sm shadow-[inset_0_0_40px_rgba(34,211,238,0.08),0_0_30px_rgba(34,211,238,0.18)] flex flex-col overflow-y-auto overflow-x-hidden scrollbar-cyan">
-        {/* 모서리 L자 deco — HUD 프레임 톤 */}
-        <span className="absolute -top-px -left-px w-3.5 h-3.5 border-t-2 border-l-2 border-cyan-300 rounded-tl-xl pointer-events-none" />
-        <span className="absolute -top-px -right-px w-3.5 h-3.5 border-t-2 border-r-2 border-cyan-300 rounded-tr-xl pointer-events-none" />
-        <span className="absolute -bottom-px -left-px w-3.5 h-3.5 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none" />
-        <span className="absolute -bottom-px -right-px w-3.5 h-3.5 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none" />
+      {/* 외부 래퍼: 스크롤 없음 → 모서리 deco가 뷰포트(컨테이너) 기준으로 고정 */}
+      <div className="relative w-full h-full bg-slate-900/55 border border-cyan-400/50 rounded-xl backdrop-blur-sm shadow-[inset_0_0_40px_rgba(34,211,238,0.08),0_0_30px_rgba(34,211,238,0.18)] flex flex-col overflow-hidden">
+        {/* 모서리 L자 deco — HUD 프레임 톤 (스크롤 영역 밖에 둬서 위치 고정) */}
+        <span className="absolute -top-px -left-px w-3.5 h-3.5 border-t-2 border-l-2 border-cyan-300 rounded-tl-xl pointer-events-none z-10" />
+        <span className="absolute -top-px -right-px w-3.5 h-3.5 border-t-2 border-r-2 border-cyan-300 rounded-tr-xl pointer-events-none z-10" />
+        <span className="absolute -bottom-px -left-px w-3.5 h-3.5 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none z-10" />
+        <span className="absolute -bottom-px -right-px w-3.5 h-3.5 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none z-10" />
 
-        {/* 콘텐츠 — 기업뉴스처럼 카드 상단부터 아래로 흐름. 길어지면 카드 자체가 세로 스크롤 */}
-        <div className="w-full">
+        {/* 내부 스크롤 영역: 콘텐츠가 길어지면 여기서만 스크롤 */}
+        <div className="w-full h-full overflow-y-auto overflow-x-hidden scrollbar-cyan p-3 sm:p-4 md:p-5 lg:p-7">
           {/* 배지 라인 — BREAKING + 카테고리 */}
           <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2 md:mb-3 flex-wrap">
             <span className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-0.5 bg-red-600/25 border border-red-400/70 rounded font-mono text-[10px] sm:text-xs font-bold tracking-[0.2em] sm:tracking-[0.25em] text-red-200 shadow-[0_0_10px_rgba(248,113,113,0.3)]">
