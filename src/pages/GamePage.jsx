@@ -67,7 +67,9 @@ export default function GamePage() {
   const [transitioningWeek, setTransitioningWeek] = useState(1)
   const chartButtonRef = useRef(null)
   const [chartStartRect, setChartStartRect] = useState(null)
-  const [currentTip, setCurrentTip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)])
+  // TIPS를 매 게임마다 셔플해서 Marquee에 통째로 넘김 → 한 팁(12s) 끝나면 다음 팁 자동 cycle
+  // 단일 팁만 넘기면 Marquee 내부 setInterval이 안 걸려서 한 번 흐른 뒤 빈 화면이 됨
+  const [shuffledTips] = useState(() => [...TIPS].sort(() => Math.random() - 0.5))
 
   // 첫 진입 시 도움말 자동 오픈 (인트로 완료 후 조작법 안내)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,10 +79,6 @@ export default function GamePage() {
       clearFirstPlay()
     }
   }, [])
-
-  useEffect(() => {
-    setCurrentTip(TIPS[Math.floor(Math.random() * TIPS.length)])
-  }, [turn])
 
   // ESC = 종료 버튼 클릭과 동일 (다른 모달이 열려 있으면 스택상 그 모달이 먼저 닫힘)
   useEscapeKey(() => setOpenExit(true))
@@ -376,7 +374,7 @@ export default function GamePage() {
             style={{ top: 'calc(0.75rem + 115px)', left: '50%' }}
             className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10"
           >
-            <Marquee items={[currentTip]} leftLabel="📢 TIPS" />
+            <Marquee items={shuffledTips} leftLabel="📢 TIPS" />
           </div>
 
           {/* 상단 중앙: KOSPI 축약 ticker — 수치+변동률만 표시, 클릭 시 ChartExpandModal에서 풀 차트
