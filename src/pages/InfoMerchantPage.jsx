@@ -39,7 +39,7 @@ const HOTSPOT = {
   // 국제뉴스 팝업 (16:9)
   globalPopup: {
     close:   { top: 'calc(2.5% + 7px)', right: 'calc(1.2% + 11px)', width: 'calc(4.2% - 5px)', height: 'calc(8.5% - 20px)' }, // 좌 +11px, 아래 +7px / 가로 -5px, 세로 -20px (누적)
-    content: { top: '14%',              left: '5%',                right: '5%',   bottom: '8%' },
+    content: { top: '14%',              left: '5%',                right: '5%',   bottom: '11%' }, // 기업뉴스와 동일하게 bottom 11% (배경 하단 침범 방지 + 상하 여백 균형)
   },
   // 기업뉴스 팝업 (16:9, 배경 구성이 globalPopup과 동일하나 독립 관리)
   companyPopup: {
@@ -266,12 +266,12 @@ function PopupOverlay({
 
         {/* 콘텐츠 — 좌표는 HOTSPOT[*Popup].content (뉴스) / topFrame·midFrame·button (추천종목) */}
         {activePopup === 'globalNews' && (
-          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-y-auto p-2 sm:p-3 md:p-5">
+          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-hidden p-2 sm:p-3 md:p-5">
             <GlobalNewsView news={currentGlobalNews} />
           </div>
         )}
         {activePopup === 'companyNews' && (
-          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-y-auto p-2 sm:p-3 md:p-5">
+          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-hidden p-2 sm:p-3 md:p-5">
             <CompanyNewsView sectors={sectors} currentNews={currentNews} />
           </div>
         )}
@@ -302,16 +302,16 @@ function GlobalNewsView({ news }) {
     )
   }
   return (
-    <div className="h-full flex items-center justify-center">
-      <div className="relative w-full h-full bg-slate-900/55 border border-cyan-400/50 rounded-xl p-3 sm:p-4 md:p-5 lg:p-7 backdrop-blur-sm shadow-[inset_0_0_40px_rgba(34,211,238,0.08),0_0_30px_rgba(34,211,238,0.18)] flex flex-col overflow-y-auto">
+    <div className="h-full w-full">
+      <div className="relative w-full h-full bg-slate-900/55 border border-cyan-400/50 rounded-xl p-3 sm:p-4 md:p-5 lg:p-7 backdrop-blur-sm shadow-[inset_0_0_40px_rgba(34,211,238,0.08),0_0_30px_rgba(34,211,238,0.18)] flex flex-col overflow-y-auto overflow-x-hidden scrollbar-cyan">
         {/* 모서리 L자 deco — HUD 프레임 톤 */}
         <span className="absolute -top-px -left-px w-3.5 h-3.5 border-t-2 border-l-2 border-cyan-300 rounded-tl-xl pointer-events-none" />
         <span className="absolute -top-px -right-px w-3.5 h-3.5 border-t-2 border-r-2 border-cyan-300 rounded-tr-xl pointer-events-none" />
         <span className="absolute -bottom-px -left-px w-3.5 h-3.5 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none" />
         <span className="absolute -bottom-px -right-px w-3.5 h-3.5 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none" />
 
-        {/* 콘텐츠 래퍼 — my-auto: 짧으면 카드 안에서 세로 가운데, 길면 위에서부터 흐르며 카드 자체가 스크롤 */}
-        <div className="my-auto">
+        {/* 콘텐츠 — 기업뉴스처럼 카드 상단부터 아래로 흐름. 길어지면 카드 자체가 세로 스크롤 */}
+        <div className="w-full">
           {/* 배지 라인 — BREAKING + 카테고리 */}
           <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2 md:mb-3 flex-wrap">
             <span className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-0.5 bg-red-600/25 border border-red-400/70 rounded font-mono text-[10px] sm:text-xs font-bold tracking-[0.2em] sm:tracking-[0.25em] text-red-200 shadow-[0_0_10px_rgba(248,113,113,0.3)]">
@@ -321,16 +321,15 @@ function GlobalNewsView({ news }) {
             <span className="text-cyan-300/70 text-[10px] sm:text-xs font-mono tracking-[0.2em] sm:tracking-[0.25em]">GLOBAL · MARKET ALERT</span>
           </div>
 
-          {/* 헤드라인 — detail이 길이와 무관하게 다 보이도록 비중 축소 */}
-          <p className="font-bold text-cyan-50 text-sm sm:text-base md:text-lg lg:text-xl mb-1.5 sm:mb-2 md:mb-3 leading-snug drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+          {/* 헤드라인 */}
+          <p className="font-bold text-cyan-50 text-sm sm:text-base md:text-lg lg:text-xl mb-1.5 sm:mb-2 md:mb-3 leading-snug drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] break-keep">
             {news.headline}
           </p>
 
           {/* 구분선 */}
           <div className="h-px bg-gradient-to-r from-cyan-500/0 via-cyan-400/60 to-cyan-500/0 mb-1.5 sm:mb-2 md:mb-3" />
 
-          {/* 디테일 — news-events.json detail 원문을 길이 가정 없이 그대로 표시.
-              카드에 overflow-y-auto 안전망이 있어 데이터가 더 길어져도 잘리지 않음 */}
+          {/* 디테일 — news-events.json detail 원문을 길이 가정 없이 그대로 표시 */}
           <p className="text-xs sm:text-sm md:text-base lg:text-lg text-cyan-100/90 leading-relaxed whitespace-pre-line break-keep">
             {news.detail}
           </p>
@@ -632,19 +631,19 @@ function HelpOverlay({ onClose }) {
       {/* 지구본 */}
       <HelpBubble style={{ top: '30%', left: '15.5%', transform: 'translateX(-50%)' }} arrow="down">
         <strong className="text-cyan-300 text-base block">🌐 국제 뉴스</strong>
-        <p className="text-xs mt-1 text-cyan-100">이번 주 글로벌 시장 동향<br />환율·금리·정세 영향</p>
+        <p className="text-xs mt-1 text-cyan-100">이번 주 세계 시장 소식<br />전체 주가에 영향을 줘요</p>
       </HelpBubble>
 
       {/* 서류가방 (좌 누적 -180px, 위 -30px) */}
       <HelpBubble style={{ top: 'calc(55% - 3.175%)', left: 'calc(48% - 10.714%)', transform: 'translateX(-50%)' }} arrow="down">
         <strong className="text-amber-300 text-base block">💼 기업 뉴스</strong>
-        <p className="text-xs mt-1 text-cyan-100">활성 종목 섹터별<br />호재/악재 헤드라인</p>
+        <p className="text-xs mt-1 text-cyan-100">업종별 호재·악재 소식<br />해당 업종 주가가 움직여요</p>
       </HelpBubble>
 
       {/* 태블릿 (좌 누적 -210px) */}
       <HelpBubble style={{ top: '58%', left: 'calc(79% - 12.500%)', transform: 'translateX(-50%)' }} arrow="down">
         <strong className="text-emerald-300 text-base block">📈 내부 정보</strong>
-        <p className="text-xs mt-1 text-cyan-100">총 자산의 5% 수수료로<br />다음 주 최고 상승 종목을<br />단독 공개 (라운드당 1회)</p>
+        <p className="text-xs mt-1 text-cyan-100">수수료(총자산 5%)를 내면<br />다음 주 가장 많이 오를<br />종목 1개를 알려줘요<br /><span className="text-emerald-300/80">(라운드당 1회)</span></p>
       </HelpBubble>
     </div>
   )
