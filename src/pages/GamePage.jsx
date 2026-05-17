@@ -25,7 +25,6 @@ import { TIPS } from '../components/game/TipBox'
 import SettingsModal from '../components/game/SettingsModal'
 import { IconButton, HelpIcon, SettingsIcon, ExitIcon } from '../components/game/PageNav'
 
-// 전광판에 흘러갈 게임플레이 팁 — 정적 (라운드 무관)
 
 // stocks.json의 id(realTicker)로 stockData에서 라운드별 가격 배열 찾기 위한 인덱스
 const stockDataByTicker = Object.fromEntries(
