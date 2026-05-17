@@ -458,10 +458,11 @@ export default function GamePage() {
             </div>
           )}
 
-          {/* NPC 클릭 영역 — 좌표는 상단 HOTSPOT.npc 상수에서 관리 (배경 캐릭터 위치 미세조정) */}
-          <NPCHotspot {...HOTSPOT.npc.market}       label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} hoverBubbleTop="28px" />
-          <NPCHotspot {...HOTSPOT.npc.infoMerchant} label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} />
-          <NPCHotspot {...HOTSPOT.npc.techMerchant} label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} hoverBubbleTop="9px" />
+          {/* NPC 클릭 영역 — 좌표는 상단 HOTSPOT.npc 상수에서 관리 (배경 캐릭터 위치 미세조정)
+              bubbleScale={Math.max(1, 1/scale): 스케일 래퍼로 인한 풍선 축소 보정 — 화면 작아져도 가독성 유지 */}
+          <NPCHotspot {...HOTSPOT.npc.market}       label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} hoverBubbleTop="28px" bubbleScale={Math.max(1, 1/scale)} />
+          <NPCHotspot {...HOTSPOT.npc.infoMerchant} label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} bubbleScale={Math.max(1, 1/scale)} />
+          <NPCHotspot {...HOTSPOT.npc.techMerchant} label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} hoverBubbleTop="9px" bubbleScale={Math.max(1, 1/scale)} />
 
           {/* 도움말 오버레이 — 각 UI 옆에 설명 풍선, 배경 클릭 시 닫힘 */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
@@ -638,7 +639,8 @@ function AssetRow({ label, value, trend, cacheKey }) {
 // NPC 클릭 영역 — 시안 광채 + 머리 위 라벨 풍선
 // 좌표(left/top/width/height)는 호출부에서 HOTSPOT.npc.* 스프레드로 주입
 // hoverBubbleTop — 호버 풍선 Y 오프셋 (기본 0 = 핫스팟 상단 위, NPC별 미세조정용)
-function NPCHotspot({ left, top, width, height, label, subLabel, onClick, hoverBubbleTop = 0 }) {
+// bubbleScale — 화면 축소 시 풍선이 너무 작아지지 않도록 적용하는 역보정 배율 (기본 1)
+function NPCHotspot({ left, top, width, height, label, subLabel, onClick, hoverBubbleTop = 0, bubbleScale = 1 }) {
   return (
     <button
       onClick={onClick}
@@ -665,12 +667,19 @@ function NPCHotspot({ left, top, width, height, label, subLabel, onClick, hoverB
         }}
         className="absolute opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
       >
-        {/* HelpBubble과 동일한 톤: slate-900/95 + cyan-400 border + 글로우 + font-mono */}
-        <span className="block whitespace-nowrap bg-slate-900/95 text-cyan-100 font-bold text-xs px-3 py-1.5 rounded-lg border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] font-mono tracking-wider">
-          {label}
-          <span className="text-cyan-300/70 font-normal ml-1">· {subLabel}</span>
+        {/* 역보정 래퍼 — bottom center 기준으로 풍선을 키워 NPC 머리 위 화살표 끝점 고정
+            (이중 transform: 외층 translate / 내층 scale 분리) */}
+        <span
+          className="block"
+          style={{ transform: `scale(${bubbleScale})`, transformOrigin: 'bottom center' }}
+        >
+          {/* HelpBubble과 동일한 톤: slate-900/95 + cyan-400 border + 글로우 + font-mono */}
+          <span className="block whitespace-nowrap bg-slate-900/95 text-cyan-100 font-bold text-xs px-3 py-1.5 rounded-lg border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] font-mono tracking-wider">
+            {label}
+            <span className="text-cyan-300/70 font-normal ml-1">· {subLabel}</span>
+          </span>
+          <span className="block w-0 h-0 mx-auto border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-cyan-400"></span>
         </span>
-        <span className="block w-0 h-0 mx-auto border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-cyan-400"></span>
       </span>
     </button>
   )

@@ -16,11 +16,12 @@
 //   · store.activeStocks, store.prices, store.portfolio
 //   · store.buyStock / sellStock / navigateTo
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import StockChart from '../components/game/StockChart'
 import { getRecentCloses } from '../components/game/chartUtils'
 import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
+import ScaledPanel from '../components/ui/ScaledPanel'
 
 // 도움말 자동 표시 여부 기억용 sessionStorage 키 — 한 게임당 1회 자동 노출
 const MARKET_HELP_SEEN_KEY = 'market-help-seen'
@@ -120,11 +121,29 @@ export default function MarketPage() {
     setSelectedStockId(null)
   }
 
+  // 반응형 스케일 — 1920×1080 고정 캔버스를 컨테이너 너비에 맞춰 transform: scale
+  // 화면 축소 시 PageNav 버튼·핫스팟이 배경과 함께 비례 축소됨 (GamePage 동일 패턴)
+  const containerRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      const w = el.clientWidth
+      if (w > 0) setScale(w / 1920)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden animate-page-enter">
       {/* 배경 이미지 영역 — viewport 안에 들어가도록 width·height 모두 16:9로 클램프 */}
       <div
-        className="relative aspect-[16/9]"
+        ref={containerRef}
+        className="relative aspect-[16/9] overflow-hidden"
         style={{
           width: 'min(100vw, calc(100vh * 16 / 9))',
           height: 'min(100vh, calc(100vw * 9 / 16))',
@@ -133,6 +152,16 @@ export default function MarketPage() {
           backgroundPosition: 'center',
         }}
       >
+        {/* 스케일 래퍼 — 1920×1080 고정 좌표로 모든 absolute 요소 그리고, 컨테이너 너비에 맞춰 비례 축소 */}
+        <div
+          className="absolute top-0 left-0"
+          style={{
+            width: '1920px',
+            height: '1080px',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+          }}
+        >
           {/* 핫스팟 좌표는 상단 HOTSPOT.market 상수에서 관리 (1920×1080 비례 % + 픽셀 미세조정) */}
           <Hotspot label="종목분석 열기" className="absolute rounded-full"
             style={HOTSPOT.market.analysis} onClick={() => setActivePopup('analysis')} />
@@ -151,6 +180,7 @@ export default function MarketPage() {
 
           {/* 도움말 오버레이 (배경 클릭 시 닫힘) */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
+        </div>
       </div>
 
       {/* 팝업 — 종목분석 / 주식구매 / 주식판매 (store 의존 props는 내부에서 직접 구독) */}
@@ -560,19 +590,22 @@ function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClos
             <AnalysisHelpOverlay onClose={() => setShowAnalysisHelp(false)} />
           )}
 
-          {/* 콘텐츠 영역 — 좌측 그리드 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
+          {/* 콘텐츠 영역 — 좌측 그리드 패널 영역 (우측 캐릭터·말풍선 영역 제외)
+              ScaledPanel: 모달 축소 시 내부 패널(rem/px 고정 크기)도 함께 비례 축소되도록 1600×1000 캔버스 기준 scale */}
           <div className="absolute" style={ANALYSIS_CONTENT_BOUNDS}>
-            <StockAnalysisPanel
-              stocks={activeStocks}
-              prices={prices}
-              portfolio={portfolio}
-              selectedStockId={selectedStockId}
-              setSelectedStockId={setSelectedStockId}
-              maPurchased={maPurchased}
-              bollingerPurchased={bollingerPurchased}
-              macdPurchased={macdPurchased}
-              obvPurchased={obvPurchased}
-            />
+            <ScaledPanel canvasWidth={1000} canvasHeight={620} maxScale={1.5}>
+              <StockAnalysisPanel
+                stocks={activeStocks}
+                prices={prices}
+                portfolio={portfolio}
+                selectedStockId={selectedStockId}
+                setSelectedStockId={setSelectedStockId}
+                maPurchased={maPurchased}
+                bollingerPurchased={bollingerPurchased}
+                macdPurchased={macdPurchased}
+                obvPurchased={obvPurchased}
+              />
+            </ScaledPanel>
           </div>
         </div>
       </div>
@@ -597,10 +630,11 @@ function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClos
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 상단 우측 그려진 버튼 위 hotspot — 좌표는 HOTSPOT.buy 상수 */}
-          <Hotspot label="도움말" className="absolute rounded-lg"
+          {/* 상단 우측 그려진 버튼 위 hotspot — 좌표는 HOTSPOT.buy 상수
+              glowColor="emerald": 매수 톤 soft halo (매도의 red halo와 동일 패턴) — cyan 박스 윤곽 대신 부드러운 광채 */}
+          <Hotspot label="도움말" className="absolute rounded-lg" glowColor="emerald"
             style={HOTSPOT.buy.help} onClick={() => setShowBuyHelp(true)} />
-          <Hotspot label="닫기" className="absolute rounded-lg"
+          <Hotspot label="닫기" className="absolute rounded-lg" glowColor="emerald"
             style={HOTSPOT.buy.close} onClick={onClose} />
 
           {/* 도움말 오버레이 — 모달 안에 떠서 차트 위에 설명 표시 */}
@@ -608,15 +642,18 @@ function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClos
             <BuyHelpOverlay onClose={() => setShowBuyHelp(false)} />
           )}
 
-          {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 영역 제외) */}
+          {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 영역 제외)
+              ScaledPanel: 모달 축소 시 내부 패널(rem/px 고정 크기)도 함께 비례 축소되도록 1600×1000 캔버스 기준 scale */}
           <div className="absolute" style={TRADE_CONTENT_BOUNDS}>
-            <BulkBuyPanel
-              stocks={activeStocks}
-              prices={prices}
-              portfolio={portfolio}
-              cash={cash}
-              onBuy={buyStock}
-            />
+            <ScaledPanel canvasWidth={1000} canvasHeight={620} maxScale={1.5}>
+              <BulkBuyPanel
+                stocks={activeStocks}
+                prices={prices}
+                portfolio={portfolio}
+                cash={cash}
+                onBuy={buyStock}
+              />
+            </ScaledPanel>
           </div>
         </div>
       </div>
@@ -652,15 +689,18 @@ function PopupOverlay({ activePopup, selectedStockId, setSelectedStockId, onClos
             <SellHelpOverlay onClose={() => setShowSellHelp(false)} />
           )}
 
-          {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 제외) */}
+          {/* 콘텐츠 영역 — 좌측 패널 영역 (우측 캐릭터·말풍선 제외)
+              ScaledPanel: 모달 축소 시 내부 패널(rem/px 고정 크기)도 함께 비례 축소되도록 1600×1000 캔버스 기준 scale */}
           <div className="absolute" style={TRADE_CONTENT_BOUNDS}>
-            <BulkSellPanel
-              stocks={activeStocks}
-              prices={prices}
-              portfolio={portfolio}
-              cash={cash}
-              onSell={sellStock}
-            />
+            <ScaledPanel canvasWidth={1000} canvasHeight={620} maxScale={1.5}>
+              <BulkSellPanel
+                stocks={activeStocks}
+                prices={prices}
+                portfolio={portfolio}
+                cash={cash}
+                onSell={sellStock}
+              />
+            </ScaledPanel>
           </div>
         </div>
       </div>

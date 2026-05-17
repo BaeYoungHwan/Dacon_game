@@ -14,7 +14,7 @@
 //   · store.currentNews, store.currentGlobalNews, store.activeStocks, store.prices, store.turn
 //   · store.navigateTo
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
 import StockChart from '../components/game/StockChart'
@@ -111,11 +111,29 @@ export default function InfoMerchantPage() {
   const alreadyBought = insiderTip?.purchasedAtTurn === turn
   const canAfford     = insiderFee <= cash
 
+  // 반응형 스케일 — 1920×1080 고정 캔버스를 컨테이너 너비에 맞춰 transform: scale
+  // 화면 축소 시 PageNav 버튼·오브젝트 글로우가 배경과 함께 비례 축소됨 (GamePage 동일 패턴)
+  const containerRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      const w = el.clientWidth
+      if (w > 0) setScale(w / 1920)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-slate-950 overflow-hidden animate-page-enter">
       {/* 16:9 배경 컨테이너 */}
       <div
-        className="relative aspect-[16/9]"
+        ref={containerRef}
+        className="relative aspect-[16/9] overflow-hidden"
         style={{
           width: 'min(100vw, calc(100vh * 16 / 9))',
           height: 'min(100vh, calc(100vw * 9 / 16))',
@@ -124,19 +142,30 @@ export default function InfoMerchantPage() {
           backgroundPosition: 'center',
         }}
       >
-        {/* 책상 위 오브젝트 핫스팟 — 좌표는 상단 HOTSPOT.infoMerchant 상수에서 관리 */}
-        <ObjectGlow label="국제 뉴스" style={HOTSPOT.infoMerchant.globe}     glowColor="cyan"    onClick={() => setActivePopup('globalNews')} />
-        <ObjectGlow label="기업 뉴스" style={HOTSPOT.infoMerchant.briefcase} glowColor="amber"   onClick={() => setActivePopup('companyNews')} />
-        <ObjectGlow label="추천 종목" style={HOTSPOT.infoMerchant.tablet}    glowColor="emerald" onClick={() => setActivePopup('recommendation')} />
+        {/* 스케일 래퍼 — 1920×1080 고정 좌표로 모든 absolute 요소 그리고, 컨테이너 너비에 맞춰 비례 축소 */}
+        <div
+          className="absolute top-0 left-0"
+          style={{
+            width: '1920px',
+            height: '1080px',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          {/* 책상 위 오브젝트 핫스팟 — 좌표는 상단 HOTSPOT.infoMerchant 상수에서 관리 */}
+          <ObjectGlow label="국제 뉴스" style={HOTSPOT.infoMerchant.globe}     glowColor="cyan"    onClick={() => setActivePopup('globalNews')} />
+          <ObjectGlow label="기업 뉴스" style={HOTSPOT.infoMerchant.briefcase} glowColor="amber"   onClick={() => setActivePopup('companyNews')} />
+          <ObjectGlow label="추천 종목" style={HOTSPOT.infoMerchant.tablet}    glowColor="emerald" onClick={() => setActivePopup('recommendation')} />
 
-        {/* 우상단: 도움말 / 설정 / 메인 — PageNav 통일 스타일 */}
-        <TopRightNav onHelp={() => setOpenHelp(true)} navigateTo={navigateTo} />
+          {/* 우상단: 도움말 / 설정 / 메인 — PageNav 통일 스타일 */}
+          <TopRightNav onHelp={() => setOpenHelp(true)} navigateTo={navigateTo} />
 
-        {/* 우하단: 다른 페이지 이동 (거래소 / 기술상) */}
-        <BottomRightNav current="infoMerchant" navigateTo={navigateTo} />
+          {/* 우하단: 다른 페이지 이동 (거래소 / 기술상) */}
+          <BottomRightNav current="infoMerchant" navigateTo={navigateTo} />
 
-        {/* 도움말 오버레이 */}
-        {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
+          {/* 도움말 오버레이 */}
+          {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
+        </div>
       </div>
 
       {/* 팝업 */}
@@ -254,15 +283,19 @@ function PopupOverlay({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* X 버튼 — 좌표는 HOTSPOT[*Popup].close 상수에서 관리 */}
-        <button
+        {/* X 버튼 — 좌표는 HOTSPOT[*Popup].close 상수에서 관리
+            ObjectGlow의 soft halo 패턴 (MarketPage 매수/매도·기술상 닫기와 동일 톤): cyan 박스 윤곽 대신 부드러운 광채
+            activePopup별 톤: globalNews=cyan(지구본) / companyNews=amber(서류가방) / recommendation=emerald(태블릿) */}
+        <ObjectGlow
+          label="닫기"
+          style={hotspot.close}
+          glowColor={
+            activePopup === 'companyNews' ? 'amber'
+            : activePopup === 'recommendation' ? 'emerald'
+            : 'cyan'
+          }
           onClick={onClose}
-          aria-label="닫기"
-          style={{ outline: 'none', position: 'absolute', ...hotspot.close }}
-          className="group focus:outline-none cursor-pointer rounded-md"
-        >
-          <span className="absolute inset-0 rounded-md border-2 border-transparent group-hover:border-cyan-300 group-hover:shadow-[inset_0_0_15px_rgba(34,211,238,0.4),0_0_15px_rgba(34,211,238,0.4)] transition-all duration-150 pointer-events-none" />
-        </button>
+        />
 
         {/* 콘텐츠 — 좌표는 HOTSPOT[*Popup].content (뉴스) / topFrame·midFrame·button (추천종목) */}
         {activePopup === 'globalNews' && (
