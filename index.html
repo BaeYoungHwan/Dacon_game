@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>K-Stock Merchant 📈</title>
+    <!-- IE / 구형 Edge 방문자 안내 (ES Module 미지원 브라우저에서만 실행) -->
+    <script nomodule>
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.innerHTML =
+          '<div style="font-family:sans-serif;padding:40px;text-align:center;' +
+          'background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;' +
+          'align-items:center;justify-content:center;flex-direction:column;">' +
+          '<h1 style="color:#22d3ee;font-size:1.5rem;margin-bottom:1rem;">브라우저 업데이트가 필요합니다</h1>' +
+          '<p>이 게임은 최신 브라우저를 지원합니다.</p>' +
+          '<p style="margin-top:0.5rem;color:#94a3b8;">' +
+          'Chrome, Edge, Firefox, Safari 최신 버전을 사용해 주세요.</p>' +
+          '</div>';
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
