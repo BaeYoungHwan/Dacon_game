@@ -47,7 +47,7 @@ function generatePackage(hiddenStocks, prices) {
     ;[pool[i], pool[j]] = [pool[j], pool[i]]
   }
 
-  // 1~3개 무작위 선택
+  // 3~5개 무작위 선택
   const count = Math.min(pool.length, Math.floor(Math.random() * 3) + 3)
   const selected = pool.slice(0, count)
 
