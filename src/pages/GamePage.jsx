@@ -652,20 +652,18 @@ function IconButton({ icon, label, onClick }) {
 
 // NPC 클릭 영역 — 시안 광채 + 머리 위 라벨 풍선
 // 좌표(left/top/width/height)는 호출부에서 HOTSPOT.npc.* 스프레드로 주입
-// bubbleOffsetX: 라벨 풍선만 가로 이동 (px) — 캐릭터 가운데 정렬 미세조정용
-// glowOffsetX:   hover 광채만 가로 이동 (px) — 캐릭터 윤곽 미세조정용
-function NPCHotspot({ left, top, width, height, label, subLabel, onClick, bubbleOffsetX = 0, glowOffsetX = 0 }) {
+function NPCHotspot({ left, top, width, height, label, subLabel, onClick }) {
   return (
     <button
       onClick={onClick}
       style={{ left, top, width, height, outline: 'none' }}
       className="absolute group rounded transition-all duration-150 focus:outline-none focus:ring-0"
     >
-      {/* hover 시 시안 광채 — glowOffsetX만큼 가로 이동 (button 영역보다 약간 크게) */}
+      {/* hover 시 시안 광채 (button 영역보다 약간 크게) */}
       <span
         aria-hidden="true"
         style={{
-          left: `calc(50% + ${glowOffsetX}px)`,
+          left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
           background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.3) 0%, transparent 65%)',
@@ -675,7 +673,7 @@ function NPCHotspot({ left, top, width, height, label, subLabel, onClick, bubble
 
       <span
         style={{
-          left: `calc(50% + ${bubbleOffsetX}px)`,
+          left: '50%',
           transform: 'translate(-50%, -100%)',
         }}
         className="absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
