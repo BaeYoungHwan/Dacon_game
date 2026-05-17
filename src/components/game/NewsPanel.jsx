@@ -14,7 +14,7 @@ export default function NewsPanel({ companyNews, globalNews }) {
             <span className="text-xs font-bold px-2 py-0.5 rounded bg-gray-700">🌐 국제</span>
           </div>
           <p className="font-bold text-sm">📰 {globalNews.headline}</p>
-          <p className="text-sm text-gray-200 leading-relaxed border-t border-yellow-500/30 pt-2 mt-2">{globalNews.detail}</p>
+          <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line border-t border-yellow-500/30 pt-2 mt-2">{globalNews.detail}</p>
         </div>
       )}
       {companyNews && companyNews.map((news) => (
@@ -23,7 +23,7 @@ export default function NewsPanel({ companyNews, globalNews }) {
             <span className="text-xs font-bold px-2 py-0.5 rounded bg-gray-700">{news.sector}</span>
           </div>
           <p className="font-bold text-sm">📰 {news.headline}</p>
-          <p className="text-sm text-gray-200 leading-relaxed border-t border-blue-500/30 pt-2 mt-2">{news.detail}</p>
+          <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line border-t border-blue-500/30 pt-2 mt-2">{news.detail}</p>
         </div>
       ))}
     </div>
