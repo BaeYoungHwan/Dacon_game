@@ -22,6 +22,7 @@ import KospiChart from '../components/game/KospiChart'
 import AnimatedNumber from '../components/ui/AnimatedNumber'
 import Marquee from '../components/ui/Marquee'
 import SettingsModal from '../components/game/SettingsModal'
+import { IconButton, HelpIcon, SettingsIcon, ExitIcon } from '../components/game/PageNav'
 
 // 전광판에 흘러갈 게임플레이 팁 — 정적 (라운드 무관)
 // Marquee가 한 팁씩 우→좌로 흐르고 끝나면 다음 팁으로 자동 순환
@@ -41,6 +42,21 @@ const GAMEPLAY_TIPS = [
 const stockDataByTicker = Object.fromEntries(
   (stockData.stocks ?? []).map((s) => [s.realTicker, s])
 )
+
+// ─────────────────────────────────────────────────────────
+// 핫스팟 좌표 상수 — 배경 이미지(1695×928)의 NPC 위치에 맞춘 클릭 영역
+// (MarketPage / InfoMerchantPage HOTSPOT 패턴 준수 — 좌표 미세조정은 이 상수만 수정)
+//   npc.market:       좌측 여성 (시장 분석가) → 거래소
+//   npc.infoMerchant: 중앙 남성 (정보 브로커) → 정보상
+//   npc.techMerchant: 우측 여성 (퀀트 테크니션) → 기술상
+// ─────────────────────────────────────────────────────────
+const HOTSPOT = {
+  npc: {
+    market:       { left: 'calc(42.5% - 190px)', width: '8%', top: '28%', height: '64%' } , // 좌 -190px (누적)
+    infoMerchant: { left: 'calc(48% - 50px)',    width: '8%', top: '28%', height: '64%' }, // 좌 -50px
+    techMerchant: { left: '57%',                 width: '8%', top: '28%', height: '64%' },
+  },
+}
 
 export default function GamePage() {
   const {
@@ -209,7 +225,7 @@ export default function GamePage() {
         style={{
           width: 'min(100vw, calc(100vh * 1695 / 928))',
           height: 'min(100vh, calc(100vw * 928 / 1695))',
-          backgroundImage: "url('/images/game-bg.png')",
+          backgroundImage: "url('/images/game-bg.webp')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -420,10 +436,10 @@ export default function GamePage() {
             </div>
           )}
 
-          {/* NPC 클릭 영역 — 정보상·기술상은 라벨 풍선만 우측으로 이동 */}
-          <NPCHotspot left="35%" label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} />
-          <NPCHotspot left="48%" label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} bubbleOffsetX={35} glowOffsetX={60} />
-          <NPCHotspot left="62%" label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} bubbleOffsetX={100} glowOffsetX={90} />
+          {/* NPC 클릭 영역 — 좌표는 상단 HOTSPOT.npc 상수에서 관리 (배경 캐릭터 위치 미세조정) */}
+          <NPCHotspot {...HOTSPOT.npc.market}       label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} />
+          <NPCHotspot {...HOTSPOT.npc.infoMerchant} label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} />
+          <NPCHotspot {...HOTSPOT.npc.techMerchant} label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} />
 
           {/* 도움말 오버레이 — 각 UI 옆에 설명 풍선, 배경 클릭 시 닫힘 */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
@@ -616,40 +632,20 @@ function AssetRow({ label, value, highlight, trend, deltaPct, deltaAmount, cache
   )
 }
 
-// 우상단 아이콘 버튼 — SVG 아이콘 + hover 시 inset+outer 글로우 (다른 페이지 Hotspot cyan 패턴)
-// group class는 라벨 풍선의 group-hover:opacity-100용. shadow는 자기 hover에 직접 적용.
-function IconButton({ icon, label, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{ outline: 'none' }}
-      className="relative group flex items-center justify-center bg-gradient-to-b from-slate-900 to-slate-950 hover:from-slate-800 hover:to-slate-900 backdrop-blur rounded-lg w-16 h-16 border-2 border-cyan-500/60 hover:border-cyan-300 text-cyan-300 hover:text-cyan-100 transition-all duration-150 focus:outline-none focus:ring-0 hover:shadow-[inset_0_0_25px_rgba(34,211,238,0.35),0_0_25px_rgba(34,211,238,0.35)]"
-      aria-label={label}
-    >
-      {icon}
-      {/* 라벨 풍선 — HelpBubble과 동일한 톤 */}
-      <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/95 text-cyan-100 text-sm px-3 py-1 rounded-lg border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)] opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none font-mono tracking-wider">
-        {label}
-      </span>
-    </button>
-  )
-}
-
 // NPC 클릭 영역 — 시안 광채 + 머리 위 라벨 풍선
-// bubbleOffsetX: 라벨 풍선만 가로 이동 (px)
-// glowOffsetX:   hover 광채만 가로 이동 (px) — 캐릭터 윤곽 미세 조정용
-function NPCHotspot({ left, label, subLabel, onClick, bubbleOffsetX = 0, glowOffsetX = 0 }) {
+// 좌표(left/top/width/height)는 호출부에서 HOTSPOT.npc.* 스프레드로 주입
+function NPCHotspot({ left, top, width, height, label, subLabel, onClick }) {
   return (
     <button
       onClick={onClick}
-      style={{ left, width: '14%', top: '42%', height: '55%', outline: 'none' }}
+      style={{ left, top, width, height, outline: 'none' }}
       className="absolute group rounded transition-all duration-150 focus:outline-none focus:ring-0"
     >
-      {/* hover 시 시안 광채 — glowOffsetX만큼 가로 이동 (button 영역보다 약간 크게) */}
+      {/* hover 시 시안 광채 (button 영역보다 약간 크게) */}
       <span
         aria-hidden="true"
         style={{
-          left: `calc(50% + ${glowOffsetX}px)`,
+          left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
           background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.3) 0%, transparent 65%)',
@@ -659,7 +655,7 @@ function NPCHotspot({ left, label, subLabel, onClick, bubbleOffsetX = 0, glowOff
 
       <span
         style={{
-          left: `calc(50% + ${bubbleOffsetX}px)`,
+          left: '50%',
           transform: 'translate(-50%, -100%)',
         }}
         className="absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
@@ -672,36 +668,6 @@ function NPCHotspot({ left, label, subLabel, onClick, bubbleOffsetX = 0, glowOff
         <span className="block w-0 h-0 mx-auto border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-cyan-400"></span>
       </span>
     </button>
-  )
-}
-
-// ─────────────────────────────────────────────────────────
-// SVG 아이콘 (Heroicons outline 스타일)
-// ─────────────────────────────────────────────────────────
-
-function HelpIcon() {
-  return (
-    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17.25h.008v.008H12v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  )
-}
-
-function SettingsIcon() {
-  return (
-    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.108 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  )
-}
-
-function ExitIcon() {
-  // 문 바깥으로 화살표 (logout 아이콘)
-  return (
-    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-    </svg>
   )
 }
 

@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-16 (1.8.1~1.8.2·1.8.5 완료, ResultPage 코스피 연동 1.8.7 추가 — 디자인 톤 통일(자산카드/IconButton/ExitConfirmModal/NPC라벨/KospiChart+Marquee outer) / KospiChart compact 모드 + SVG 디테일 보강(글로우·area fill·펄스 ring·pregame↔game 연결·Y축 좌측 정렬) / 총자산 전주 대비 증감률·증감액 표시 / ResizeObserver + transform:scale wrapper로 viewport 반응형 / 도움말 KOSPI 박스 추가 + 8개 풍선 입문자용 리라이팅 + arrow="up" 지원 / 페이지 진입 애니메이션(opacity+scale+blur) 4개 페이지 적용 / 새 게임 첫 라운드 trend·delta 초기화(useRef→useState + sessionStorage 클리어))
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.12 뉴스 시스템 고도화 — news-events.json 85→170개 확장 + gameLogic 기업뉴스 3~5개 보장 + dateIndexMap O(1) 최적화 + nearbyIds 중복 방지 + NewsPanel·InfoMerchantPage detail 가시성 개선 + 테스트 7→14케이스 + PR #54 머지 가능. 이전: 1.10 QA 자동화 PR #48 완료 / 1.11 UI 폴리시 12건 배치)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -32,12 +32,16 @@
 | 1.1 분석/기획 | 3 | 3 | 100% |
 | 1.2 설계 | 3 | 3 | 100% |
 | 1.3 P0 기반 구축 | 7 | 7 | 100% |
-| 1.4 P1 핵심 기능 | 36 | 33 | 91.7% (3개 대체됨) |
+| 1.4 P1 핵심 기능 | 45 | 42 | 93.3% (3개 대체됨) |
 | 1.5 P1 통합 | 8 | 8 | 100% |
 | 1.6 P2 QA + 배포 | 6 | 4 | 66.7% |
 | 1.7 버퍼 | 2 | 0 | 0% |
 | 1.8 추가 작업 | 7 | 5 | 71.4% |
-| **전체** | **72** | **63** | **87.5%** |
+| 1.9 하네스 업그레이드 | 11 | 11 | 100% |
+| 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
+| 1.11 UI 폴리시 (송원호) | 15 | 6 | 40.0% |
+| 1.12 뉴스 시스템 고도화 (배영환) | 6 | 6 | 100% |
+| **전체** | **122** | **104** | **85.2%** |
 
 ---
 
@@ -133,6 +137,15 @@
 | 1.4.34 | [Front] 도움말 보강 — KOSPI 차트 박스 추가(arrow="down", 차트 위쪽 위치) + `HelpBubble` arrow="up" 분기 추가(다른 페이지와 통일) + 8개 풍선 문구 입문자용 리라이팅(전문 용어 풀어쓰기, "매수/매도"→"사고팔기", "퀀트"→생략, 정보상에 "뉴스→주가 변동" 인과 설명 추가). TIPS는 원래 "떡상 꿀팁이 흐릅니다 ✨"로 롤백 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.3 | src/pages/GamePage.jsx | P1 |
 | 1.4.35 | [Front] 페이지 진입 애니메이션 — index.css `@keyframes page-enter`(450ms, opacity 0→1 + scale 0.96→1 + blur 4px→0, cubic-bezier(0.16,1,0.3,1) easeOutExpo 풍) + GamePage/MarketPage/InfoMerchantPage/TechMerchantPage 최상위 div에 `animate-page-enter` class 적용. 페이지 전환 시 부드러운 fade-in + 줌인 + 블러 풀림 효과 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.2 | src/index.css, 4개 페이지 .jsx | P1 |
 | 1.4.36 | [Front] 새 게임 첫 라운드 trend/delta 초기화 — `prev*Ref(useRef)`를 `useState`로 마이그레이션. 초기값 함수에서 `turn === 1` 시 sessionStorage 캐시(`game-stock-value-prev`, `game-total-assets-prev`) `removeItem` + null 반환. 게임 종료 후 재시작 시 첫 라운드에 ▲/▼ 아이콘 및 증감률·증감액이 이전 게임 마지막 값과 비교되어 잘못 표시되던 버그 수정. `confirmNextTurn`에서 `setPrev*`로 baseline 저장 | 송원호 | 완료 | 100% | 05/15 | 05/15 | 0.2 | src/pages/GamePage.jsx | P1 |
+| 1.4.37 | [Front] MarketPage 종목분석 모달 — 16:9 이미지 배경(`stock-analysis-bg.webp`) + 좌측 사이드바(10종목 컴팩트 카드, 시안 스크롤바) + 우측 멀티 패널 차트(메인 차트 violet / MACD violet / OBV emerald 세로 스택) + `StockChart.jsx` 전면 재작성(`PanelFrame`/`LockedHint` + `NeonGlowDefs` SVG 글로우 필터) + `SubTabBar` 폐기(모든 패널 동시 노출, 미구매 지표는 LockedHint) + 캔들 색상 녹/적(이미지 톤) + MACD 히스토그램만(0 중심 대칭, 워밍업 우측 쏠림 해결 위해 유효 데이터만 X축 재구성) + OBV 청록 라인 + `SubYAxis`(K/M/B 단축 표기 + extraGap) + 모든 서브 패널에 `XAxisLabels` 추가 + 도움말 오버레이(`AnalysisHelpOverlay` — 캔들/MA/볼린저/MACD/OBV 6개 섹션) + hotspot 픽셀 단위 미세조정 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 1 | src/pages/MarketPage.jsx, src/components/game/StockChart.jsx, public/images/stock-analysis-bg.webp | P1 |
+| 1.4.38 | [Front] MarketPage 주식구매 모달 — 16:9 이미지 배경(`stock-buy-bg.webp`) + 기존 `StockBoard` 폐기 → 신규 `BulkBuyPanel`(시안 디지털 보드 톤): 종목별 자체 수량 컨트롤(수량 > 0 자동 매수 대상, 별도 체크박스 없음) + 단축 액션(`전체 1주`/`전체 해제`) + 종목 행(섹터 태그/보유 배지/8주 미니 스파크라인/등락률+전주대비/소계) + 하단 시장 분위기·합계·매수 후 예상 잔액·🛒 일괄 매수 + 도움말 오버레이(`BuyHelpOverlay` 8개 섹션) + 합계 박스 검정 text-shadow로 캐릭터 배경 가독성 확보 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 1 | src/pages/MarketPage.jsx, public/images/stock-buy-bg.webp | P1 |
+| 1.4.39 | [Front] MarketPage 주식판매 모달 — 16:9 이미지 배경(`stock-sell-bg.webp`, 로즈/레드 톤) + 기존 시안 카드 폐기 → 신규 `BulkSellPanel`(BulkBuyPanel 동일 구조, 로즈 톤): 보유 종목만 노출, 매도 수량 max=보유수량 제약 + 단축 액션(`전량 매도`/`전체 해제`) + 하단 매도 수익·매도 후 예상 현금·💸 일괄 매도 + `.scrollbar-rose` 커스텀 스크롤바 + 도움말 오버레이(`SellHelpOverlay` 7개 섹션, `SellHelpSection` 로즈 헬퍼) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 1 | src/pages/MarketPage.jsx, src/index.css, public/images/stock-sell-bg.webp | P1 |
+| 1.4.40 | [Front] chartUtils 확장 평균 + calcOBV 시그니처 수정 — `calcMA` 워밍업 기간 사용 가능한 데이터로 부분 평균(expanding MA) 방식 → MA20 라인이 차트 좌측부터 그려짐. `calcBollinger`도 동기. `calcOBV(ohlcv)` 시그니처 호출 오류(`(closes, volumes)` → `(allCandles)`) 수정으로 OBV 값이 0만 나오던 버그 해결. 차트 Y축 스케일에 볼린저 상/하단 포함 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/components/game/chartUtils.js, src/components/game/StockChart.jsx | P1 |
+| 1.4.41 | [Front] 등락률·변동 표시 저번 주 대비로 통일 — 사이드바/BulkBuyPanel/BulkSellPanel/분석 모달 헤더 4곳 모두 `stockChange = (weekDiff/prevWeekClose) × 100`. 헤더 텍스트 `시작가와 거의 같아요` → `지난 주와 거의 같아요`. `friendlyChange` 이모지 🔺🔻➖ → 유니코드 ▲▼— (CSS color 적용). `TONE_CLASS` 한국 증시 컨벤션(up=빨강/down=파랑/flat=흰색). MACD 히스토그램도 동일 적용 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx, src/components/game/StockChart.jsx | P1 |
+| 1.4.42 | [공용] gameStore `purchaseRounds` 필드 추가 — 종목별 최초 매수 라운드 기록(`{stockId: turn}`). `buyStock`은 보유 0→>0 첫 진입 시에만 현재 turn 기록(추가 매수 시 유지). `sellStock`은 전량 매도 시 삭제. `startGame`/`resetGame` 초기화 + `persist` partialize 포함. 매도 모달 "이번 주 매수 종목" 안내용으로 도입했으나 후속 변경으로 미사용 — 추후 평가손익 정확 구현·보유 기간 표시 등 재활용 가능 | 배영환·송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/store/gameStore.js, src/pages/MarketPage.jsx | P2 |
+| 1.4.43 | [Front] 공통 UI 폴리시 — `.scrollbar-cyan`/`.scrollbar-rose` 커스텀 스크롤바(6px, 색상 thumb + 글로우, hover 밝아짐). `input[type='number']` 기본 스피너 숨김(Webkit `::-webkit-inner/outer-spin-button` + Firefox `-moz-appearance: textfield`) — 자체 +/− 버튼 중복 제거. 3개 모달 hotspot 픽셀 단위 미세조정 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/index.css, src/pages/MarketPage.jsx | P2 |
+| 1.4.44 | [Front] PR #44 리뷰 후속 — 코드 품질 4건 반영: (1) `chartUtils.js` MACD 인덱스 매핑(`signalSlice[j] → result[firstMacd + j]`) 함수 위 + 인라인 주석으로 부분 배열 변환 흐름 명시 (2) `StockChart.jsx` 캔들 배열·OHLCV·MA/볼린저/MACD/OBV 지표·Y축 min/max 스케일을 `useMemo`로 묶음(deps: stockEntry/turn/4개 구매 플래그) + `CANDLE_H`/`SUB_H` 모듈 상수로 외부 이동 → 종목 전환·매수·매도 외 재계산 차단 (3) `MarketPage.jsx` 핫스팟 좌표 `HOTSPOT` 상수 객체로 추출(market/analysis/buy/sell 4그룹) + `MODAL_CONTENT_BOUNDS`/`SELL_MODAL_CONTENT_BOUNDS` 콘텐츠 영역 상수 → 모든 hotspot 호출부 `style={HOTSPOT.section.label}` 단순화 (4) `PopupOverlay` props 14 → 4(activePopup/selectedStockId/setSelectedStockId/onClose), store 의존 데이터 10개(activeStocks/prices/portfolio/cash/buyStock/sellStock/4 구매 플래그)는 `useGameStore((s) => s.X)` 셀렉터로 내부 직접 구독 → 부모-자식 props 거리 단축. MarketPage 본체 destructure도 `navigateTo`만 남김 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/components/game/chartUtils.js, src/components/game/StockChart.jsx, src/pages/MarketPage.jsx | P2 |
+| 1.4.45 | [Front] 데드 코드 정리 — `StockChart.jsx`: `SignalBadge` 컴포넌트 + `maSignal`/`bollSignal`/`macdSignal`/`obvSignal` 계산 4줄 제거(SignalBadge 렌더 제거 후 잔존), `getMaSignal`/`getBollingerSignal`/`getMacdSignal`/`getObvSignal` import 4개 제거, useMemo 반환에서 미사용 필드(`highs`/`lows`/`closes`/`bollArr`/`macdArr`) 제거. `MarketPage.jsx`: `WeekInfoPanel` + `StatCard` 함수 제거(`StockAnalysisPanel` 멀티 패널 재설계 후 호출처 없음). **부수 효과**: `macdSignal = getMacdSignal(macdArr)` 라인에서 `macdArr`이 useMemo destructure 누락으로 `undefined`였던 잠재 TypeError 버그 자연 해결. 보존: `gameStore.purchaseRounds` 필드(향후 평가손익·보유 기간 표시 재활용 가능) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/components/game/StockChart.jsx, src/pages/MarketPage.jsx | P2 |
 
 ---
 
@@ -216,6 +229,66 @@
 
 ---
 
+## 1.10 QA 자동화 — Vitest 단위·통합 테스트 (배영환)
+
+| ID | 작업 | 담당 | 상태 | 완료% | 시작 | 종료 | 예상h | 산출물 | 우선순위 |
+|----|------|------|------|--------|------|------|--------|--------|---------|
+| 1.10.1 | [QA] Vitest + jsdom 환경 설정 — vite.config.js test 블록, package.json scripts(test/test:watch/test:cover/test:3) | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | vite.config.js, package.json | P0 |
+| 1.10.2 | [QA] src/__tests__/setup.js — @testing-library/jest-dom 초기화 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/__tests__/setup.js | P0 |
+| 1.10.3 | [QA] grade.test.js — calcExcessPp 3케이스, getGrade 경계값 10케이스, GRADES 내림차순 검증 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/lib/grade.test.js | P1 |
+| 1.10.4 | [QA] gameLogic.test.js — progressTurn 가격·KOSPI·뉴스 7케이스 (실제 JSON 사용, mock 없음) | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/lib/gameLogic.test.js | P1 |
+| 1.10.5 | [QA] gameStore.test.js — buyStock·sellStock·unlockStock·unlockPackageStock·buyIndicator·purchaseInsiderInfo·localStorage 보안·getFinalAssets 23케이스 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 1 | src/__tests__/store/gameStore.test.js | P0 |
+| 1.10.6 | [QA] chartUtils.test.js — calcMA·calcBollinger·calcMACD·calcOBV·신호감지 5종·getRecentCloses 20케이스 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 1 | src/__tests__/components/chartUtils.test.js | P1 |
+| 1.10.7 | [QA] gameTurnFlow.test.js — gameStore+progressTurn 통합 4케이스, pass^3 검증 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/__tests__/integration/gameTurnFlow.test.js | P1 |
+| 1.10.8 | [QA] qa-report.md — 테스트 결과·커버리지·갭 분석 리포트 작성 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.3 | docs/ref/qa-report.md | P2 |
+| 1.10.9 | [fix] getBollingerSignal 제로 밴드 NaN 버그 수정 — bandWidth===0 시 pctB=0.5 고정 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/components/game/chartUtils.js:113 | P1 |
+
+---
+
+## 1.11 UI 폴리시 (송원호 — 2026-05-17 추가 배치)
+
+> 기간: 2026-05-17 ~ 2026-05-18 | 담당: 송원호 | 출처: 사용자 직접 요청 (별표 우선순위)
+> 우선순위 표기: ★★★★★(P0) / ★★★★(P1) / ★★★(P1-) / ★★(P2) / ★(P3)
+> 영역: 모두 `src/pages/`, `src/components/` — 송원호 담당 영역 내부
+
+| WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
+|-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
+| 1.10.1 | [Front] ★★★★★ 메인화면 호버 작업 — GamePage NPC 3인 / 좌측 자산 카드 / KOSPI 차트 / 우상단 IconButton / 다음 주 버튼 / TIPS Marquee 호버 인터랙션 보강 (현재 22건 group-hover 존재하나 시안 글로우 톤·라벨 풍선·커서·트랜지션 일관성 점검 + 부족한 영역 호버 피드백 추가) | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.5 | src/pages/GamePage.jsx | P0 |
+| 1.10.2 | [Front] ★★★★★ 기술상 컨텐츠 UI 개선 — TechMerchantPage PopupOverlay 3종(indicators/hiddenStocks/locked)을 추천종목.webp 배경(4:3) + 3-zone 레이아웃(topFrame / midFrame / button)으로 리뉴얼. 기존 max-w-2xl 모달 사이즈 유지(`width: min(72vw, calc(78vh*4/3))`, `maxWidth: 46rem`). HOTSPOT.popup 상수(close/topFrame/midFrame/button) 추가, LockedView/IndicatorsView/HiddenStocksView 재구성: LED 인디케이터 도트 + StatusDot 컴포넌트(cyan/emerald/slate 색상별 상태) + scrollbar-cyan 적용. 한글 문구 유지(보유 현금/구매/구매완료/잠김/닫기/10턴 이후 사용 가능) + 폰트 크기 확대(text-sm→text-base, text-[10px]→text-xs). 하단 그린 버튼 닫기 ✕(에메랄드 글로우). | 송원호 | 완료 | 100% | 05/17 | 05/17 | 1 | src/pages/TechMerchantPage.jsx | P0 |
+| 1.10.3 | [Front] ★★★★ 거래소 매수/매도 MAX 버튼 + 수량 input UX 보완 + 매도 문구 정리 — ① `BulkBuyPanel` 종목 행 `＋` 옆에 `MAX` 버튼 신설: 다른 종목에 입력 중인 매수액을 제외한 사용 가능 잔액으로 살 수 있는 최대 주수 자동 계산(`Math.floor((cash - totalCost + subTotal) / stockPrice)`), 1주도 못 사면 비활성. ② `BulkSellPanel` 종목 행 `＋` 옆에 `MAX` 버튼 신설: 보유 수량(`stockHeld`) 자동 입력, 이미 전량 입력(`qty >= stockHeld`) 시 비활성. ③ 수량 input UX 보완 — 패널별 `focusedId` state 도입 + `value={focusedId === stock.id && qty === 0 ? '' : qty}` → 첫 진입 시 `0` 그대로 표시, 클릭(포커스) 시 입력칸 빈 칸으로 전환되어 초기 0이 안 사라지던 문제 해결. `onFocus={(e) => { setFocusedId(stock.id); e.target.select() }}`로 비-0 값일 때도 클릭 즉시 selectAll되어 다음 키 입력에 자연 대체. `onBlur` 시 다시 0 표시로 복귀. ④ 단축 액션 `전량 매도` → `전체 매도`로 문구 변경 (매도 모달 단축 버튼 + 매도 헬프 섹션 strong 라벨 + 내부 주석). 시안/로즈 톤 작은 MAX 버튼(`px-2 h-8`) 배치 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx | P1 |
+| 1.10.4 | [Front] ★★★★ 정보상 3종 팝업 UI 개선 + 뉴스 갱신 애니메이션 — 국제뉴스/기업뉴스/추천종목 팝업 배경을 각각 국제뉴스.webp(16:9, 2560×1440) / 기업뉴스.webp(16:9, 2560×1440) / 추천종목.webp(4:3, 1408×1056) 시안 이미지로 교체. 그려진 X 버튼 위치에 투명 클릭 영역 + hover 시안 글로우. 콘텐츠 디자인: ① 국제뉴스 BREAKING 카드(시안 모서리 deco + 배지 라인 + 헤드라인 + 그라데이션 구분선 + 디테일) ② 기업뉴스 섹터별 그리드(개수 적응 1/2/3/4+ — 1개 max-w-2xl, 2개 2열, 3개 3열, 4+개 2x2 / 3열, 정보 없는 섹터는 숨김) ③ 추천종목 3-zone(잠금: LOCKED 상태바+자물쇠 본문+안내 footer / 공개: UNLOCKED · 다음 주 최고 상승 예상 상태바 + 종목명·현재가/등락률 비공개 2단 카드 + RECEIPT 영수증 라인). HOTSPOT.{globalPopup/companyPopup/recommendPopup} 상수에 close + content/topFrame/midFrame/button 좌표 모음. **새 라운드 뉴스 슬라이드 인 애니메이션은 1.10.4-anim 분리 추후 작업** | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.7 | src/pages/InfoMerchantPage.jsx, public/images/info-global-news-bg.webp, public/images/info-company-news-bg.webp, public/images/info-recommendation-bg.webp | P1 |
+| 1.10.5 | [Front] ★★★★ 공용 버튼 UI 통일 — 4개 페이지(GamePage / MarketPage / InfoMerchantPage / TechMerchantPage) 우상단·우하단 네비게이션 버튼을 단일 컴포넌트 `src/components/game/PageNav.jsx`로 분리. ① `IconButton` (정사각 → **네온 칩 rounded-full w-14 h-14**) — `bg-transparent + border-2 border-cyan-300/80 + hover:bg-cyan-400/20` 라인 버튼 톤, 외광 halo(`box-shadow + filter: blur(6px)`)가 평소에도 은은하게 빛남, hover 시 글로우 1.5배 강화 + 라벨 풍선 등장. ② `LocationButton` (캡슐 rounded-full + `px-7 h-12`) — `▶ 거래소/정보상/기술상` 라벨 표시. ③ `TopRightNav(onHelp, navigateTo)` / `BottomRightNav(current, navigateTo)` 컨테이너로 우상단 도움말·설정·메인 3아이콘 + 우하단 현재 페이지 제외 2곳 이동 자동 렌더. ④ `HelpIcon/SettingsIcon/HomeIcon/ExitIcon` SVG export — GamePage가 인라인 정의 4개(IconButton + 3 SVG) 제거하고 PageNav에서 import. 시도 이력: 슬레이트+border-cyan-500/60(원형) → HUD lock-on 4모서리 대괄호(중간) → 최종 **네온 칩 아웃라인**(사용자 선택) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.6 | src/components/game/PageNav.jsx, src/pages/GamePage.jsx, MarketPage.jsx, InfoMerchantPage.jsx, TechMerchantPage.jsx | P1 |
+| 1.10.6 | [Front] ★★★★ 각 화면별 설정 버튼 추가 — 1.10.5 `TopRightNav`로 일괄 해결. `SettingsModal`을 PageNav 내부에서 `useState(openSettings)`로 마운트하여 설정 아이콘 클릭 시 자체 오픈. 거래소/정보상/기술상 모두 도움말·설정·메인 3아이콘이 우상단에 동일 톤으로 노출 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/components/game/PageNav.jsx | P1 |
+| 1.10.7 | [Front] ★★★ 모멘텀 펄스 차트 → 라인 차트로 교체 — `StockChart.jsx` MACD 패널 히스토그램 막대(rect 반복 렌더 + `histBarW` 계산) 전체를 제거하고 **단일 polyline**으로 교체. 한국 증시 컨벤션 유지를 위해 동일 polyline 2개를 `clipPath`(0선 기준 위/아래 사각형 `macdAboveClip`/`macdBelowClip`)로 분리 렌더 → 0선 위(양수=상승 모멘텀) 빨강(`#ef4444`), 0선 아래(음수=하락 모멘텀) 파랑(`#3b82f6`)으로 자연 색 전환. `validHist` 인덱스 재매핑(워밍업 35주 우측 쏠림 방지)·네온 글로우(`#macdGlow`)·0 기준선·`SubYAxis`/`XAxisLabels`는 그대로. `MarketPage.jsx` `AnalysisHelpOverlay`의 MACD 헬프 섹션도 "빨강/파랑 막대" → "빨강/파랑 라인" + 라인 칩(글로우 box-shadow)으로 동기화. 사용자 요청: "막대대신 라인으로 교체" | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/components/game/StockChart.jsx, src/pages/MarketPage.jsx | P1 |
+| 1.10.8 | [Front] ★★★ 거래소 모멘텀 펄스 ↔ OBV 위치 스왑 — `StockChart.jsx`의 세로 스택 순서를 (메인 → MACD → OBV)에서 **(메인 → OBV → MACD)** 로 변경. 모든 패널이 `aspectRatio` SVG라 Y좌표 추가 조정 불필요 — 두 `PanelFrame` 블록 위치만 교체. 도움말 오버레이 섹션 순서는 학습 흐름(가벼움→무거움) 우선이라 유지(차트 시각 순서와 헬프 순서 별개 관리) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/components/game/StockChart.jsx | P1 |
+| 1.10.9 | [Front] ★★ 거래소 합계/금액 텍스트 15px 좌측 이동 — 사용자 요청 변경(좌우 swap → 우측 여백 15px 추가). `BulkBuyPanel` 합계 박스(`text-right` div, MarketPage.jsx:1081) + 매수 후 예상 잔액 금액 span(:1094)에 `mr-[15px]` 추가. `BulkSellPanel` 매도 수익 박스(`text-right` div, :1360) + 매도 후 예상 현금 금액 span(:1373)에도 동일 적용. 라벨/값 정렬 구조는 유지하고 우측 끝에서 15px 안쪽으로 들여옴 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/MarketPage.jsx | P2 |
+| 1.10.10 | [Front] ★ 메인화면 설정 모달 UI 개선 — `SettingsModal.jsx` 현재 회색 베이스(`bg-gray-800`)를 다른 모달(PopupOverlay)과 일관된 슬레이트+시안 디지털 보드 톤으로 리뉴얼. 볼륨 슬라이더 시안 accent, 게임 초기화 버튼 로즈 톤, X 닫기 버튼 일관성 | 송원호 | 대기 | 0% | 05/18 | 05/18 | 0.3 | src/components/game/SettingsModal.jsx | P3 |
+| 1.10.11 | [Front] ★ 메인화면 KOSPI 차트·TIPS 위로 이동 — GamePage 차트(`chartButtonRef` 부근)와 TIPS Marquee 위치를 현재보다 상단으로 옮겨 시각적 무게 중심 재배치. 1695×928 좌표계에서 top 값 조정 (다른 absolute 요소 충돌 없는지 확인) | 송원호 | 대기 | 0% | 05/18 | 05/18 | 0.2 | src/pages/GamePage.jsx | P3 |
+| 1.10.12 | [Front] 거래소·정보상·기술상 3개 배경 동시 교체 — `docs/ref_user/화면구성안/{거래소,정보상,기술상}.webp` 신규 시안을 각각 `public/images/{market-bg,info-merchant-bg,tech-merchant-bg}.webp`로 덮어씀. 16:9 비율 동일, JSX `backgroundImage` 경로 변경 없음(이미지만 교체). 신규 배경은 모서리에 그려진 도움말/메인/거래소/기술상 등 네비 버튼이 없는 디자인이라 기존 투명 Hotspot 4종(`HOTSPOT.*.help/main/cross-nav`) 제거 + 1.10.5 `PageNav` 가시 버튼으로 대체. 책상 위 오브젝트 핫스팟(globe/briefcase/tablet/analysis/buy/sell)은 그대로 정합 유지 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | public/images/market-bg.webp, info-merchant-bg.webp, tech-merchant-bg.webp, src/pages/{Market,InfoMerchant,TechMerchant}Page.jsx | P3 |
+| 1.10.13 | [Front] 메인화면 배경 교체 + NPC 핫스팟 정렬 — `메인화면.webp`(KRX 거래소 + 3 캐릭터: 여성·남성·여성 클러스터) 시안 이미지를 `public/images/game-bg.webp`로 덮어씀(596KB). GamePage NPC 핫스팟 좌표 HOTSPOT.npc 상수 추출(market/infoMerchant/techMerchant), 기존 inline `left=35%/48%/62%`·hardcoded width=14%/top=42%/height=55% → 새 배경 캐릭터 클러스터에 맞춰 width=8%/top=28%/height=64%, left 미세조정(거래소 누적 좌 -190px, 정보상 좌 -50px, 기술상 57%). NPCHotspot 시그니처에 top/width/height props 추가하여 호출부에서 좌표 전체 주입 가능 + 기존 bubbleOffsetX·glowOffsetX 보정값 제거 (클릭 영역이 캐릭터에 정확히 위치) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/pages/GamePage.jsx, public/images/game-bg.webp | P1 |
+| 1.10.14 | [Front] 핫스팟 좌표 상수화 리팩터 — MarketPage HOTSPOT 패턴(PR #44 리뷰)을 InfoMerchantPage / TechMerchantPage / GamePage 3페이지에 동일 적용. 각 파일 상단에 HOTSPOT 객체 정의: ① InfoMerchantPage: infoMerchant(globe/briefcase/tablet/help/main/market/techMerchant 7개) + globalPopup·companyPopup·recommendPopup(close/content/topFrame/midFrame/button) ② TechMerchantPage: popup(close/topFrame/midFrame/button 4개) ③ GamePage: npc(market/infoMerchant/techMerchant 3개). 호출부는 `style={HOTSPOT.section.label}` 단일 라인 / props spread로 단순화 — InfoMerchantPage 70여 줄 inline calc → 8줄, 픽셀 미세조정(`calc(X% + Npx)`) 한곳 관리. 모든 X 버튼 클릭 영역 위치/크기 픽셀 단위 미세조정 작업이 상수 한곳 수정으로 즉시 반영 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.4 | src/pages/InfoMerchantPage.jsx, src/pages/TechMerchantPage.jsx, src/pages/GamePage.jsx | P2 |
+| 1.10.15 | [Front] StockChart 캔들·거래량 막대 Y축 라벨 겹침 수정 — `StockChart.jsx` `EDGE=8→11`로 좌측 내부 여백 3px 확장. 첫/마지막 캔들과 거래량 막대가 Y축 라벨과 시각적으로 떨어지도록 보정. `toX()`/`candleWidth()`가 EDGE를 공유하므로 단일 상수 변경으로 메인 차트·거래량·MACD 히스토그램·OBV 라인 모두 일관되게 3px 우측 이동 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/components/game/StockChart.jsx | P3 |
+| 1.10.16 | [Front] 정보상 추천종목 UNLOCKED 카드 전면 리뉴얼 + 거래소 자동 매수 진입 — ① 카드 디자인 전면 개편(`InfoMerchantPage.jsx`): 헤더 `▣ INSIDER REPORT · TURN 05` → **`◆ 내부정보 단독입수 ◆`** 단독(라운드 제거) + 좌우 대칭 그라디언트 라인. 본문 좌(`flex-1`)에 **`StockChart` 통합** — 추천 종목(`insiderTip.id`)의 메인 차트 + 거래량 + 구매 지표(MA/Bollinger/MACD/OBV) 모두 노출(MarketPage 종목분석 패널과 동일 props/`scrollbar-cyan pt-3` 컨테이너). 본문 우(`w-36 md:w-44 lg:w-56`)에 **종목명 hero**(`text-xl md:text-2xl lg:text-3xl` emerald 글로우) + 가는 separator + 펄스 점·현재가 + **`주식 구매 ▶` 이동 버튼**(emerald 보더 + hover 시 `group-hover:translate-x-1` + 글로우 1.5배). 푸터 RECEIPT 영수증 라인 폐기 → `● 다음 라운드 공개` 펄스 점만. 시도 톤 이력: Data Sheet(`▣ INSIDER REPORT` 행렬 4행) → Ticker Tape(`> 라벨 ······ 값` 와이어 4행 + 점선 perforation) → 라벨 전면 제거 + StockChart 통합 + 구매 이동 버튼(최종 사용자 선택). `ReportRow`/`WireRow` 라벨 헬퍼 dead code 정리. ② 거래소 자동 매수 진입(`InfoMerchantPage.jsx` + `MarketPage.jsx`): `주식 구매 ▶` 버튼 onClick에서 `sessionStorage['market-auto-select-stock'] = insiderTip.id` + `sessionStorage['market-auto-open'] = 'buy'` 저장 후 `navigateTo('market')`. MarketPage 마운트 시 useEffect 추가하여 두 키 읽고 `setSelectedStockId(autoStock)` + `setActivePopup('buy')` 실행 후 키 즉시 제거(1회용 보장 — 새로고침/재방문 재발동 방지). autoOpen 화이트리스트(`'buy' \| 'sell' \| 'analysis'`)로 동일 패턴 다른 페이지에서도 거래소 모달 자동 오픈 재사용 가능. RecommendationView가 `useGameStore` 셀렉터로 `navigateTo` + 지표 4종 직접 구독(props drilling 회피). 결과 흐름: 정보상 추천 종목 구매 → UNLOCKED 카드에 차트 즉시 확인 → 버튼 한 번에 거래소 이동 + 추천 종목 선택된 매수 모달 자동 오픈 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.4 | src/pages/InfoMerchantPage.jsx, src/pages/MarketPage.jsx | P1 |
+| 1.10.17 | [Front] PR #57 리뷰 후속 — InfoMerchantPage / MarketPage 4건 보완 — ① **권장 1** (`CompanyNewsView` 헤드라인 truncate): 헤드라인 `<p>`에 `flex-1 min-w-0` 추가. flex 자식의 기본 min-content(=`min-width: auto`)로 인해 긴 헤드라인이 `truncate` 적용되지 않고 컨테이너를 늘리던 잠재 버그 차단(1.10.16의 종목명 fix `8aa272b`와 동일 패턴). ② **권장 2** (`MarketPage` 자동 진입 useEffect): `autoStock` 사용 전 `useGameStore.getState().activeStocks`로 활성 종목 존재 검증. 유효하지 않으면 `setSelectedStockId` 스킵하고 키만 제거(1회용 보장 유지). persist 복원·라운드 진행 직후 등 엣지에서 비활성 종목 id가 들어와도 안전. useEffect 1회 실행이라 reactive 구독 불필요 → `getState()` 스냅샷. ③ **정보 3** (`MarketPage` 도움말 자동 오픈 useEffect): `sessionStorage.getItem('market-auto-open')` 가드 추가. 자동 매수 진입 신호 있을 땐 도움말 + 매수 모달 중첩을 피하려 도움말 노출 보류. `MARKET_HELP_SEEN_KEY`도 set 안 함 → 다음 일반 방문 때 정상 노출. ④ **정보 4** (`RecommendationView` 종목명): 종목명 `<p>`에 `font-sans` 추가. 상위 UNLOCKED 카드 wrapper의 `font-mono` 상속을 무효화 → 한글 종목명이 monospace로 렌더돼 자간이 어색해지던 문제 해결(Ticker Tape 톤은 헤더/구분 텍스처에만 한정) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | src/pages/InfoMerchantPage.jsx, src/pages/MarketPage.jsx | P2 |
+
+---
+
+---
+
+## 1.12 뉴스 시스템 고도화 (배영환 — 2026-05-17 추가)
+
+> 기간: 2026-05-17 | 담당: 배영환 | PR: #54 (머지 가능)
+> 목적: 라운드당 기업뉴스 0~3개 → 3~5개 보장, 국제뉴스 detail 가시성 개선
+
+| WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
+|-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
+| 1.12.1 | [데이터] news-events.json 85→170개 확장 — 기업뉴스 n86~n170 추가(날짜별 ≥3개 보장), 국제뉴스 14개 detail 30~60자 → 100~150자 리라이팅 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/data/news-events.json | P0 |
+| 1.12.2 | [로직] gameLogic.js 기업뉴스 3~5개 보장 로직 — 날짜 매칭 → ±4턴 윈도우 → 전체 pool 3단계 보충, dateIndexMap Map O(1) 최적화(indexOf 반복 제거), nearbyIds Set 중복 방지, mulberry32 시드 RNG 결정적 셔플 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/lib/gameLogic.js | P0 |
+| 1.12.3 | [QA] gameLogic.test.js 보강 — 7케이스→14케이스: 기업뉴스 3~5개 보장·라운드 내 ID 중복 없음·결정성·날짜 매칭 우선, globalNews 모든 턴 null 아님·sector=전체 검증 추가 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/__tests__/lib/gameLogic.test.js | P1 |
+| 1.12.4 | [UI] NewsPanel.jsx 뉴스 detail 가시성 개선 — 국제/기업뉴스 detail text-xs text-gray-400 → text-sm text-gray-200 + leading-relaxed + 구분선(border-t) + TODO 주석 제거 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/components/game/NewsPanel.jsx | P1 |
+| 1.12.5 | [UI] InfoMerchantPage.jsx CompanyNewsView detail 가시성 개선 — text-xs text-cyan-100/80 → text-sm text-cyan-100/90 + border-t border-cyan-500/25 + pt-2 mt-2 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/InfoMerchantPage.jsx | P1 |
+| 1.12.6 | [QA] PR #54 생성 + 2차 코드 리뷰 완료 — filler 중복 버그 수정, dateIndexMap 성능 개선, 테스트 보강, 리뷰 결론: 필수 수정 없음 머지 가능 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.2 | GitHub PR #54 | P1 |
+
 ## 브랜치 전략
 
 | 브랜치 | 담당자 | 연결 태스크 |
@@ -230,6 +303,7 @@
 | `feature/p1-integration` | 배영환 | 1.5.1~1.5.4, 1.5.7 |
 | `feature/p1-ui-result` | 송원호 | 1.5.5~1.5.6 |
 | `feature/p2-polish` | 송원호 | 1.6.2~1.6.3 |
+| `WOHNO` (현재) / `feature/ui-polish-1.10` | 송원호 | 1.10.1~1.10.12 |
 
 > PR 규칙: 송원호 → master PR 생성 → 배영환 리뷰 후 merge
 

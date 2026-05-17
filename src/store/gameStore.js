@@ -40,45 +40,32 @@ function splitStocks(stocks) {
 function generatePackage(hiddenStocks, prices) {
   if (!hiddenStocks.length) return { packageStocks: [], packagePrice: 0 }
 
-  // 패키지 가격: 100만~200만원 (10만원 단위)
-  const packagePrice = (Math.floor(Math.random() * 11) + 10) * 100_000
-
-  const minTotal = packagePrice * 0.9
-  const maxTotal = packagePrice * 1.1
-
+  // 풀 셔플
   const pool = hiddenStocks.map(s => ({ ...s, currentPrice: prices[s.id] ?? s.price }))
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[pool[i], pool[j]] = [pool[j], pool[i]]
   }
 
-  const selected = []
-  let total = 0
-  for (const stock of pool) {
-    if (total + stock.currentPrice <= maxTotal) {
-      selected.push(stock)
-      total += stock.currentPrice
-      if (total >= minTotal) break
-    }
-  }
+  // 3~5개 무작위 선택
+  const count = Math.min(pool.length, Math.floor(Math.random() * 3) + 3)
+  const selected = pool.slice(0, count)
 
-  // 종목 합이 목표가보다 너무 낮으면 전체 포함 후 가격 맞춤
-  if (total < minTotal) {
-    const allTotal = pool.reduce((s, x) => s + x.currentPrice, 0)
-    const fallbackPrice = Math.min(
-      Math.max(Math.round(allTotal / 10_000) * 10_000, 1_000_000),
-      2_000_000
-    )
-    return {
-      packageStocks: pool.sort((a, b) => a.currentPrice - b.currentPrice).map(({ currentPrice, ...s }) => s),
-      packagePrice: fallbackPrice,
-    }
-  }
+  // 각 종목: 목표 가치 100만~200만원 → 주수 계산 → ±10% 적용 = 구매가
+  // 구매 시 플레이어는 quantity 주를 실제로 받음
+  const packageStocks = selected.map(({ currentPrice, ...s }) => {
+    const base = (Math.floor(Math.random() * 11) + 10) * 100_000  // 1M~2M 목표 가치
+    const quantity = Math.max(1, Math.round(base / currentPrice))
+    const actualValue = quantity * currentPrice
+    const factor = 0.9 + Math.random() * 0.2                       // ±10% 노이즈
+    const stockPackagePrice = Math.round(actualValue * factor / 1_000) * 1_000
+    return { ...s, quantity, packagePrice: stockPackagePrice }
+  })
 
-  return {
-    packageStocks: selected.sort((a, b) => a.currentPrice - b.currentPrice).map(({ currentPrice, ...s }) => s),
-    packagePrice,
-  }
+  // 금액 오름차순 정렬
+  packageStocks.sort((a, b) => a.packagePrice - b.packagePrice)
+  const packagePrice = packageStocks.reduce((sum, s) => sum + s.packagePrice, 0)
+  return { packageStocks, packagePrice }
 }
 
 export const useGameStore = create(
@@ -108,6 +95,8 @@ export const useGameStore = create(
       exchangeRate: INITIAL_EXCHANGE_RATE,
       currentNews: null,
       currentGlobalNews: null,
+      assetHistory: [],
+      insiderTip: null,
 
       setNickname: (name) => set({ nickname: name }),
       navigateTo: (page) => set({ page }),
@@ -146,20 +135,25 @@ export const useGameStore = create(
           currentGlobalNews: initialTurn.globalNews,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
+          assetHistory: [],
+          insiderTip: null,
         })
       },
 
       nextTurn: ({ newPrices, news, globalNews, newKospi, newExchangeRate }) => {
-        const { turn, totalTurns, exchangeRate } = get()
+        const { turn, totalTurns, exchangeRate, prices: prevPrices, assetHistory } = get()
+        const snapshot = get().getFinalAssets()
         const next = turn + 1
+        const isLast = next > totalTurns
         set({
           turn: next,
-          prices: newPrices,
+          prices: isLast ? prevPrices : newPrices,
           currentNews: news,
           currentGlobalNews: globalNews,
           kospi: newKospi,
           exchangeRate: newExchangeRate ?? exchangeRate,
-          page: next > totalTurns ? 'result' : 'main',
+          assetHistory: [...assetHistory, snapshot],
+          page: isLast ? 'result' : 'main',
         })
       },
 
@@ -206,17 +200,23 @@ export const useGameStore = create(
         return true
       },
 
-      unlockPackage: () => {
-        const { cash, packageStocks, packagePrice, hiddenStocks, activeStocks, unlockedStockIds } = get()
-        if (!packageStocks.length || packagePrice > cash) return false
-        const ids = packageStocks.map(s => s.id)
+      unlockPackageStock: (stockId) => {
+        const { cash, packageStocks, hiddenStocks, activeStocks, unlockedStockIds, portfolio, purchaseRounds, turn } = get()
+        const target = packageStocks.find(s => s.id === stockId)
+        if (!target || target.packagePrice > cash) return false
+        const { packagePrice: _, quantity, ...stockWithoutPrice } = target
+        const remaining = packageStocks.filter(s => s.id !== stockId)
+        const qty = quantity ?? 1
+        const wasZero = (portfolio[stockId] || 0) === 0
         set({
-          cash: cash - packagePrice,
-          unlockedStockIds: [...unlockedStockIds, ...ids],
-          hiddenStocks: hiddenStocks.filter(s => !ids.includes(s.id)),
-          activeStocks: [...activeStocks, ...packageStocks],
-          packageStocks: [],
-          packagePrice: 0,
+          cash: cash - target.packagePrice,
+          unlockedStockIds: [...unlockedStockIds, stockId],
+          hiddenStocks: hiddenStocks.filter(s => s.id !== stockId),
+          activeStocks: [...activeStocks, stockWithoutPrice],
+          packageStocks: remaining,
+          packagePrice: remaining.reduce((sum, s) => sum + s.packagePrice, 0),
+          portfolio: { ...portfolio, [stockId]: (portfolio[stockId] || 0) + qty },
+          purchaseRounds: wasZero ? { ...purchaseRounds, [stockId]: turn } : purchaseRounds,
         })
         return true
       },
@@ -228,6 +228,54 @@ export const useGameStore = create(
         const field = key + "Purchased"
         set({ cash: cash - cost, [field]: true })
         return true
+      },
+
+      // 총 자산의 5% 수수료로 다음 주 최고 상승 종목 1개 공개
+      purchaseInsiderInfo: () => {
+        const { cash, portfolio, prices, activeStocks, turn, totalTurns, insiderTip } = get()
+
+        if (turn >= totalTurns) return { ok: false, reason: 'last_turn' }
+        if (insiderTip?.purchasedAtTurn === turn) return { ok: false, reason: 'already_purchased' }
+
+        const stockValue = activeStocks.reduce((sum, s) => {
+          return sum + (prices[s.id] ?? s.price ?? 0) * (portfolio[s.id] || 0)
+        }, 0)
+        const fee = Math.floor((cash + stockValue) * 0.05)
+
+        if (fee > cash) return { ok: false, reason: 'insufficient_cash', fee, cash }
+
+        // turn은 1-based → 현재 idx = turn-1, 다음 주 idx = turn
+        let bestStock = null
+        let bestRatio = -Infinity
+
+        activeStocks.forEach((stock) => {
+          const entry = stockDataByTicker[stock.id]
+          if (!entry) return
+          const currentClose = entry.prices[turn - 1]?.close
+          const nextClose    = entry.prices[turn]?.close
+          if (currentClose == null || nextClose == null) return
+          const ratio = (nextClose - currentClose) / currentClose * 100
+          if (ratio > bestRatio) {
+            bestRatio = ratio
+            bestStock = { stock, currentClose, nextClose, ratio }
+          }
+        })
+
+        if (!bestStock) return { ok: false, reason: 'no_data' }
+
+        set({
+          cash: cash - fee,
+          insiderTip: {
+            id:              bestStock.stock.id,
+            name:            bestStock.stock.name,
+            currentClose:    bestStock.currentClose,
+            nextClose:       bestStock.nextClose,
+            nextRatio:       bestStock.ratio,
+            purchasedAtTurn: turn,
+            feePaid:         fee,
+          },
+        })
+        return { ok: true }
       },
 
       getFinalAssets: () => {
@@ -265,6 +313,8 @@ export const useGameStore = create(
           currentGlobalNews: null,
           kospi: INITIAL_KOSPI,
           exchangeRate: INITIAL_EXCHANGE_RATE,
+          assetHistory: [],
+          insiderTip: null,
         })
       },
     }),
@@ -292,6 +342,11 @@ export const useGameStore = create(
         exchangeRate: state.exchangeRate,
         currentNews: state.currentNews,
         currentGlobalNews: state.currentGlobalNews,
+        assetHistory: state.assetHistory,
+        // nextClose·nextRatio는 미래 정보 — localStorage 노출 방지
+        insiderTip: state.insiderTip
+          ? (({ nextClose: _nc, nextRatio: _nr, ...safe }) => safe)(state.insiderTip)
+          : null,
       }),
     },
   ),
