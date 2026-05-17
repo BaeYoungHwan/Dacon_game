@@ -42,6 +42,21 @@ const stockDataByTicker = Object.fromEntries(
   (stockData.stocks ?? []).map((s) => [s.realTicker, s])
 )
 
+// ─────────────────────────────────────────────────────────
+// 핫스팟 좌표 상수 — 배경 이미지(1695×928)의 NPC 위치에 맞춘 클릭 영역
+// (MarketPage / InfoMerchantPage HOTSPOT 패턴 준수 — 좌표 미세조정은 이 상수만 수정)
+//   npc.market:       좌측 여성 (시장 분석가) → 거래소
+//   npc.infoMerchant: 중앙 남성 (정보 브로커) → 정보상
+//   npc.techMerchant: 우측 여성 (퀀트 테크니션) → 기술상
+// ─────────────────────────────────────────────────────────
+const HOTSPOT = {
+  npc: {
+    market:       { left: 'calc(42.5% - 190px)', width: '8%', top: '28%', height: '64%' } , // 좌 -190px (누적)
+    infoMerchant: { left: 'calc(48% - 50px)',    width: '8%', top: '28%', height: '64%' }, // 좌 -50px
+    techMerchant: { left: '57%',                 width: '8%', top: '28%', height: '64%' },
+  },
+}
+
 export default function GamePage() {
   const {
     turn, totalTurns, cash, portfolio, prices,
@@ -420,10 +435,10 @@ export default function GamePage() {
             </div>
           )}
 
-          {/* NPC 클릭 영역 — 정보상·기술상은 라벨 풍선만 우측으로 이동 */}
-          <NPCHotspot left="35%" label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} />
-          <NPCHotspot left="48%" label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} bubbleOffsetX={35} glowOffsetX={60} />
-          <NPCHotspot left="62%" label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} bubbleOffsetX={100} glowOffsetX={90} />
+          {/* NPC 클릭 영역 — 좌표는 상단 HOTSPOT.npc 상수에서 관리 (배경 캐릭터 위치 미세조정) */}
+          <NPCHotspot {...HOTSPOT.npc.market}       label="거래소" subLabel="시장 분석가"   onClick={() => navigateTo('market')} />
+          <NPCHotspot {...HOTSPOT.npc.infoMerchant} label="정보상" subLabel="정보 브로커"   onClick={() => navigateTo('infoMerchant')} />
+          <NPCHotspot {...HOTSPOT.npc.techMerchant} label="기술상" subLabel="퀀트 테크니션" onClick={() => navigateTo('techMerchant')} />
 
           {/* 도움말 오버레이 — 각 UI 옆에 설명 풍선, 배경 클릭 시 닫힘 */}
           {openHelp && <HelpOverlay onClose={() => setOpenHelp(false)} />}
@@ -636,20 +651,19 @@ function IconButton({ icon, label, onClick }) {
 }
 
 // NPC 클릭 영역 — 시안 광채 + 머리 위 라벨 풍선
-// bubbleOffsetX: 라벨 풍선만 가로 이동 (px)
-// glowOffsetX:   hover 광채만 가로 이동 (px) — 캐릭터 윤곽 미세 조정용
-function NPCHotspot({ left, label, subLabel, onClick, bubbleOffsetX = 0, glowOffsetX = 0 }) {
+// 좌표(left/top/width/height)는 호출부에서 HOTSPOT.npc.* 스프레드로 주입
+function NPCHotspot({ left, top, width, height, label, subLabel, onClick }) {
   return (
     <button
       onClick={onClick}
-      style={{ left, width: '14%', top: '42%', height: '55%', outline: 'none' }}
+      style={{ left, top, width, height, outline: 'none' }}
       className="absolute group rounded transition-all duration-150 focus:outline-none focus:ring-0"
     >
-      {/* hover 시 시안 광채 — glowOffsetX만큼 가로 이동 (button 영역보다 약간 크게) */}
+      {/* hover 시 시안 광채 (button 영역보다 약간 크게) */}
       <span
         aria-hidden="true"
         style={{
-          left: `calc(50% + ${glowOffsetX}px)`,
+          left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
           background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.3) 0%, transparent 65%)',
@@ -659,7 +673,7 @@ function NPCHotspot({ left, label, subLabel, onClick, bubbleOffsetX = 0, glowOff
 
       <span
         style={{
-          left: `calc(50% + ${bubbleOffsetX}px)`,
+          left: '50%',
           transform: 'translate(-50%, -100%)',
         }}
         className="absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
