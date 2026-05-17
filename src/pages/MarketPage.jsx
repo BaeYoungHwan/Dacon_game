@@ -88,6 +88,23 @@ export default function MarketPage() {
     sessionStorage.setItem(MARKET_HELP_SEEN_KEY, '1')
   }, [])
 
+  // 정보상 추천 종목 → '주식 구매' 버튼으로 진입 시 자동으로 종목 선택 + 매수 팝업 오픈
+  // (InfoMerchantPage가 sessionStorage에 신호를 남기고 navigateTo('market') 호출)
+  // 1회용이므로 처리 후 즉시 키 제거 → 새로고침/재방문 시 재발동 방지
+  useEffect(() => {
+    if (typeof sessionStorage === 'undefined') return
+    const autoStock = sessionStorage.getItem('market-auto-select-stock')
+    if (autoStock) {
+      setSelectedStockId(autoStock)
+      sessionStorage.removeItem('market-auto-select-stock')
+    }
+    const autoOpen = sessionStorage.getItem('market-auto-open')
+    if (autoOpen === 'buy' || autoOpen === 'sell' || autoOpen === 'analysis') {
+      setActivePopup(autoOpen)
+      sessionStorage.removeItem('market-auto-open')
+    }
+  }, [])
+
   const closePopup = () => {
     setActivePopup(null)
     setSelectedStockId(null)

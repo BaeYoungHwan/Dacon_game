@@ -17,6 +17,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { TopRightNav, BottomRightNav } from '../components/game/PageNav'
+import StockChart from '../components/game/StockChart'
 
 // 새 게임 시작당 1회 자동 도움말 노출용 sessionStorage 키
 const INFO_HELP_SEEN_KEY = 'info-merchant-help-seen'
@@ -38,12 +39,12 @@ const HOTSPOT = {
   // 국제뉴스 팝업 (16:9)
   globalPopup: {
     close:   { top: 'calc(2.5% + 7px)', right: 'calc(1.2% + 11px)', width: 'calc(4.2% - 5px)', height: 'calc(8.5% - 20px)' }, // 좌 +11px, 아래 +7px / 가로 -5px, 세로 -20px (누적)
-    content: { top: '14%',              left: '5.5%',              right: '5%',   bottom: '8%' },
+    content: { top: '14%',              left: '5%',                right: '5%',   bottom: '8%' },
   },
   // 기업뉴스 팝업 (16:9, 배경 구성이 globalPopup과 동일하나 독립 관리)
   companyPopup: {
     close:   { top: 'calc(2.5% + 6px)', right: 'calc(1.2% + 18px)', width: 'calc(4.2% - 7px)', height: 'calc(8.5% - 20px)' }, // 좌 +18px, 아래 +6px / 가로 -7px, 세로 -20px (누적)
-    content: { top: '14%',              left: '5.5%',               right: '5%',   bottom: '8%' },
+    content: { top: '14%',              left: '5%',                right: '5%',   bottom: '11%' }, // bottom +3%(배경 하단 침범 방지)
   },
   // 추천종목 팝업 (4:3, 3-zone 레이아웃)
   recommendPopup: {
@@ -265,12 +266,12 @@ function PopupOverlay({
 
         {/* 콘텐츠 — 좌표는 HOTSPOT[*Popup].content (뉴스) / topFrame·midFrame·button (추천종목) */}
         {activePopup === 'globalNews' && (
-          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-y-auto p-5">
+          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-y-auto p-2 sm:p-3 md:p-5">
             <GlobalNewsView news={currentGlobalNews} />
           </div>
         )}
         {activePopup === 'companyNews' && (
-          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-y-auto p-5">
+          <div style={{ position: 'absolute', ...hotspot.content }} className="overflow-y-auto p-2 sm:p-3 md:p-5">
             <CompanyNewsView sectors={sectors} currentNews={currentNews} />
           </div>
         )}
@@ -290,6 +291,7 @@ function PopupOverlay({
 }
 
 // 국제 뉴스 — HUD 배경에 어울리는 BREAKING 뉴스 카드 한 장
+// detail이 100~150자로 길어졌으므로 컨테이너가 콘텐츠보다 커지면 위가 잘리지 않도록 items-start 사용
 function GlobalNewsView({ news }) {
   if (!news) {
     return (
@@ -300,51 +302,56 @@ function GlobalNewsView({ news }) {
     )
   }
   return (
-    <div className="h-full flex items-center justify-center px-4">
-      <div className="relative w-full max-w-3xl bg-slate-900/55 border border-cyan-400/50 rounded-xl p-6 md:p-8 backdrop-blur-sm shadow-[inset_0_0_40px_rgba(34,211,238,0.08),0_0_30px_rgba(34,211,238,0.18)]">
+    <div className="h-full flex items-center justify-center">
+      <div className="relative w-full h-full bg-slate-900/55 border border-cyan-400/50 rounded-xl p-3 sm:p-4 md:p-5 lg:p-7 backdrop-blur-sm shadow-[inset_0_0_40px_rgba(34,211,238,0.08),0_0_30px_rgba(34,211,238,0.18)] flex flex-col overflow-y-auto">
         {/* 모서리 L자 deco — HUD 프레임 톤 */}
-        <span className="absolute -top-px -left-px w-3 h-3 border-t-2 border-l-2 border-cyan-300 rounded-tl-xl pointer-events-none" />
-        <span className="absolute -top-px -right-px w-3 h-3 border-t-2 border-r-2 border-cyan-300 rounded-tr-xl pointer-events-none" />
-        <span className="absolute -bottom-px -left-px w-3 h-3 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none" />
-        <span className="absolute -bottom-px -right-px w-3 h-3 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none" />
+        <span className="absolute -top-px -left-px w-3.5 h-3.5 border-t-2 border-l-2 border-cyan-300 rounded-tl-xl pointer-events-none" />
+        <span className="absolute -top-px -right-px w-3.5 h-3.5 border-t-2 border-r-2 border-cyan-300 rounded-tr-xl pointer-events-none" />
+        <span className="absolute -bottom-px -left-px w-3.5 h-3.5 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none" />
+        <span className="absolute -bottom-px -right-px w-3.5 h-3.5 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none" />
 
-        {/* 배지 라인 — BREAKING + 카테고리 */}
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <span className="flex items-center gap-1.5 px-2 py-0.5 bg-red-600/25 border border-red-400/70 rounded font-mono text-[10px] font-bold tracking-[0.25em] text-red-200 shadow-[0_0_10px_rgba(248,113,113,0.3)]">
-            <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse" />
-            BREAKING
-          </span>
-          <span className="text-cyan-300/70 text-[10px] font-mono tracking-[0.25em]">GLOBAL · MARKET ALERT</span>
+        {/* 콘텐츠 래퍼 — my-auto: 짧으면 카드 안에서 세로 가운데, 길면 위에서부터 흐르며 카드 자체가 스크롤 */}
+        <div className="my-auto">
+          {/* 배지 라인 — BREAKING + 카테고리 */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2 md:mb-3 flex-wrap">
+            <span className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-0.5 bg-red-600/25 border border-red-400/70 rounded font-mono text-[10px] sm:text-xs font-bold tracking-[0.2em] sm:tracking-[0.25em] text-red-200 shadow-[0_0_10px_rgba(248,113,113,0.3)]">
+              <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse" />
+              BREAKING
+            </span>
+            <span className="text-cyan-300/70 text-[10px] sm:text-xs font-mono tracking-[0.2em] sm:tracking-[0.25em]">GLOBAL · MARKET ALERT</span>
+          </div>
+
+          {/* 헤드라인 — detail이 길이와 무관하게 다 보이도록 비중 축소 */}
+          <p className="font-bold text-cyan-50 text-sm sm:text-base md:text-lg lg:text-xl mb-1.5 sm:mb-2 md:mb-3 leading-snug drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+            {news.headline}
+          </p>
+
+          {/* 구분선 */}
+          <div className="h-px bg-gradient-to-r from-cyan-500/0 via-cyan-400/60 to-cyan-500/0 mb-1.5 sm:mb-2 md:mb-3" />
+
+          {/* 디테일 — news-events.json detail 원문을 길이 가정 없이 그대로 표시.
+              카드에 overflow-y-auto 안전망이 있어 데이터가 더 길어져도 잘리지 않음 */}
+          <p className="text-xs sm:text-sm md:text-base lg:text-lg text-cyan-100/90 leading-relaxed whitespace-pre-line break-keep">
+            {news.detail}
+          </p>
         </div>
-
-        {/* 헤드라인 */}
-        <p className="font-bold text-cyan-50 text-xl md:text-2xl mb-4 leading-snug drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
-          {news.headline}
-        </p>
-
-        {/* 구분선 */}
-        <div className="h-px bg-gradient-to-r from-cyan-500/0 via-cyan-400/60 to-cyan-500/0 mb-4" />
-
-        {/* 디테일 */}
-        <p className="text-sm md:text-base text-cyan-100/85 leading-relaxed">
-          {news.detail}
-        </p>
       </div>
     </div>
   )
 }
 
-// 기업 뉴스 — 뉴스가 있는 섹터만 표시
-// 개수에 따라 그리드 적응: 1개=중앙 큰 카드, 2~3개=가로 분할, 4+개=2~3열 그리드
+// 기업 뉴스 — 뉴스 항목을 위→아래로 세로 나열 (gameLogic이 3~5개 보장)
+// 각 카드: [섹터 배지] 📰 헤드라인 한 줄, 아래 detail 1~2줄
 function CompanyNewsView({ sectors, currentNews }) {
-  const sectorsWithNews = sectors
-    .map((sector) => ({
-      sector,
-      news: (currentNews || []).filter((n) => n.sector === sector),
-    }))
-    .filter(({ news }) => news.length > 0)
+  // sectors 순서를 그대로 따라 뉴스 정렬 (섹터가 같은 뉴스끼리 인접)
+  const sectorOrder = new Map(sectors.map((s, i) => [s, i]))
+  const orderedNews = [...(currentNews || [])].sort((a, b) => {
+    const ai = sectorOrder.get(a.sector) ?? 999
+    const bi = sectorOrder.get(b.sector) ?? 999
+    return ai - bi
+  })
 
-  if (sectorsWithNews.length === 0) {
+  if (orderedNews.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-cyan-300/50 gap-2">
         <span className="text-4xl">💼</span>
@@ -353,48 +360,35 @@ function CompanyNewsView({ sectors, currentNews }) {
     )
   }
 
-  // 개수별 그리드 — 적을수록 카드 크게 펼쳐 배경 영역을 채움
-  const n = sectorsWithNews.length
-  const gridConfig =
-    n === 1 ? 'grid-cols-1 max-w-2xl' :
-    n === 2 ? 'grid-cols-2 max-w-5xl' :
-    n === 3 ? 'grid-cols-3 max-w-6xl' :
-    n === 4 ? 'grid-cols-2 max-w-4xl' :
-    /* 5+ */  'grid-cols-3 max-w-6xl'
-
   return (
-    <div className="h-full flex items-center justify-center">
-      <div className={`grid gap-4 w-full mx-auto ${gridConfig}`}>
-        {sectorsWithNews.map(({ sector, news }) => (
-          <div
-            key={sector}
-            className="relative bg-slate-900/55 border border-cyan-400/50 rounded-xl p-5 backdrop-blur-sm shadow-[inset_0_0_30px_rgba(34,211,238,0.07),0_0_20px_rgba(34,211,238,0.15)]"
-          >
-            {/* 모서리 L자 deco — 국제뉴스와 톤 통일 */}
-            <span className="absolute -top-px -left-px w-2.5 h-2.5 border-t-2 border-l-2 border-cyan-300 rounded-tl-xl pointer-events-none" />
-            <span className="absolute -top-px -right-px w-2.5 h-2.5 border-t-2 border-r-2 border-cyan-300 rounded-tr-xl pointer-events-none" />
-            <span className="absolute -bottom-px -left-px w-2.5 h-2.5 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none" />
-            <span className="absolute -bottom-px -right-px w-2.5 h-2.5 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none" />
+    <div className="h-full w-full flex flex-col gap-1.5 sm:gap-2 md:gap-2.5">
+      {orderedNews.map((n) => (
+        <div
+          key={n.id}
+          className="relative flex-1 min-h-0 bg-slate-900/55 border border-cyan-400/50 rounded-lg px-2.5 py-1.5 sm:px-4 sm:py-2.5 md:px-5 md:py-3 backdrop-blur-sm shadow-[inset_0_0_20px_rgba(34,211,238,0.06),0_0_15px_rgba(34,211,238,0.12)] flex flex-col justify-center"
+        >
+          {/* 모서리 L자 deco — 국제뉴스와 톤 통일 */}
+          <span className="absolute -top-px -left-px w-2 h-2 sm:w-2.5 sm:h-2.5 border-t-2 border-l-2 border-cyan-300 rounded-tl-lg pointer-events-none" />
+          <span className="absolute -top-px -right-px w-2 h-2 sm:w-2.5 sm:h-2.5 border-t-2 border-r-2 border-cyan-300 rounded-tr-lg pointer-events-none" />
+          <span className="absolute -bottom-px -left-px w-2 h-2 sm:w-2.5 sm:h-2.5 border-b-2 border-l-2 border-cyan-300 rounded-bl-lg pointer-events-none" />
+          <span className="absolute -bottom-px -right-px w-2 h-2 sm:w-2.5 sm:h-2.5 border-b-2 border-r-2 border-cyan-300 rounded-br-lg pointer-events-none" />
 
-            {/* 섹터 배지 */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-900/70 border border-cyan-500/50 text-cyan-200 font-mono tracking-[0.25em]">
-                {sector}
-              </span>
-            </div>
-
-            {news.map((n) => (
-              <div key={n.id} className="mt-3 first:mt-0">
-                <p className="font-bold text-base md:text-lg text-cyan-50 mb-2 leading-snug drop-shadow-[0_0_6px_rgba(34,211,238,0.3)]">
-                  📰 {n.headline}
-                </p>
-                <p className="text-sm text-cyan-100/90 leading-relaxed border-t border-cyan-500/25 pt-2 mt-2">{n.detail}</p>
-              </div>
-            ))}
+          {/* 한 줄: 섹터 배지 + 📰 헤드라인 */}
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 mb-1 sm:mb-1.5">
+            <span className="shrink-0 text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-0.5 md:px-2.5 md:py-1 rounded bg-cyan-900/70 border border-cyan-500/50 text-cyan-200 font-mono tracking-[0.15em] sm:tracking-[0.2em]">
+              {n.sector}
+            </span>
+            <p className="font-bold text-xs sm:text-sm md:text-base lg:text-lg text-cyan-50 leading-snug drop-shadow-[0_0_6px_rgba(34,211,238,0.3)] truncate">
+              📰 {n.headline}
+            </p>
           </div>
-        ))}
-      </div>
+
+          {/* 디테일 */}
+          <p className="text-[11px] sm:text-xs md:text-sm lg:text-base text-cyan-100/85 leading-relaxed border-t border-cyan-500/25 pt-1 sm:pt-1.5 md:pt-2">
+            {n.detail}
+          </p>
+        </div>
+      ))}
     </div>
   )
 }
@@ -405,6 +399,13 @@ function CompanyNewsView({ sectors, currentNews }) {
 //   하단 그린 버튼: 구매 액션 (배경 이미지의 그린 버튼 영역 위 클릭 타겟)
 function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought, canAfford, onPurchase }) {
   const [error, setError] = useState(null)
+
+  // 차트·이동 버튼용: navigateTo + 지표 구매 상태 (MarketPage StockChart와 동일 props 전달)
+  const navigateTo         = useGameStore((s) => s.navigateTo)
+  const maPurchased        = useGameStore((s) => s.maPurchased)
+  const bollingerPurchased = useGameStore((s) => s.bollingerPurchased)
+  const macdPurchased      = useGameStore((s) => s.macdPurchased)
+  const obvPurchased       = useGameStore((s) => s.obvPurchased)
 
   const handlePurchase = () => {
     setError(null)
@@ -428,43 +429,97 @@ function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought,
       {/* 상단 큰 프레임 — 잠금 / 공개 결과 (좌표: HOTSPOT.recommendPopup.topFrame) */}
       <div style={{ position: 'absolute', ...HOTSPOT.recommendPopup.topFrame }} className="p-5 overflow-y-auto">
         {alreadyBought && insiderTip ? (
-          // 공개 상태 — HUD 터미널 톤: 상단 상태바 / 좌(TARGET) · 우(FORECAST) 카드 / 하단 영수증 라인
-          <div className="h-full flex flex-col">
-            {/* 상단 상태바 — UNLOCKED */}
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-emerald-500/30">
+          // 공개 상태 — Ticker Tape 톤: [내부정보 단독입수] 헤더 / 와이어 4행 / 다음 라운드 공개 푸터
+          <div className="h-full flex flex-col font-mono">
+            {/* 헤더 — 양옆 그라디언트 라인 + 가운데 타이틀 (대칭 페이드) */}
+            <div className="flex items-center gap-3 md:gap-4 px-1 mb-1.5 md:mb-2">
+              <span className="flex-1 h-px bg-gradient-to-r from-emerald-500/0 via-emerald-400/40 to-emerald-400/70" />
+              <span className="shrink-0 text-emerald-300 text-xs md:text-sm font-bold tracking-[0.2em] drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]">
+                ◆ 내부정보 단독입수 ◆
+              </span>
+              <span className="flex-1 h-px bg-gradient-to-l from-emerald-500/0 via-emerald-400/40 to-emerald-400/70" />
+            </div>
+
+            {/* 본문 — 종이 테이프 카드 (상하 점선 텍스처 + 4행 와이어 라인) */}
+            <div className="flex-1 min-h-0 bg-slate-950/55 border border-emerald-500/40 rounded-lg shadow-[inset_0_0_20px_rgba(52,211,153,0.08)] flex flex-col py-2 md:py-3 overflow-hidden">
+              {/* 상단 점선 텍스처 — 테이프 perforation 느낌 */}
+              <div className="px-3 md:px-5 text-emerald-500/35 tracking-[0.3em] text-[10px] md:text-xs leading-none whitespace-nowrap overflow-hidden select-none">
+                ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+              </div>
+
+              {/* 본문 2단 — 좌(와이어 3행) / 우(시각 패널: 봉인 도장 + 검열 차트) */}
+              <div className="flex-1 min-h-0 flex items-stretch px-2 md:px-3 lg:px-4 gap-2 md:gap-3">
+                {/* 좌 — 추천 종목 메인 차트 (MarketPage 종목분석과 동일한 StockChart) */}
+                <div className="flex-1 min-w-0 overflow-y-auto scrollbar-cyan -mr-1 pr-1.5 pt-3">
+                  <StockChart
+                    stockId={insiderTip.id}
+                    maPurchased={maPurchased}
+                    bollingerPurchased={bollingerPurchased}
+                    macdPurchased={macdPurchased}
+                    obvPurchased={obvPurchased}
+                  />
+                </div>
+
+                {/* 세로 점선 구분 — 좌/우 영역 분리 */}
+                <span aria-hidden="true" className="shrink-0 w-px self-stretch bg-gradient-to-b from-emerald-500/0 via-emerald-500/40 to-emerald-500/0" />
+
+                {/* 우 — 종목명/현재가 hero + 거래소 이동 버튼 */}
+                <div className="shrink-0 w-36 md:w-44 lg:w-56 flex flex-col items-stretch justify-center py-1.5 px-2 gap-3 md:gap-4">
+                  {/* 종목명 + 현재가 (이전 자물쇠 자리) */}
+                  <div className="flex flex-col items-center text-center gap-2 md:gap-2.5">
+                    <p className="text-xl md:text-2xl lg:text-3xl font-bold text-emerald-50 drop-shadow-[0_0_12px_rgba(52,211,153,0.7)] leading-tight break-keep">
+                      {insiderTip.name}
+                    </p>
+                    <span aria-hidden="true" className="w-2/3 h-px bg-gradient-to-r from-emerald-500/0 via-emerald-400/65 to-emerald-500/0" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="relative inline-flex">
+                        <span aria-hidden="true" className="absolute inset-0 rounded-full bg-cyan-400 opacity-70 animate-pulse" />
+                        <span className="relative block w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_6px_rgba(34,211,238,0.9)]" />
+                      </span>
+                      <p className="text-sm md:text-base lg:text-lg font-bold tabular-nums font-mono text-cyan-100">
+                        {insiderTip.currentClose.toLocaleString()}
+                        <span className="ml-0.5 text-xs text-cyan-300/70">원</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 거래소 이동 버튼 (이전 sparkline 자리) — 추천 종목을 선택한 상태로 매수 모달 자동 오픈 */}
+                  <button
+                    onClick={() => {
+                      // MarketPage가 진입 시 읽고 자동으로 매수 팝업 + 종목 선택 처리
+                      if (typeof sessionStorage !== 'undefined') {
+                        sessionStorage.setItem('market-auto-select-stock', insiderTip.id)
+                        sessionStorage.setItem('market-auto-open', 'buy')
+                      }
+                      navigateTo('market')
+                    }}
+                    aria-label="거래소로 이동하여 추천 종목 매수 모달 열기"
+                    className="group relative overflow-hidden rounded-lg border border-emerald-500/50 bg-emerald-900/30 px-3 py-2 md:py-2.5 shadow-[inset_0_0_15px_rgba(52,211,153,0.15)] transition-all duration-150 hover:bg-emerald-800/40 hover:border-emerald-400 hover:shadow-[inset_0_0_25px_rgba(52,211,153,0.3),0_0_15px_rgba(52,211,153,0.4)] focus:outline-none cursor-pointer"
+                  >
+                    <span className="flex items-center justify-center gap-1.5 md:gap-2">
+                      <span className="text-emerald-100 text-xs md:text-sm font-bold tracking-[0.2em] drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]">
+                        주식 구매
+                      </span>
+                      <span aria-hidden="true" className="text-emerald-300 transition-transform duration-150 group-hover:translate-x-1">▶</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 하단 점선 텍스처 */}
+              <div className="px-3 md:px-5 text-emerald-500/35 tracking-[0.3em] text-[10px] md:text-xs leading-none whitespace-nowrap overflow-hidden select-none">
+                ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+              </div>
+            </div>
+
+            {/* 푸터 — 펄스 점 + 다음 라운드 공개 */}
+            <div className="mt-1.5 md:mt-2 flex items-center justify-center gap-2">
               <span className="relative inline-flex">
-                <span className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-75" />
-                <span className="relative block w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,1)]" />
+                <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative block w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]" />
               </span>
-              <span className="text-emerald-300 text-sm md:text-base font-mono tracking-[0.3em] font-bold drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]">
-                UNLOCKED · 다음 주 최고 상승 예상
-              </span>
-            </div>
-
-            {/* 본문 2단 — 종목 / 등락률 */}
-            <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
-              {/* 좌 — 종목명 + 현재가 */}
-              <div className="bg-slate-950/55 border border-emerald-500/40 rounded-lg p-4 flex flex-col justify-center shadow-[inset_0_0_20px_rgba(52,211,153,0.08)]">
-                <p className="text-2xl md:text-3xl font-bold text-emerald-100 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] mb-2 leading-tight">
-                  {insiderTip.name}
-                </p>
-                <p className="text-sm md:text-base text-cyan-300/80 font-mono">
-                  현재가 <span className="text-cyan-100 tabular-nums font-bold">{insiderTip.currentClose.toLocaleString()}</span>원
-                </p>
-              </div>
-
-              {/* 우 — 등락률 비공개 */}
-              <div className="bg-slate-950/55 border border-emerald-500/40 rounded-lg p-4 flex flex-col justify-center items-center shadow-[inset_0_0_20px_rgba(52,211,153,0.08)]">
-                <p className="text-4xl md:text-5xl font-bold tabular-nums text-emerald-300 tracking-widest drop-shadow-[0_0_14px_rgba(52,211,153,0.7)] my-1">???</p>
-                <p className="text-sm md:text-base mt-2 text-cyan-300/70 font-mono tracking-wider">등락률 비공개</p>
-              </div>
-            </div>
-
-            {/* 하단 영수증 라인 — RECEIPT */}
-            <div className="mt-3 pt-2 border-t border-emerald-500/30 flex items-center justify-between font-mono text-xs md:text-sm">
-              <span className="text-emerald-300/70 tracking-[0.25em]">RECEIPT</span>
-              <span className="text-emerald-200/90">
-                <span className="text-emerald-200 font-bold tabular-nums">{insiderTip.feePaid.toLocaleString()}</span>원 지불 완료 · 다음 라운드 갱신
+              <span className="text-emerald-300 text-[11px] md:text-xs tracking-[0.2em]">
+                다음 라운드 공개
               </span>
             </div>
           </div>
