@@ -67,7 +67,9 @@ export default function GamePage() {
   const [transitioningWeek, setTransitioningWeek] = useState(1)
   const chartButtonRef = useRef(null)
   const [chartStartRect, setChartStartRect] = useState(null)
-  const [currentTip, setCurrentTip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)])
+  // TIPS를 매 게임마다 셔플해서 Marquee에 통째로 넘김 → 한 팁(12s) 끝나면 다음 팁 자동 cycle
+  // 단일 팁만 넘기면 Marquee 내부 setInterval이 안 걸려서 한 번 흐른 뒤 빈 화면이 됨
+  const [shuffledTips] = useState(() => [...TIPS].sort(() => Math.random() - 0.5))
 
   // 첫 진입 시 도움말 자동 오픈 (인트로 완료 후 조작법 안내)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,10 +79,6 @@ export default function GamePage() {
       clearFirstPlay()
     }
   }, [])
-
-  useEffect(() => {
-    setCurrentTip(TIPS[Math.floor(Math.random() * TIPS.length)])
-  }, [turn])
 
   // ESC = 종료 버튼 클릭과 동일 (다른 모달이 열려 있으면 스택상 그 모달이 먼저 닫힘)
   useEscapeKey(() => setOpenExit(true))
@@ -223,6 +221,9 @@ export default function GamePage() {
     ? null
     : totalAssetsDelta > 0 ? 'up' : 'down'
 
+  // 마지막 라운드 — "다음 주" 대신 "결과 집계" 톤으로 분기 (버튼 라벨·popover 카피·확인 버튼)
+  const isLastTurn = turn >= totalTurns
+
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-stone-900 overflow-hidden animate-page-enter">
       {/* viewport에 맞춰 1695:928 비율 컨테이너 (다른 페이지와 동일 패턴) */}
@@ -260,16 +261,16 @@ export default function GamePage() {
             <div className="flex items-center justify-between pb-2 border-b border-cyan-500/25">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                <span className="text-cyan-300 text-[11px] font-mono tracking-[0.3em]">ROUND</span>
+                <span className="text-cyan-300 text-lg font-mono tracking-[0.3em] font-bold">ROUND</span>
               </div>
-              <span className="text-cyan-100 font-mono tabular-nums text-sm font-bold tracking-wider">
+              <span className="text-cyan-100 font-mono tabular-nums text-lg font-bold tracking-wider">
                 {String(turn).padStart(2, '0')} <span className="text-cyan-500/60">/</span> {totalTurns}
               </span>
             </div>
 
             {/* TOTAL ASSET — 히어로 영역 (가장 눈에 띔, 글로우 강화) */}
             <div className="mt-4 mb-4">
-              <span className="text-cyan-300/80 text-[10px] font-mono tracking-[0.3em] block mb-1">TOTAL ASSET</span>
+              <span className="text-cyan-300/80 text-sm font-mono tracking-[0.3em] font-bold block mb-1">TOTAL ASSET</span>
               <p
                 className="text-[2rem] font-bold text-cyan-100 font-mono tabular-nums leading-none"
                 style={{ textShadow: '0 0 14px rgba(34,211,238,0.5)' }}
@@ -303,9 +304,9 @@ export default function GamePage() {
             <div className="flex items-center justify-between mt-3 mb-2">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
-                <span className="text-cyan-300 text-[10px] font-mono tracking-[0.3em]">HOLDINGS</span>
+                <span className="text-cyan-300 text-sm font-mono tracking-[0.3em] font-bold">HOLDINGS</span>
               </div>
-              <span className="text-cyan-300/70 text-[10px] font-mono tabular-nums">{holdings.length}종목</span>
+              <span className="text-cyan-300/70 text-sm font-mono tabular-nums font-bold">{holdings.length}종목</span>
             </div>
             {/* 고정 높이 14rem + scrollbar-cyan — 종목 개수와 무관하게 카드 크기 통일,
                 4종목 이상부터 카드 내부 스크롤 (시안 글로우 스크롤바, index.css 정의) */}
@@ -376,7 +377,7 @@ export default function GamePage() {
             style={{ top: 'calc(0.75rem + 115px)', left: '50%' }}
             className="absolute -translate-x-1/2 w-[26rem] max-w-[35vw] z-10"
           >
-            <Marquee items={[currentTip]} leftLabel="📢 TIPS" />
+            <Marquee items={shuffledTips} leftLabel="📢 TIPS" />
           </div>
 
           {/* 상단 중앙: KOSPI 축약 ticker — 수치+변동률만 표시, 클릭 시 ChartExpandModal에서 풀 차트
@@ -392,11 +393,19 @@ export default function GamePage() {
             <KospiChart compact />
           </button>
 
-          {/* 우상단: 도움말 / 설정 / 종료 (hover 시 라벨) */}
-          <div className="absolute top-3 right-3 flex gap-2 z-10">
-            <IconButton icon={<HelpIcon />}     label="도움말" onClick={() => setOpenHelp(true)} />
-            <IconButton icon={<SettingsIcon />} label="설정"   onClick={() => setOpenSettings(true)} />
-            <IconButton icon={<ExitIcon />}     label="종료"   onClick={handleExit} />
+          {/* 우상단: 도움말 / 설정 / 종료 (hover 시 라벨)
+              · 다른 페이지(TopRightNav: 거래소/정보상/기술상)와 시각 사이즈·간격 통일
+              · GamePage 캔버스(1695×928)는 다른 페이지(1920×1080)보다 약 13% 업스케일되어
+                같은 w-14 아이콘이 더 크게 렌더됨 → counter-scale(1695/1920)로 보정 */}
+          <div
+            className="absolute top-4 right-4 z-10"
+            style={{ transform: `scale(${1695 / 1920})`, transformOrigin: 'top right' }}
+          >
+            <div className="flex gap-3">
+              <IconButton icon={<HelpIcon />}     label="도움말" onClick={() => setOpenHelp(true)} />
+              <IconButton icon={<SettingsIcon />} label="설정"   onClick={() => setOpenSettings(true)} />
+              <IconButton icon={<ExitIcon />}     label="종료"   onClick={handleExit} />
+            </div>
           </div>
 
           {/* 우하단: 다음 주 버튼 — HTS 디지털 보드 톤 (슬레이트 + 시안 글로우 + 모서리 deco) */}
@@ -419,7 +428,7 @@ export default function GamePage() {
               className="text-2xl font-bold tracking-widest font-mono"
               style={{ textShadow: '0 0 12px rgba(34,211,238,0.7)' }}
             >
-              다음 주 ▶
+              {isLastTurn ? '결과 집계 🏁' : '다음 주 ▶'}
             </p>
           </button>
 
@@ -433,19 +442,29 @@ export default function GamePage() {
                 <span className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-300 rounded-bl-xl pointer-events-none" />
                 <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-300 rounded-br-xl pointer-events-none" />
 
-                {/* LED 인디케이터 라벨 — KospiChart의 LIVE 헤더와 통일 */}
+                {/* LED 인디케이터 라벨 — KospiChart의 LIVE 헤더와 통일
+                    마지막 라운드엔 FINAL RESULT로 라벨 전환 */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                  <span className="text-cyan-300 text-[10px] font-mono tracking-[0.25em]">NEXT TURN</span>
+                  <span
+                    className="text-cyan-300 font-mono tracking-[0.25em] font-bold text-base"
+                    style={{ textShadow: '0 0 10px rgba(34,211,238,0.6)' }}
+                  >
+                    {isLastTurn ? 'FINAL RESULT' : 'NEXT TURN'}
+                  </span>
                 </div>
 
                 <p
                   className="text-cyan-100 font-bold text-lg mb-2 font-mono"
                   style={{ textShadow: '0 0 8px rgba(34,211,238,0.4)' }}
                 >
-                  다음 주로 이동하시겠습니까?
+                  {isLastTurn ? '최종 결과를 집계하시겠습니까?' : '다음 주로 이동하시겠습니까?'}
                 </p>
-                <p className="text-cyan-300/70 text-sm mb-5 font-mono">⚠️ 진행 후엔 되돌릴 수 없습니다.</p>
+                <p className="text-cyan-300/70 text-sm mb-5 font-mono">
+                  {isLastTurn
+                    ? `🏁 ${totalTurns}주 게임 끝. 결과 화면으로 이동합니다.`
+                    : '⚠️ 진행 후엔 되돌릴 수 없습니다.'}
+                </p>
 
                 <div className="flex gap-3">
                   <button
@@ -463,7 +482,7 @@ export default function GamePage() {
                     }}
                     className="flex-1 py-3 bg-gradient-to-b from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border-2 border-cyan-300 rounded-lg text-base font-bold text-slate-900 transition-all duration-150 focus:outline-none font-mono tracking-wider"
                   >
-                    진행 ▶
+                    {isLastTurn ? '결과 보기' : '진행'}
                   </button>
                 </div>
               </div>
@@ -784,11 +803,14 @@ function HelpOverlay({ onClose }) {
         </p>
       </HelpBubble>
 
-      {/* 우하단 다음 주 버튼 위 */}
+      {/* 우하단 다음 주 / 결과 집계 버튼 위
+          50주차에 버튼 라벨이 "결과 집계 🏁"로 바뀌므로 풍선에 두 동작을 함께 안내
+          (turn별 분기 대신 상시 동일 카피 — 도움말이 라운드마다 달라지지 않게) */}
       <HelpBubble style={{ bottom: '6rem', right: '1rem' }}>
-        <strong className="text-cyan-300 text-base block">▶ 다음 주로</strong>
+        <strong className="text-cyan-300 text-base block">▶ 다음 주 / 결과 집계</strong>
         <p className="text-xs mt-1 text-cyan-100">
-          한 주를 보내고 주가 갱신
+          한 주 보내고 주가 갱신
+          <br />50주차: 최종 결과 화면으로 이동
           <br />⚠️ 누르면 되돌릴 수 없어요
         </p>
       </HelpBubble>
