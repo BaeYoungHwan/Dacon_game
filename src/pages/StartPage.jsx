@@ -7,9 +7,12 @@
 
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import SettingsModal from '../components/game/SettingsModal'
+import { SettingsIcon } from '../components/game/PageNav'
 
 export default function StartPage() {
   const [nicknameInput, setNicknameInput] = useState('')
+  const [openSettings, setOpenSettings] = useState(false)
   const setNickname = useGameStore((s) => s.setNickname)
   const startGame   = useGameStore((s) => s.startGame)
 
@@ -32,6 +35,19 @@ export default function StartPage() {
           backgroundPosition: 'center',
         }}
       >
+        {/* 설정 버튼 — 우상단, StartPage 앰버/스톤 톤에 맞춤 (SettingsModal은 슬레이트/시안 그대로 재사용) */}
+        <button
+          onClick={() => setOpenSettings(true)}
+          aria-label="설정"
+          className="group absolute top-[3%] right-[3%] z-10 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-b from-stone-800 to-stone-900 hover:from-stone-700 hover:to-stone-800 text-amber-100 hover:text-amber-50 border-2 border-amber-700 hover:border-amber-500 shadow-2xl transition-all duration-150"
+          style={{ boxShadow: '0 0 18px rgba(180,130,60,0.35), inset 0 0 10px rgba(180,130,60,0.15)' }}
+        >
+          <SettingsIcon />
+          <span className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-amber-700 bg-stone-900/95 px-2 py-0.5 text-[11px] font-mono tracking-wider text-amber-100 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            설정
+          </span>
+        </button>
+
         {/* 인풋 — 캐릭터 발 아래 바닥 영역 (컨테이너 하단에서 10% 위) */}
         <input
           type="text"
@@ -53,6 +69,8 @@ export default function StartPage() {
           <p className="text-[9px] sm:text-[10px] md:text-xs text-amber-200/80 leading-tight">게임 시작</p>
         </button>
       </div>
+
+      {openSettings && <SettingsModal onClose={() => setOpenSettings(false)} />}
     </div>
   )
 }
