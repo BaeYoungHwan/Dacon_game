@@ -34,7 +34,8 @@ const HOTSPOT = {
   // 거래소 메인 — 배경 이미지의 키오스크·NPC·홀로그램 영역 핫스팟
   // (도움말/메인/정보상/기술상은 PageNav 컴포넌트로 분리)
   market: {
-    analysis: { top: 'calc(8% + 1.481%)', left: 'calc(28% - 0.060%)', width: 'calc(42% + 1.845%)', height: 'calc(58% + 6.138%)' },
+    // 원형 핫스팟 — 배경 중앙 홀로그램 차트 링에 맞춤 (16:9 비례, width%×16/9 = height%로 정원 보정)
+    analysis: { top: '23.63%', left: '41.05%', width: '18%', height: 'calc(18% * 16 / 9)' },
     buy:      { top: '55%', left: 'calc(15% - 7.738%)', width: '16%', height: '35%' },
     sell:     { top: '55%', right: 'calc(15% - 5.952%)', width: '16%', height: '35%' },
   },
@@ -133,7 +134,7 @@ export default function MarketPage() {
         }}
       >
           {/* 핫스팟 좌표는 상단 HOTSPOT.market 상수에서 관리 (1920×1080 비례 % + 픽셀 미세조정) */}
-          <Hotspot label="종목분석 열기" className="absolute rounded-[15px]"
+          <Hotspot label="종목분석 열기" className="absolute rounded-full"
             style={HOTSPOT.market.analysis} onClick={() => setActivePopup('analysis')} />
 
           <Hotspot label="주식 구매" className="absolute rounded-xl"
