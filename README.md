@@ -181,7 +181,6 @@ src/
 │   ├── AudioController.jsx         # 음악/효과음 컨트롤러
 │   ├── game/
 │   │   ├── GradeCard.jsx           # 코스피 대비 등급 카드
-│   │   ├── HelpModal.jsx           # 도움말 모달
 │   │   ├── IntroScene.jsx          # 인트로 애니메이션 씬
 │   │   ├── KospiChart.jsx          # 코스피 지수 차트 (compact/full 모드)
 │   │   ├── NewsPanel.jsx           # 뉴스 이벤트 출력

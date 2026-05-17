@@ -43,7 +43,8 @@
 | 1.12 뉴스 시스템 고도화 (배영환) | 6 | 6 | 100% |
 | 1.13 뉴스 실제이벤트 교체 + 브라우저 호환 (배영환) | 4 | 4 | 100% |
 | 1.14 플레이테스트 & 대시보드 (배영환) | 8 | 5 | 62.5% |
-| **전체** | **150** | **138** | **92.0%** |
+| 1.15 QA 시나리오·후속 정리 (송원호) | 5 | 5 | 100% |
+| **전체** | **155** | **143** | **92.3%** |
 
 ---
 
@@ -333,6 +334,20 @@
 | 1.14.6 | [버그] report.html Y축 단위 수정 — 자산변동 라인차트 Y축 레이블이 "Xk만" 형식으로 표시되는 어색한 단위를 "X천만" 또는 "X,000만" 형식으로 변경 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.05 | report.html | P3 |
 | 1.14.7 | [Fix] KODEX 200 StockChart KOSPI 추종 수정 — `stock_etf`(KODEX 200) StockChart가 ETF 실제 가격 대신 `pregame_kospi_closes` + `kospi_closes`를 ETF 시작가 기준 스케일링해 KospiChart와 동일한 모양으로 추종하도록 수정. 거래량은 실제 ETF 데이터 재사용 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.2 | src/components/game/StockChart.jsx | P1 |
 | 1.14.8 | [Fix] leaderboardStore.js submitted 버그 수정 — Supabase insert 실패 시 `submitted`가 `false`로 유지되어 "랭킹 등록" 버튼을 반복 클릭할 수 있던 버그. `handleSubmit`이 `setShowLeaderboard(true)`를 항상 호출해 오버레이는 열리는데 버튼 상태가 되돌아오는 UX 불일치. 에러 분기(`if (error)`)에 `submitted: true` 추가 → 저장 실패해도 버튼이 "랭킹 확인"으로 전환됨(중복 등록 방지). `error` 상태는 유지되어 후속 에러 표시 가능 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.05 | src/store/leaderboardStore.js | P1 |
+
+---
+
+## 1.15 QA 시나리오·후속 정리 (송원호 — 2026-05-18)
+
+> 기간: 2026-05-18 | 담당: 송원호 | 목적: 최근 변경(50주차 결과 집계 모달·TIPS 전광판·키보드 단축키·우상단 아이콘·좌측 카드) QA 시나리오 검증 + 발견 이슈 즉시 처리 + 통합 QA 리포트 정비
+
+| WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
+|-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
+| 1.15.1 | [QA] 시나리오 검증(7건) + 통합 리포트 작성 — HEAD `33f6c61` 기준 빌드·테스트·dev server 베이스라인 확인(75/75 통과) → A·B·C·E·F·G Pass / D Partial. `docs/qa/qa-scenario-report-260518.md` 작성 후 기존 `docs/ref/qa-report.md`(05/17 단위테스트 리포트)에 Part 1·2·3 구조로 통합(자동화 테스트 / 시나리오 검증 / 이슈 트래킹). docs/qa 폴더 제거 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.5 | docs/ref/qa-report.md | P1 |
+| 1.15.2 | [Fix] ExitConfirmModal Enter 단축키 제거 + 효과음 부작용 해결 — 1.15.1에서 발견한 P1 이슈(시나리오 D). `useEnterKey(onConfirm)`이 ESC로 종료 모달을 연 직후 Enter를 누르면 즉시 `confirmExit → resetGame`을 실행해 게임 진행 상황 전체가 소실되던 위험. (a) 키 바인딩 제거 + `handleExit` 인라인(`onClick={() => setOpenExit(true)}`) → ESC로만 취소 가능, 종료는 마우스 또는 Tab+Enter (b) 종료 아이콘 button 포커스가 잔존해 Enter→재클릭→`App.jsx` 전역 click 리스너→`playSfx('click')` 효과음 재생되는 부작용을 `ExitConfirmModal` 마운트 시 `useEffect(() => document.activeElement?.blur?.(), [])`로 해결 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.3 | src/pages/GamePage.jsx | P1 |
+| 1.15.3 | [Cleanup] HelpModal.jsx 데드코드 삭제 + README 동기화 — `src/components/game/HelpModal.jsx` import 0건 데드코드. 실제 도움말은 `GamePage` 내부 `HelpOverlay`로 대체됨. 추가로 `2배 이상 — 레전드 / 1.5배 — 마스터` 옛 단순 배수 기반 등급 설명이 stale 상태로 남아있어(실제는 `src/lib/grade.js`의 KOSPI 대비 초과수익률 6단계) 향후 오용 위험 → 파일 삭제 + `README.md:184` 폴더 트리에서 해당 줄 제거 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.1 | src/components/game/HelpModal.jsx (삭제), README.md | P2 |
+| 1.15.4 | [UI] 다음 주 popover 확인 버튼 ENTER 통일 + 사이즈 확대 — `GamePage.jsx:479` 확인 버튼 라벨 `{isLastTurn ? '결과 보기' : '진행'}` → `ENTER`로 통일(일반 라운드/50주차 분기 제거, popover 본문 카피가 맥락 제공). 1.10.32에서 "결과 보기 🏁/진행 ▶ → 결과 보기/진행"로 1차 단순화 후 단축키 자체를 노출하는 방향으로 추가 단순화. 사용자 요청으로 ENTER 버튼만 `text-base/tracking-wider → text-2xl/tracking-widest`로 확대해 primary action 시각 우선순위 강조 (취소 버튼은 그대로) | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.05 | src/pages/GamePage.jsx | P3 |
+| 1.15.5 | [UI] ExitConfirmModal UI 재설계 — SettingsModal 디자인 시스템 통일 (4모서리 L자 deco 4개 span 추가 / 백드롭 `bg-black/70` → `bg-slate-950/75` / 패널 `border-cyan-500/60 rounded-xl` → `border-cyan-300/80 rounded-lg` + 폭 `max-w-sm` → `max-w-md` / boxShadow outer만 → outer+inset 2겹 cyan glow / 헤더 라벨 `게임 종료` → `GAME EXIT` 영문 + `font-mono tracking-widest` + textShadow glow / X 닫기 평면 텍스트 → 원형 chip border+glow / 본문 카드 `bg-slate-800/70 border-cyan-500/30 rounded-lg` → `rounded-md border-cyan-400/20 bg-slate-900/60` / 본문 텍스트 sans-serif → font-mono tracking-wider). 취소/종료 버튼 색(슬레이트/빨강) 및 동작은 destructive 의미 보존 위해 유지 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.1 | src/pages/GamePage.jsx | P3 |
 
 ---
 

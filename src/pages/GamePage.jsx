@@ -145,12 +145,6 @@ export default function GamePage() {
     }, 1000)
   }
 
-  // blur: 트리거 버튼이 포커스를 유지하면 모달 열린 뒤 Enter가 이 버튼을 재트리거해 글로벌 Enter 핸들러가 동작 안 함
-  const handleExit = () => {
-    if (typeof document !== 'undefined') document.activeElement?.blur?.()
-    setOpenExit(true)
-  }
-
   const confirmExit = () => {
     setOpenExit(false)
     resetGame()
@@ -404,7 +398,7 @@ export default function GamePage() {
             <div className="flex gap-3">
               <IconButton icon={<HelpIcon />}     label="도움말" onClick={() => setOpenHelp(true)} />
               <IconButton icon={<SettingsIcon />} label="설정"   onClick={() => setOpenSettings(true)} />
-              <IconButton icon={<ExitIcon />}     label="종료"   onClick={handleExit} />
+              <IconButton icon={<ExitIcon />}     label="종료"   onClick={() => setOpenExit(true)} />
             </div>
           </div>
 
@@ -480,9 +474,9 @@ export default function GamePage() {
                       outline: 'none',
                       boxShadow: '0 0 20px rgba(34,211,238,0.5), inset 0 0 10px rgba(34,211,238,0.15)',
                     }}
-                    className="flex-1 py-3 bg-gradient-to-b from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border-2 border-cyan-300 rounded-lg text-base font-bold text-slate-900 transition-all duration-150 focus:outline-none font-mono tracking-wider"
+                    className="flex-1 py-3 bg-gradient-to-b from-cyan-600 to-cyan-800 hover:from-cyan-500 hover:to-cyan-700 border-2 border-cyan-300 rounded-lg text-2xl font-bold text-slate-900 transition-all duration-150 focus:outline-none font-mono tracking-widest"
                   >
-                    {isLastTurn ? '결과 보기' : '진행'}
+                    ENTER
                   </button>
                 </div>
               </div>
@@ -537,35 +531,64 @@ export default function GamePage() {
   )
 }
 
-// 게임 종료 확인 모달 — PopupOverlay 패턴 (font-mono 헤더 + ✕ + slate-800/70 카드)
+// 게임 종료 확인 모달 — SettingsModal과 동일한 디자인 시스템 (4모서리 L자 deco + 영문 헤더 + cyan glow)
+// destructive 모달이라 Enter 단축키는 의도적으로 묶지 않음 — ESC로 취소만 가능,
+// 종료는 마우스 클릭 또는 Tab+Enter로만 확정 (실수 방지)
 function ExitConfirmModal({ onConfirm, onCancel }) {
   useEscapeKey(onCancel)
-  useEnterKey(onConfirm)
+  // 모달 마운트 시 외부 트리거 버튼(종료 아이콘 등)의 포커스를 떼어둠.
+  // 그렇지 않으면 Enter 키가 트리거 버튼을 재클릭해 App.jsx 전역 click 리스너가
+  // playSfx('click')을 재생하는 부작용 발생 (게임 종료는 안 되지만 효과음만 남음)
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.activeElement?.blur?.()
+  }, [])
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
-        className="relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/60 rounded-xl p-6 max-w-sm w-full shadow-[0_0_40px_rgba(34,211,238,0.2)]"
         onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md rounded-lg border-2 border-cyan-300/80 bg-gradient-to-b from-slate-900 to-slate-950 p-6"
+        style={{
+          boxShadow: '0 0 32px rgba(34,211,238,0.45), inset 0 0 24px rgba(34,211,238,0.10)',
+        }}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-cyan-300 font-mono tracking-wider">게임 종료</h2>
+        {/* 4모서리 L자 deco — SettingsModal CornerDeco와 동일 패턴 */}
+        <span className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-300/80 rounded-tl-md pointer-events-none" />
+        <span className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-300/80 rounded-tr-md pointer-events-none" />
+        <span className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-300/80 rounded-bl-md pointer-events-none" />
+        <span className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-300/80 rounded-br-md pointer-events-none" />
+
+        {/* 헤더 — SettingsModal과 동일 톤 (영문 라벨 + glow + 원형 X) */}
+        <div className="mb-5 flex items-center justify-between">
+          <h2
+            className="font-mono text-lg font-bold tracking-widest text-cyan-100"
+            style={{ textShadow: '0 0 10px rgba(34,211,238,0.7)' }}
+          >
+            GAME EXIT
+          </h2>
           <button
             onClick={onCancel}
-            style={{ outline: 'none' }}
-            className="text-cyan-300 hover:text-cyan-100 text-xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
+            aria-label="닫기"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-300/60 text-cyan-200 transition-all duration-150 hover:border-cyan-200 hover:bg-cyan-400/15 hover:text-white"
+            style={{ boxShadow: '0 0 10px rgba(34,211,238,0.25)' }}
           >
             ✕
           </button>
         </div>
 
-        <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-4 mb-4">
-          <p className="text-sm text-cyan-100 mb-2">게임을 종료하고 초기 화면으로 돌아가시겠습니까?</p>
-          <p className="text-xs text-cyan-300/60 font-mono">⚠️ 현재 진행 상황은 모두 사라집니다.</p>
-        </div>
+        {/* 본문 카드 — SettingsModal 섹션 카드 톤 */}
+        <section className="mb-5 space-y-2 rounded-md border border-cyan-400/20 bg-slate-900/60 p-4">
+          <p className="font-mono text-sm tracking-wider text-cyan-100">
+            게임을 종료하고 초기 화면으로 돌아가시겠습니까?
+          </p>
+          <p className="font-mono text-xs tracking-wider text-cyan-300/60">
+            ⚠️ 현재 진행 상황은 모두 사라집니다.
+          </p>
+        </section>
 
+        {/* 버튼 — 취소(슬레이트) / 종료(빨강 destructive) */}
         <div className="flex gap-2">
           <button
             onClick={onCancel}
@@ -576,8 +599,8 @@ function ExitConfirmModal({ onConfirm, onCancel }) {
           </button>
           <button
             onClick={onConfirm}
-            style={{ outline: 'none' }}
-            className="flex-1 py-2 bg-red-700 hover:bg-red-600 border-2 border-red-400/60 text-white rounded-lg font-bold font-mono tracking-wider transition-all duration-150 focus:outline-none shadow-[0_0_15px_rgba(248,113,113,0.3)]"
+            style={{ outline: 'none', boxShadow: '0 0 15px rgba(248,113,113,0.3)' }}
+            className="flex-1 py-2 bg-red-700 hover:bg-red-600 border-2 border-red-400/60 text-white rounded-lg font-bold font-mono tracking-wider transition-all duration-150 focus:outline-none"
           >
             종료
           </button>
