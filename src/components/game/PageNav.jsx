@@ -21,45 +21,34 @@ const PAGE_LABELS = {
 }
 
 // ─────────────────────────────────────────────────────────
-// 공유 버튼 톤 — HUD lock-on 대괄호 + 투명 본체 (홀로그램 UI 톤)
-//   · 본체: slate-900/30 + backdrop-blur (배경이 비치도록 투명)
-//   · 테두리: cyan-400/40 (얇고 은은)
-//   · 평소: 약한 시안 outer shadow
-//   · hover: 본체 진해짐 + 진한 글로우 + 대괄호 바깥으로 확장
-//   · 4모서리에 버튼 외곽 큰 L자 대괄호 (w-4 h-4 border-2 cyan-300)
+// 공유 버튼 톤 — 네온 칩(아웃라인 캡슐)
+//   · 본체: 완전 투명 (bg-transparent)
+//   · 테두리: cyan-300 두꺼운 라인 (rounded-full)
+//   · 평소: outer halo glow (blur 느낌의 외광 — box-shadow + ::after halo)
+//   · hover: 안쪽이 cyan-400/20으로 차오르며 글로우 진해짐
+//   · 텍스트/아이콘: cyan-100, 시안 드롭섀도우
 // ─────────────────────────────────────────────────────────
 const BTN_BASE =
   'relative group flex items-center justify-center ' +
-  'bg-slate-900/30 hover:bg-slate-800/50 ' +
-  'backdrop-blur-sm rounded-sm border border-cyan-400/40 hover:border-cyan-300/80 ' +
-  'text-cyan-200 hover:text-cyan-50 ' +
+  'bg-transparent hover:bg-cyan-400/20 ' +
+  'border-2 border-cyan-300/80 hover:border-cyan-200 ' +
+  'text-cyan-100 hover:text-white ' +
   'transition-all duration-200 focus:outline-none focus:ring-0 cursor-pointer'
 
-const BTN_SHADOW_REST  = '0 0 12px rgba(34,211,238,0.15)'
-const BTN_SHADOW_HOVER = '0 0 28px rgba(34,211,238,0.55), inset 0 0 18px rgba(34,211,238,0.18)'
+const BTN_SHADOW_REST  = '0 0 18px rgba(34,211,238,0.35), inset 0 0 12px rgba(34,211,238,0.08)'
+const BTN_SHADOW_HOVER = '0 0 32px rgba(34,211,238,0.7),  inset 0 0 20px rgba(34,211,238,0.25)'
 
-// HUD lock-on 대괄호 — 버튼 외곽에 떠있는 4모서리 L자 프레임
-// hover 시 각 대괄호가 모서리 바깥으로 1.5px씩 더 멀어져 "타게팅" 느낌
-function CornerDecos() {
+// 외광 halo — 본체 뒤에서 부드럽게 번지는 시안 후광 (blur로 부드럽게)
+function NeonHalo() {
   return (
-    <>
-      <span
-        aria-hidden="true"
-        className="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-2 border-l-2 border-cyan-300 pointer-events-none transition-all duration-200 group-hover:-top-2 group-hover:-left-2 drop-shadow-[0_0_4px_rgba(34,211,238,0.8)]"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-2 border-r-2 border-cyan-300 pointer-events-none transition-all duration-200 group-hover:-top-2 group-hover:-right-2 drop-shadow-[0_0_4px_rgba(34,211,238,0.8)]"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-2 border-l-2 border-cyan-300 pointer-events-none transition-all duration-200 group-hover:-bottom-2 group-hover:-left-2 drop-shadow-[0_0_4px_rgba(34,211,238,0.8)]"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-2 border-r-2 border-cyan-300 pointer-events-none transition-all duration-200 group-hover:-bottom-2 group-hover:-right-2 drop-shadow-[0_0_4px_rgba(34,211,238,0.8)]"
-      />
-    </>
+    <span
+      aria-hidden="true"
+      className="absolute inset-0 rounded-full pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity duration-200"
+      style={{
+        boxShadow: '0 0 20px 4px rgba(34,211,238,0.45)',
+        filter: 'blur(6px)',
+      }}
+    />
   )
 }
 
@@ -87,10 +76,10 @@ export function IconButton({ icon, label, onClick, labelPosition = 'bottom' }) {
       style={{ outline: 'none', boxShadow: BTN_SHADOW_REST }}
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = BTN_SHADOW_HOVER }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = BTN_SHADOW_REST }}
-      className={`${BTN_BASE} w-16 h-16`}
+      className={`${BTN_BASE} w-14 h-14 rounded-full`}
     >
-      <CornerDecos />
-      {icon}
+      <NeonHalo />
+      <span className="relative z-10 drop-shadow-[0_0_6px_rgba(34,211,238,0.8)]">{icon}</span>
       <HoverLabel label={label} position={labelPosition} />
     </button>
   )
@@ -107,12 +96,12 @@ export function LocationButton({ label, onClick }) {
       style={{ outline: 'none', boxShadow: BTN_SHADOW_REST }}
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = BTN_SHADOW_HOVER }}
       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = BTN_SHADOW_REST }}
-      className={`${BTN_BASE} px-5 h-14`}
+      className={`${BTN_BASE} px-7 h-12 rounded-full`}
     >
-      <CornerDecos />
+      <NeonHalo />
       <span
-        className="font-mono font-bold tracking-widest text-base"
-        style={{ textShadow: '0 0 8px rgba(34,211,238,0.5)' }}
+        className="relative z-10 font-mono font-bold tracking-widest text-base"
+        style={{ textShadow: '0 0 10px rgba(34,211,238,0.85)' }}
       >
         ▶ {label}
       </span>
@@ -127,8 +116,8 @@ export function TopRightNav({ onHelp, navigateTo }) {
   const [openSettings, setOpenSettings] = useState(false)
   return (
     <>
-      {/* gap-4 — 외곽 대괄호가 인접 버튼과 겹치지 않도록 여유 */}
-      <div className="absolute top-4 right-4 flex gap-4 z-10">
+      {/* 칩 사이 halo 번짐 여유 */}
+      <div className="absolute top-4 right-4 flex gap-3 z-10">
         <IconButton icon={<HelpIcon />}     label="도움말" onClick={onHelp} />
         <IconButton icon={<SettingsIcon />} label="설정"   onClick={() => setOpenSettings(true)} />
         <IconButton icon={<HomeIcon />}     label="메인"   onClick={() => navigateTo('main')} />
@@ -144,7 +133,7 @@ export function TopRightNav({ onHelp, navigateTo }) {
 export function BottomRightNav({ current, navigateTo }) {
   const targets = Object.keys(PAGE_LABELS).filter((k) => k !== current)
   return (
-    <div className="absolute bottom-5 right-5 flex gap-4 z-10">
+    <div className="absolute bottom-5 right-5 flex gap-3 z-10">
       {targets.map((key) => (
         <LocationButton key={key} label={PAGE_LABELS[key]} onClick={() => navigateTo(key)} />
       ))}
