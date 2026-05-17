@@ -35,10 +35,10 @@ if (typeof window !== 'undefined') {
 
 // 지표별 구매 비용
 const INDICATOR_COSTS = {
-  ma: 300_000,
-  bollinger: 900_000,
-  macd: 1_200_000,
-  obv: 600_000,
+  ma: 200_000,
+  bollinger: 600_000,
+  macd: 800_000,
+  obv: 400_000,
 }
 const INDICATOR_LABELS = {
   ma: 'MA5 + MA20',
