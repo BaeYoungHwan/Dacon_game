@@ -81,11 +81,37 @@ export default function MarketPage() {
   const [openHelp, setOpenHelp] = useState(false)
 
   // 거래소 첫 진입 시 도움말 자동 오픈 — 이후 진입엔 노출 안 함
+  // 자동 매수 진입 신호(`market-auto-open`)가 있으면 도움말·매수 모달 중첩을 피하려 도움말 노출 보류
+  // — SEEN 플래그도 set 안 함 → 다음 일반 방문 때 정상 노출
   useEffect(() => {
     if (typeof sessionStorage === 'undefined') return
     if (sessionStorage.getItem(MARKET_HELP_SEEN_KEY)) return
+    if (sessionStorage.getItem('market-auto-open')) return
     setOpenHelp(true)
     sessionStorage.setItem(MARKET_HELP_SEEN_KEY, '1')
+  }, [])
+
+  // 정보상 추천 종목 → '주식 구매' 버튼으로 진입 시 자동으로 종목 선택 + 매수 팝업 오픈
+  // (InfoMerchantPage가 sessionStorage에 신호를 남기고 navigateTo('market') 호출)
+  // 1회용이므로 처리 후 즉시 키 제거 → 새로고침/재방문 시 재발동 방지
+  useEffect(() => {
+    if (typeof sessionStorage === 'undefined') return
+    const autoStock = sessionStorage.getItem('market-auto-select-stock')
+    if (autoStock) {
+      // 방어적 검증 — persist 복원/라운드 진행 직후 등 엣지에서 비활성 종목 id가 들어올 수 있음
+      // useEffect 1회 실행이라 reactive 구독 불필요 → getState() 스냅샷으로 충분
+      const stocks = useGameStore.getState().activeStocks
+      if (stocks.some((s) => s.id === autoStock)) {
+        setSelectedStockId(autoStock)
+      }
+      // 유효성 통과 여부와 무관하게 1회용 보장
+      sessionStorage.removeItem('market-auto-select-stock')
+    }
+    const autoOpen = sessionStorage.getItem('market-auto-open')
+    if (autoOpen === 'buy' || autoOpen === 'sell' || autoOpen === 'analysis') {
+      setActivePopup(autoOpen)
+      sessionStorage.removeItem('market-auto-open')
+    }
   }, [])
 
   const closePopup = () => {
