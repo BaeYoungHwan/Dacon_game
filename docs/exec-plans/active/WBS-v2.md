@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-18 (1.10.29 전 모달·페이지 키보드 단축키 — ESC 닫기 16개 + 장소별 메인/종료 ESC + 다음 주·종료 모달 Enter 확인 + 트리거 버튼 blur 픽스 / 이전: 1.10.23~1.10.28 반응형 스케일 통일)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-18 (1.10.30~1.10.31 Leaderboard 재설계 + ResultPage 오버레이 개선 + 1.14.8 leaderboardStore submitted 버그 수정 / 이전: 1.14.7 KODEX 200 StockChart KOSPI 추종 수정 추가 + 1.10.11 취소 / 이전: 1.14.3 플레이테스트 대시보드 + report.html UI 버그 3건 추가 / 이전: 1.10.29 전 모달·페이지 키보드 단축키 — ESC 닫기 16개 + 장소별 메인/종료 ESC + 다음 주·종료 모달 Enter 확인 + 트리거 버튼 blur 픽스 / 이전: 1.10.23~1.10.28 반응형 스케일 통일)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -39,10 +39,11 @@
 | 1.8 추가 작업 | 7 | 5 | 71.4% |
 | 1.9 하네스 업그레이드 | 11 | 11 | 100% |
 | 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
-| 1.11 UI 폴리시 (송원호) | 22 | 13 | 59.1% |
+| 1.11 UI 폴리시 (송원호) | 31 | 30 | 96.8% (1.10.11 취소 제외 100%) |
 | 1.12 뉴스 시스템 고도화 (배영환) | 6 | 6 | 100% |
 | 1.13 뉴스 실제이벤트 교체 + 브라우저 호환 (배영환) | 4 | 4 | 100% |
-| **전체** | **133** | **116** | **87.2%** |
+| 1.14 플레이테스트 & 대시보드 (배영환) | 8 | 5 | 62.5% |
+| **전체** | **150** | **138** | **92.0%** |
 
 ---
 
@@ -264,7 +265,7 @@
 | 1.10.8 | [Front] ★★★ 거래소 모멘텀 펄스 ↔ OBV 위치 스왑 — `StockChart.jsx`의 세로 스택 순서를 (메인 → MACD → OBV)에서 **(메인 → OBV → MACD)** 로 변경. 모든 패널이 `aspectRatio` SVG라 Y좌표 추가 조정 불필요 — 두 `PanelFrame` 블록 위치만 교체. 도움말 오버레이 섹션 순서는 학습 흐름(가벼움→무거움) 우선이라 유지(차트 시각 순서와 헬프 순서 별개 관리) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/components/game/StockChart.jsx | P1 |
 | 1.10.9 | [Front] ★★ 거래소 합계/금액 텍스트 15px 좌측 이동 — 사용자 요청 변경(좌우 swap → 우측 여백 15px 추가). `BulkBuyPanel` 합계 박스(`text-right` div, MarketPage.jsx:1081) + 매수 후 예상 잔액 금액 span(:1094)에 `mr-[15px]` 추가. `BulkSellPanel` 매도 수익 박스(`text-right` div, :1360) + 매도 후 예상 현금 금액 span(:1373)에도 동일 적용. 라벨/값 정렬 구조는 유지하고 우측 끝에서 15px 안쪽으로 들여옴 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/MarketPage.jsx | P2 |
 | 1.10.10 | [Front] ★ 메인화면 설정 모달 UI 개선 + 게임 초기화 버튼 로직 삭제 + 배경음/효과음 토글 일관화 — ① `SettingsModal.jsx` 회색 베이스(`bg-gray-800`)를 다른 모달(PopupOverlay) 톤(슬레이트+시안 디지털 보드, 4모서리 L자 코너 deco, 외광 halo, 백드롭 `bg-slate-950/75 + backdrop-blur-sm` + 외부 클릭 닫힘)으로 리뉴얼. 헤더 "SETTINGS" 모노 폰트 + 시안 텍스트 글로우. 볼륨 슬라이더 `accent-cyan-400`. ② **게임 초기화 버튼 + `handleReset`/`localStorage.removeItem`/`window.location.reload` 핸들러 완전 제거** + 상단 구분선 섹션 삭제(사용자 요청 변경, 당초 로즈 톤 유지 → 전면 제거). ③ **배경음악 → 배경음** 라벨 변경. ④ 효과음 섹션을 배경음과 동일한 2행 레이아웃(라벨+스피커 토글 / 슬라이더+%)으로 통일. ⑤ **스피커 아이콘을 토글 버튼으로 통합** — 기존 ON/OFF 텍스트 토글 제거. BGM 스피커 클릭: `muted` 플래그 토글(volume=0이면 이전 값 복원). SFX 스피커 클릭: `sfxVolume` 0 ↔ 이전 볼륨(audioStore에 `sfxMuted` 없어 `prevSfxVolRef` useRef로 직전 볼륨 기억해 복원). 슬라이더 onChange 시 ref 동기 갱신. ⑥ 무음 판정 통일 — BGM `muted \|\| volume === 0`, SFX `sfxVolume === 0` → 🔇/🔉/🔊 3단계 아이콘 일관 반영(이전엔 BGM은 muted 플래그, SFX는 sfxVolume=0만 봐서 슬라이더 0 드래그 시 두 섹션 아이콘이 불일치) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/components/game/SettingsModal.jsx | P3 |
-| 1.10.11 | [Front] ★ 메인화면 KOSPI 차트·TIPS 위로 이동 — GamePage 차트(`chartButtonRef` 부근)와 TIPS Marquee 위치를 현재보다 상단으로 옮겨 시각적 무게 중심 재배치. 1695×928 좌표계에서 top 값 조정 (다른 absolute 요소 충돌 없는지 확인) | 송원호 | 대기 | 0% | 05/18 | 05/18 | 0.2 | src/pages/GamePage.jsx | P3 |
+| 1.10.11 | [Front] ★ 메인화면 KOSPI 차트·TIPS 위로 이동 — GamePage 차트(`chartButtonRef` 부근)와 TIPS Marquee 위치를 현재보다 상단으로 옮겨 시각적 무게 중심 재배치. 1695×928 좌표계에서 top 값 조정 (다른 absolute 요소 충돌 없는지 확인) | 송원호 | **취소** | 0% | 05/18 | — | 0.2 | — | P3 |
 | 1.10.12 | [Front] 거래소·정보상·기술상 3개 배경 동시 교체 — `docs/ref_user/화면구성안/{거래소,정보상,기술상}.webp` 신규 시안을 각각 `public/images/{market-bg,info-merchant-bg,tech-merchant-bg}.webp`로 덮어씀. 16:9 비율 동일, JSX `backgroundImage` 경로 변경 없음(이미지만 교체). 신규 배경은 모서리에 그려진 도움말/메인/거래소/기술상 등 네비 버튼이 없는 디자인이라 기존 투명 Hotspot 4종(`HOTSPOT.*.help/main/cross-nav`) 제거 + 1.10.5 `PageNav` 가시 버튼으로 대체. 책상 위 오브젝트 핫스팟(globe/briefcase/tablet/analysis/buy/sell)은 그대로 정합 유지 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.2 | public/images/market-bg.webp, info-merchant-bg.webp, tech-merchant-bg.webp, src/pages/{Market,InfoMerchant,TechMerchant}Page.jsx | P3 |
 | 1.10.13 | [Front] 메인화면 배경 교체 + NPC 핫스팟 정렬 — `메인화면.webp`(KRX 거래소 + 3 캐릭터: 여성·남성·여성 클러스터) 시안 이미지를 `public/images/game-bg.webp`로 덮어씀(596KB). GamePage NPC 핫스팟 좌표 HOTSPOT.npc 상수 추출(market/infoMerchant/techMerchant), 기존 inline `left=35%/48%/62%`·hardcoded width=14%/top=42%/height=55% → 새 배경 캐릭터 클러스터에 맞춰 width=8%/top=28%/height=64%, left 미세조정(거래소 누적 좌 -190px, 정보상 좌 -50px, 기술상 57%). NPCHotspot 시그니처에 top/width/height props 추가하여 호출부에서 좌표 전체 주입 가능 + 기존 bubbleOffsetX·glowOffsetX 보정값 제거 (클릭 영역이 캐릭터에 정확히 위치) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/pages/GamePage.jsx, public/images/game-bg.webp | P1 |
 | 1.10.14 | [Front] 핫스팟 좌표 상수화 리팩터 — MarketPage HOTSPOT 패턴(PR #44 리뷰)을 InfoMerchantPage / TechMerchantPage / GamePage 3페이지에 동일 적용. 각 파일 상단에 HOTSPOT 객체 정의: ① InfoMerchantPage: infoMerchant(globe/briefcase/tablet/help/main/market/techMerchant 7개) + globalPopup·companyPopup·recommendPopup(close/content/topFrame/midFrame/button) ② TechMerchantPage: popup(close/topFrame/midFrame/button 4개) ③ GamePage: npc(market/infoMerchant/techMerchant 3개). 호출부는 `style={HOTSPOT.section.label}` 단일 라인 / props spread로 단순화 — InfoMerchantPage 70여 줄 inline calc → 8줄, 픽셀 미세조정(`calc(X% + Npx)`) 한곳 관리. 모든 X 버튼 클릭 영역 위치/크기 픽셀 단위 미세조정 작업이 상수 한곳 수정으로 즉시 반영 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.4 | src/pages/InfoMerchantPage.jsx, src/pages/TechMerchantPage.jsx, src/pages/GamePage.jsx | P2 |
@@ -283,6 +284,8 @@
 | 1.10.27 | [Front] ★★ 기술상 모달 X 닫기 hotspot ObjectGlow 교체 + 좌측 8px 미세조정 — TechMerchantPage `PopupOverlay`의 X 버튼이 인라인 `<button>` + cyan 박스 윤곽(border + inset shadow)으로 그려져 매수/매도 soft halo와 톤 불일치 + 배경 X 버튼 위치와 미세 어긋남. 변경: ① 인라인 button을 같은 파일의 `<ObjectGlow>` 컴포넌트로 교체 (radial-gradient blur halo). ② `activePopup`에 따라 톤 분기 — `hiddenStocks` → **blue** (메인 ObjectGlow 깜짝종목 톤), `indicators`/`locked` → **cyan**. ③ `HOTSPOT.popup.close.right` `3.5%` → `calc(3.5% + 8px)` (사용자 2회 미세조정: +5px → +3px 누적, 좌측으로 8px 이동하여 배경 X 버튼과 정렬) | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/TechMerchantPage.jsx | P2 |
 | 1.10.28 | [Front] ★★ 정보상 3종 모달 X 닫기 hotspot ObjectGlow 교체 + 톤 분기 — InfoMerchantPage `PopupOverlay`의 X 버튼이 인라인 `<button>` + cyan 박스 윤곽으로 그려지던 것을 같은 파일의 `<ObjectGlow>`로 교체 (soft halo). `activePopup`에 따라 메인 화면 책상 위 ObjectGlow와 동일 톤 분기 — `globalNews`(지구본) → **cyan**, `companyNews`(서류가방) → **amber**, `recommendation`(태블릿) → **emerald**. 한 곳 수정으로 3개 팝업 X 버튼 모두 적용 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/InfoMerchantPage.jsx | P2 |
 | 1.10.29 | [Front] ★★★★ 전 모달·페이지 키보드 단축키 — ESC 닫기 / 메인 / 종료 + Enter 확인 + 트리거 버튼 blur 픽스 — ① **공용 훅 신설**(`src/components/hooks/useEscapeKey.js` + `useEnterKey.js`): 스택 기반 키 핸들러. 가장 최근 마운트된 핸들러만 호출되어 중첩 모달(예: 매수 모달 안 도움말 오버레이) 시 ESC 1번 → 도움말만, 2번 → 매수 모달 닫힘. `enabled` 인자로 인라인 팝오버(상태 토글로 마운트되는 비-컴포넌트 모달)에도 대응. ② **ESC 닫기 — 16개 모달/오버레이 적용**: `HelpModal` / `SettingsModal` / GamePage 4종(`ExitConfirmModal` / `ChartExpandModal` / `ModalContainer` / `HelpOverlay`) + 인라인 다음 주 확인 팝오버 / InfoMerchantPage(`PopupOverlay` 3종 + `HelpOverlay`) / TechMerchantPage(`PopupOverlay` 3종 + `HelpOverlay`) / MarketPage(`PopupOverlay` 3종 + `HelpOverlayShell` 3종 + `HelpOverlay`). ③ **장소별 메인 버튼 ESC**(`PageNav.jsx` `TopRightNav`): `useEscapeKey(() => navigateTo('main'))` — 거래소·정보상·기술상에서 페이지에 모달이 떠 있을 땐 스택상 모달 핸들러 먼저 닫히고, 모달이 없을 땐 ESC가 메인으로 이동. ④ **메인화면 종료 ESC**(`GamePage.jsx`): `useEscapeKey(() => setOpenExit(true))` — 모달 없을 때 ESC = 종료 버튼 클릭(확인 모달 오픈). 토글 동작: 확인 모달이 열린 상태에서 ESC 다시 누르면 모달 ESC 핸들러(cancel)가 우선. ⑤ **Enter 확인**(`ExitConfirmModal` `useEnterKey(onConfirm)` + 다음 주 팝오버 부모 `useEnterKey(confirmNextTurn, 활성 조건)`): 종료 모달 Enter = "종료", 다음 주 팝오버 Enter = "진행 ▶". Tab으로 "취소" 버튼 잡고 Enter 시 그 버튼만 실행되도록 글로벌 Enter 훅은 `<button>`/`<input>`/`<textarea>`/`<select>` 포커스 시 스킵. ⑥ **버그 수정 — 트리거 버튼 blur**(`handleNextTurn` / `handleExit`): "다음 주" / "종료" 버튼이 클릭 후 포커스를 유지한 상태로 모달이 열려, Enter를 누르면 브라우저가 그 포커스된 버튼의 click을 발생시켜 `handleNextTurn` 토글이 다시 실행(off) → 모달만 꺼지던 버그. 상태 변경 직전 `document.activeElement?.blur?.()` 호출로 포커스를 body로 빼서 글로벌 Enter 훅이 정상 작동. ⑦ 빌드 검증 3회(ESC 1차 / 메인·종료 추가 / Enter 추가 + blur 픽스) 모두 Vite 프로덕션 빌드 통과 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.3 | src/components/hooks/useEscapeKey.js, src/components/hooks/useEnterKey.js, src/components/game/HelpModal.jsx, SettingsModal.jsx, PageNav.jsx, src/pages/GamePage.jsx, MarketPage.jsx, InfoMerchantPage.jsx, TechMerchantPage.jsx | P1 |
+| 1.10.30 | [Front] ★★★★ Leaderboard.jsx 사이버펑크 테마 완전 재설계 — 기존 TODO 스텁(날 테이블, 무스타일) → 게임 테마 완전 통일. ① **KRX GLOBAL RANKING 헤더**: ResultPage 헤더와 동일한 시안 border 뱃지(`[KRX]`) + 우상단 내 순위 뱃지(`내 순위 #N`, myRank null 시 미표시). ② **컨테이너**: `rounded-xl border border-cyan-500/40`, `rgba(2,6,23,0.95)` 배경, `0 0 32px rgba(34,211,238,0.25)` glow. ③ **thead**: `text-cyan-400/50 text-xs font-mono tracking-widest`. ④ **상위 3위 특별 스타일**: 🥇 amber/🥈 slate/🥉 orange 행 배경+보더+닉네임 색상 분기. ⑤ **내 행 하이라이트**: `ring-1 ring-cyan-500/50 bg-cyan-500/7`, 닉네임 `text-cyan-200 font-bold` + `ME` 뱃지(시안). ⑥ **로딩**: 점 3개 `animate-pulse` + 간격 딜레이. ⑦ **빈 상태**: `"아직 등록된 랭킹이 없습니다"` 안내. ⑧ **닉네임 매칭**: `useGameStore().nickname`으로 내 행 자동 판별 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.3 | src/components/leaderboard/Leaderboard.jsx | P1 |
+| 1.10.31 | [Front] ★★★ ResultPage.jsx 랭킹 오버레이 개선 + 닫기 버튼 테마 통일 — ① 오버레이 래퍼 `max-w-lg` → `max-w-2xl` 확장(Leaderboard 테이블 충분한 너비 확보, 이중 max-w 충돌 제거). ② **닫기 버튼 재설계**: 기존 무색 `border-slate-600 text-slate-300` → 다시 하기 버튼과 동일한 슬레이트 다크 그라디언트(`linear-gradient(135deg, #334155, #1e293b)`) + `border + boxShadow + textShadow` 완전 일치. 아이콘 `✕ 닫기` 추가 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.1 | src/pages/ResultPage.jsx | P2 |
 
 ---
 
@@ -315,6 +318,23 @@
 | 1.13.2 | [데이터] 국제뉴스 전체 detail 1000자 이상 보장 — 모든 50개 항목 1000자 이상 검증, n13(809자→1059자) 포함 전수 수정 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/data/news-events.json | P1 |
 | 1.13.3 | [데이터] 기업뉴스 157개 실제 한국 시장 이벤트 기반 전면 교체 — 반도체·바이오·2차전지·자동차·조선·방산·금융 등 20개 섹터 전부 실제 기업·정책·계약 사건으로 교체 (유한양행 렉라자 FDA, 한화오션 미해군 MRO, K9 폴란드, KF-21 인도네시아, 체코 원전 등) | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/data/news-events.json | P1 |
 | 1.13.4 | [chore] PC 브라우저 호환성 패치 — browserslist 설정으로 autoprefixer webkit 접두사 자동화, @keyframes에 -webkit-backdrop-filter 추가, Vite build.target 명시, IE/구형 Edge 안내 배너 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.2 | index.html, package.json, src/index.css, vite.config.js | P2 |
+
+## 1.14 플레이테스트 & 대시보드 (배영환 — 2026-05-18)
+
+> 기간: 2026-05-18 | 담당: 배영환 | 목적: 50라운드 완주 플레이테스트 + 버그 기록 + HTML 대시보드 생성
+
+| WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
+|-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
+| 1.14.1 | [QA] 50라운드 완주 플레이테스트 — 뉴스 기반 매수/매도 전략, 매 턴 매수·매도 5회 이상, 최종 자산 31,008,439원 (+210.1%, KOSPI 대비 +32.1%p), 등급: 슈퍼개미 달성 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.5 | 플레이 기록 | P1 |
+| 1.14.2 | [QA] 게임 내 버그 3건 발견 및 기록 — BUG-001 (Critical), BUG-002 (Major), BUG-003 (Minor) 식별 및 재현 경로 문서화 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.2 | 버그 리포트 | P0 |
+| 1.14.3 | [산출물] 플레이테스트 대시보드 report.html 생성 — 사이버펑크 다크 테마, KPI 4종(최종자산·수익률·KOSPI대비·등급), Chart.js 자산변동 라인차트(점선:R1~R34 / 실선:R35~R50) + 전략별 성과 바차트, 16턴 전략 테이블, 버그 리포트 카드 3건, 기능 테스트 현황 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.5 | report.html | P2 |
+| 1.14.4 | [버그] report.html 바차트 오른쪽 잘림 수정 — 전략별 성과 바차트에서 "관망" 막대+레이블이 캔버스 밖으로 잘리는 현상. Chart.js layout.padding 또는 x축 max 값 조정으로 해결 | 배영환 | 대기 | 0% | 05/18 | 05/18 | 0.1 | report.html | P2 |
+| 1.14.5 | [버그] report.html 배지 줄바꿈 수정 — 기능 테스트 현황 "OK 정상" 배지가 두 줄로 줄바꿈되는 현상. CSS white-space: nowrap 추가로 해결 | 배영환 | 대기 | 0% | 05/18 | 05/18 | 0.05 | report.html | P3 |
+| 1.14.6 | [버그] report.html Y축 단위 수정 — 자산변동 라인차트 Y축 레이블이 "Xk만" 형식으로 표시되는 어색한 단위를 "X천만" 또는 "X,000만" 형식으로 변경 | 배영환 | 대기 | 0% | 05/18 | 05/18 | 0.05 | report.html | P3 |
+| 1.14.7 | [Fix] KODEX 200 StockChart KOSPI 추종 수정 — `stock_etf`(KODEX 200) StockChart가 ETF 실제 가격 대신 `pregame_kospi_closes` + `kospi_closes`를 ETF 시작가 기준 스케일링해 KospiChart와 동일한 모양으로 추종하도록 수정. 거래량은 실제 ETF 데이터 재사용 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.2 | src/components/game/StockChart.jsx | P1 |
+| 1.14.8 | [Fix] leaderboardStore.js submitted 버그 수정 — Supabase insert 실패 시 `submitted`가 `false`로 유지되어 "랭킹 등록" 버튼을 반복 클릭할 수 있던 버그. `handleSubmit`이 `setShowLeaderboard(true)`를 항상 호출해 오버레이는 열리는데 버튼 상태가 되돌아오는 UX 불일치. 에러 분기(`if (error)`)에 `submitted: true` 추가 → 저장 실패해도 버튼이 "랭킹 확인"으로 전환됨(중복 등록 방지). `error` 상태는 유지되어 후속 에러 표시 가능 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.05 | src/store/leaderboardStore.js | P1 |
+
+---
 
 ## 브랜치 전략
 
