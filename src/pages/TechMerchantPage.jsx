@@ -47,6 +47,22 @@ const INDICATOR_LABELS = {
 }
 // 지표별 구매 가능 최소 턴
 const INDICATOR_UNLOCK_TURN = { ma: 10, bollinger: 20, macd: 30, obv: 15 }
+
+// ─────────────────────────────────────────────────────────
+// 핫스팟 좌표 상수 — 팝업 내부 3-zone (추천종목.webp 프레임 공용)
+//   close: 그려진 X 버튼 위 클릭 영역
+//   topFrame: 상단 큰 프레임 (지표/종목/잠금 본문)
+//   midFrame: 중단 작은 프레임 (보유 현금/턴 상태)
+//   button: 하단 그린 버튼 (닫기)
+// ─────────────────────────────────────────────────────────
+const HOTSPOT = {
+  popup: {
+    close:    { top: '6.5%', right: '3.5%', width: '6.5%', height: '7.5%' },
+    topFrame: { top: '14%',  left: '6%',    right: '6%',   height: '48%'  },
+    midFrame: { top: '63%',  left: '6%',    right: '6%',   height: '10.5%' },
+    button:   { top: '74%',  left: '6%',    right: '6%',   height: '15%'  },
+  },
+}
 export default function TechMerchantPage() {
   const {
     navigateTo, cash, turn,
@@ -239,111 +255,172 @@ function ObjectGlow({ style, label, onClick, glowColor = 'cyan' }) {
 }
 
 // ─────────────────────────────────────────────────────────
-// 팝업 컨테이너 — 차트지표 / 깜짝종목 / 잠금 안내 공통 모달
+// 팝업 컨테이너 — 차트지표 / 깜짝종목 / 잠금 공통 모달
+// 배경: 추천종목.webp (4:3 HUD 프레임 — InfoMerchantPage와 공유)
+// 3-zone 레이아웃: 상단 본문 / 중단 상태 / 하단 그린 닫기 버튼
 // ─────────────────────────────────────────────────────────
 function PopupOverlay({
   activePopup, turn, cash, purchasedMap,
   packageStocks, unlockPackageStock, buyIndicator,
   onClose,
 }) {
-  const title = {
-    indicators: '차트 지표 구매',
-    hiddenStocks: '깜짝 종목 판매상',
-    locked: '아직 사용할 수 없는 기능',
-  }[activePopup]
+  const isLocked = activePopup === 'locked'
+  const remaining = TECH_MERCHANT_UNLOCK_TURN - turn
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-page-enter"
       onClick={onClose}
     >
       <div
-        className="relative bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500/60 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-[0_0_40px_rgba(34,211,238,0.2)]"
+        className="relative"
+        style={{
+          width: 'min(72vw, calc(78vh * 4 / 3))',
+          maxWidth: '46rem', /* 기존 max-w-2xl(42rem)에 살짝 여유 */
+          aspectRatio: '4/3',
+          backgroundImage: "url('/images/info-recommendation-bg.webp')",
+          backgroundSize: '100% 100%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-cyan-300 font-mono tracking-wider">{title}</h2>
-          <button
-            onClick={onClose}
-            style={{ outline: 'none' }}
-            className="text-cyan-300 hover:text-cyan-100 text-xl w-8 h-8 flex items-center justify-center transition-all duration-150 focus:outline-none"
-          >
-            ✕
-          </button>
+        {/* X 버튼 — 좌표는 HOTSPOT.popup.close (수동 미세조정 가능) */}
+        <button
+          onClick={onClose}
+          aria-label="닫기"
+          style={{ outline: 'none', position: 'absolute', ...HOTSPOT.popup.close }}
+          className="group focus:outline-none cursor-pointer rounded-md"
+        >
+          <span className="absolute inset-0 rounded-md border-2 border-transparent group-hover:border-cyan-300 group-hover:shadow-[inset_0_0_15px_rgba(34,211,238,0.4),0_0_15px_rgba(34,211,238,0.4)] transition-all duration-150 pointer-events-none" />
+        </button>
+
+        {/* 상단 큰 프레임 — 본문 */}
+        <div
+          style={{ position: 'absolute', ...HOTSPOT.popup.topFrame }}
+          className="p-3 overflow-hidden"
+        >
+          {isLocked && <LockedView turn={turn} />}
+          {activePopup === 'indicators' && (
+            <IndicatorsView turn={turn} cash={cash} purchasedMap={purchasedMap} buyIndicator={buyIndicator} />
+          )}
+          {activePopup === 'hiddenStocks' && (
+            <HiddenStocksView cash={cash} packageStocks={packageStocks} unlockPackageStock={unlockPackageStock} />
+          )}
         </div>
 
-        {activePopup !== 'locked' && (
-          <div className="flex items-center justify-between bg-slate-800/70 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm mb-4">
-            <span className="text-cyan-300/70 font-mono text-xs tracking-wider">보유 현금</span>
-            <span className="font-bold text-cyan-100 tabular-nums">{cash.toLocaleString()}원</span>
-          </div>
-        )}
+        {/* 중단 작은 프레임 — 보유 현금 / 잠금 카운트다운 (HUD LED 톤) */}
+        <div
+          style={{ position: 'absolute', ...HOTSPOT.popup.midFrame }}
+          className="px-5 flex items-center justify-between"
+        >
+          {isLocked ? (
+            <span className="w-full text-center text-sm md:text-base font-mono tracking-wider text-cyan-300/80">
+              현재 <span className="text-cyan-50 font-bold tabular-nums drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">{turn}</span>턴
+              <span className="mx-2 text-cyan-500/40">·</span>
+              {remaining > 0 ? (
+                <><span className="text-emerald-300 font-bold tabular-nums">{remaining}</span>턴 남음</>
+              ) : (
+                <span className="text-emerald-300 font-bold">곧 해금</span>
+              )}
+            </span>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                <span className="text-sm md:text-base text-cyan-300/80 font-mono tracking-wider">보유 현금</span>
+              </div>
+              <span className="text-lg md:text-xl font-bold text-cyan-50 tabular-nums font-mono drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+                {cash.toLocaleString()}원
+              </span>
+            </>
+          )}
+        </div>
 
-        {activePopup === 'locked' && <LockedView turn={turn} />}
-        {activePopup === 'indicators' && (
-          <IndicatorsView turn={turn} cash={cash} purchasedMap={purchasedMap} buyIndicator={buyIndicator} />
-        )}
-        {activePopup === 'hiddenStocks' && (
-          <HiddenStocksView
-            cash={cash}
-            packageStocks={packageStocks}
-            unlockPackageStock={unlockPackageStock}
-          />
-        )}
+        {/* 하단 그린 버튼 — 닫기 (배경 이미지 그린 버튼 위 클릭 타겟) */}
+        <button
+          onClick={onClose}
+          style={{ outline: 'none', position: 'absolute', ...HOTSPOT.popup.button }}
+          className="rounded-lg focus:outline-none transition-all duration-150 group cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+        >
+          <span className="absolute inset-0 rounded-lg flex items-center justify-center group-hover:shadow-[inset_0_0_25px_rgba(52,211,153,0.45),0_0_30px_rgba(52,211,153,0.45)] transition-all duration-150">
+            <span className="text-lg md:text-2xl font-bold font-mono tracking-widest text-emerald-50 drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]">
+              닫기 ✕
+            </span>
+          </span>
+        </button>
       </div>
     </div>
   )
 }
 
-// 잠금 안내 — 10턴 이전 클릭 시
+// 잠금 안내 — 자물쇠 + 안내 문구 (원본 한글 유지, 폰트만 키움)
 function LockedView({ turn }) {
-  const remaining = TECH_MERCHANT_UNLOCK_TURN - turn
   return (
-    <div className="bg-slate-800/70 border border-cyan-500/30 rounded-lg p-6 text-center">
-      <p className="text-5xl mb-3">🔒</p>
-      <p className="font-bold text-cyan-100 mb-2">10턴 이후에 사용 가능합니다</p>
-      <p className="text-xs text-cyan-300/70 leading-relaxed">
+    <div className="h-full flex flex-col items-center justify-center text-center px-4">
+      <p className="text-6xl md:text-7xl mb-4 drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]">🔒</p>
+      <p className="font-bold text-cyan-50 text-xl md:text-2xl mb-3 font-mono tracking-wider drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">
+        10턴 이후에 사용 가능합니다
+      </p>
+      <p className="text-sm md:text-base text-cyan-100/85 leading-relaxed">
         차트 지표 구매와 깜짝 종목 판매상은
         <br />
-        게임 <span className="text-cyan-200 font-bold">10턴</span> 이후부터 열립니다.
-      </p>
-      <p className="text-xs text-cyan-300/50 mt-3 font-mono">
-        현재 {turn}턴 · {remaining > 0 ? `${remaining}턴 남음` : '곧 해금'}
+        게임 <span className="text-emerald-300 font-bold">10턴</span> 이후부터 열립니다
       </p>
     </div>
   )
 }
 
-// 차트 지표 구매 뷰
+// 상태 LED 도트 — 색상별 (cyan: 사용가능 / emerald: 보유중 / slate: 잠금)
+function StatusDot({ tone, pulse }) {
+  const cls = {
+    cyan:    'bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.9)]',
+    emerald: 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]',
+    slate:   'bg-slate-500 shadow-[0_0_4px_rgba(100,116,139,0.6)]',
+  }[tone]
+  return <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cls} ${pulse ? 'animate-pulse' : ''}`} />
+}
+
+// 차트 지표 구매 — HUD 톤 리스트 (한글 문구 유지)
 function IndicatorsView({ turn, cash, purchasedMap, buyIndicator }) {
+  const items = Object.entries(INDICATOR_COSTS).sort(
+    ([a], [b]) => INDICATOR_UNLOCK_TURN[a] - INDICATOR_UNLOCK_TURN[b],
+  )
   return (
-    <div className="space-y-2">
-      <p className="text-cyan-300/70 text-xs font-mono mb-3 tracking-wider">
-        📊 구매한 지표는 거래소 차트에 영구 표시됩니다.
-      </p>
-      {Object.entries(INDICATOR_COSTS).sort(([a], [b]) => INDICATOR_UNLOCK_TURN[a] - INDICATOR_UNLOCK_TURN[b]).map(([key, cost]) => {
-        const minTurn = INDICATOR_UNLOCK_TURN[key]
-        const locked = turn < minTurn
+    <div className="h-full flex flex-col gap-2 overflow-y-auto pr-1 scrollbar-cyan">
+      {items.map(([key, cost]) => {
+        const minTurn  = INDICATOR_UNLOCK_TURN[key]
+        const locked   = turn < minTurn
+        const purchased = purchasedMap[key]
+        const tone = purchased ? 'emerald' : locked ? 'slate' : 'cyan'
         return (
-          <div key={key} className="flex items-center justify-between bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3">
-            <div>
-              <p className="font-bold text-sm text-cyan-100">{INDICATOR_LABELS[key]}</p>
-              <p className="text-xs text-cyan-300/70 mt-0.5">
-                {locked
-                  ? `${minTurn}턴 이후 구매 가능 (현재 ${turn}턴)`
-                  : `${cost.toLocaleString()}원`}
-              </p>
+          <div
+            key={key}
+            className={`flex items-center justify-between bg-slate-900/55 border rounded-lg px-4 py-3 shadow-[inset_0_0_15px_rgba(34,211,238,0.06)] ${
+              purchased ? 'border-emerald-500/50' : locked ? 'border-slate-600/40' : 'border-cyan-500/40'
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <StatusDot tone={tone} pulse={!locked && !purchased} />
+              <div className="min-w-0">
+                <p className="font-bold text-base text-cyan-50 truncate font-mono tracking-wider">{INDICATOR_LABELS[key]}</p>
+                <p className="text-xs text-cyan-300/80 mt-0.5 font-mono tabular-nums">
+                  {locked
+                    ? <>{minTurn}턴 이후 구매 가능 · 현재 <span className="text-cyan-100 font-bold">{turn}</span>턴</>
+                    : <span className="text-yellow-200/90">{cost.toLocaleString()}원</span>}
+                </p>
+              </div>
             </div>
-            {purchasedMap[key] ? (
-              <span className="text-emerald-400 text-sm font-bold font-mono">구매완료</span>
+            {purchased ? (
+              <span className="text-emerald-200 text-xs font-bold font-mono px-3 py-1.5 bg-emerald-900/40 border border-emerald-400/60 rounded shadow-[0_0_10px_rgba(52,211,153,0.3)] tracking-wider">구매완료</span>
             ) : locked ? (
-              <span className="text-slate-500 text-sm font-mono">잠김</span>
+              <span className="text-slate-400 text-xs font-mono px-3 py-1.5 bg-slate-800/50 border border-slate-600/40 rounded tracking-wider">잠김</span>
             ) : (
               <button
                 onClick={() => buyIndicator(key, cost)}
                 disabled={cash < cost}
                 style={{ outline: 'none' }}
-                className="px-3 py-1.5 bg-cyan-600/80 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-400/50"
+                className="px-4 py-1.5 bg-gradient-to-b from-cyan-500 to-cyan-700 hover:from-cyan-400 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-800 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-300/60 font-mono tracking-wider text-cyan-50 shadow-[0_0_10px_rgba(34,211,238,0.25)] disabled:shadow-none disabled:border-slate-600/40"
               >
                 {cash < cost ? '잔액부족' : '구매'}
               </button>
@@ -355,39 +432,47 @@ function IndicatorsView({ turn, cash, purchasedMap, buyIndicator }) {
   )
 }
 
-// 깜짝 종목 판매상 뷰
+// 깜짝 종목 판매상 — HUD 톤 리스트 (한글 문구 유지)
 function HiddenStocksView({ cash, packageStocks, unlockPackageStock }) {
+  if (packageStocks.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center">
+        <p className="text-5xl mb-3 drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]">🎲</p>
+        <p className="text-cyan-300/70 text-base font-mono tracking-wider">비공개 종목이 없습니다</p>
+      </div>
+    )
+  }
   return (
-    <div className="space-y-2">
-      <p className="text-cyan-300/70 text-xs font-mono mb-3 tracking-wider">
-        🎲 예측 불가능한 비공개 종목 — 종목별 개별 구매 가능
-      </p>
-      {packageStocks.length === 0 ? (
-        <p className="text-cyan-300/60 text-sm text-center py-6 font-mono">비공개 종목이 없습니다.</p>
-      ) : (
-        packageStocks.map((stock, i) => (
+    <div className="h-full flex flex-col gap-2 overflow-y-auto pr-1 scrollbar-cyan">
+      {packageStocks.map((stock, i) => {
+        const canBuy = cash >= stock.packagePrice
+        return (
           <div
             key={stock.id}
-            className="flex justify-between items-center bg-slate-800/70 border border-cyan-500/30 rounded-lg p-3"
+            className={`flex items-center justify-between bg-slate-900/55 border rounded-lg px-4 py-3 shadow-[inset_0_0_15px_rgba(34,211,238,0.06)] ${
+              canBuy ? 'border-cyan-500/40' : 'border-slate-600/40'
+            }`}
           >
-            <span className="font-bold text-cyan-100">??? ({i + 1}번 종목)</span>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <div className="text-cyan-400 text-sm font-mono">{stock.packagePrice.toLocaleString()}원</div>
-                <div className="text-cyan-500/60 text-xs font-mono">{stock.quantity ?? 1}주 포함</div>
+            <div className="flex items-center gap-3 min-w-0">
+              <StatusDot tone={canBuy ? 'cyan' : 'slate'} pulse={canBuy} />
+              <div className="min-w-0">
+                <p className="font-bold text-base text-cyan-50 truncate font-mono tracking-wider">??? ({i + 1}번 종목)</p>
+                <p className="text-xs text-cyan-300/80 mt-0.5 font-mono tabular-nums">
+                  <span className="text-yellow-200/90">{stock.packagePrice.toLocaleString()}원</span> · {stock.quantity ?? 1}주 포함
+                </p>
               </div>
-              <button
-                onClick={() => unlockPackageStock(stock.id)}
-                disabled={cash < stock.packagePrice}
-                style={{ outline: 'none' }}
-                className="px-3 py-1.5 bg-cyan-600/80 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-400/50"
-              >
-                {cash < stock.packagePrice ? '잔액부족' : '구매'}
-              </button>
             </div>
+            <button
+              onClick={() => unlockPackageStock(stock.id)}
+              disabled={!canBuy}
+              style={{ outline: 'none' }}
+              className="px-4 py-1.5 bg-gradient-to-b from-cyan-500 to-cyan-700 hover:from-cyan-400 hover:to-cyan-600 disabled:from-slate-700 disabled:to-slate-800 disabled:text-slate-500 rounded text-sm font-bold transition-all duration-150 focus:outline-none border border-cyan-300/60 font-mono tracking-wider text-cyan-50 shadow-[0_0_10px_rgba(34,211,238,0.25)] disabled:shadow-none disabled:border-slate-600/40"
+            >
+              {canBuy ? '구매' : '잔액부족'}
+            </button>
           </div>
-        ))
-      )}
+        )
+      })}
     </div>
   )
 }
