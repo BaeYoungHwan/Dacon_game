@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 QA 자동화 — Vitest 단위·통합 테스트 66개 + getBollingerSignal NaN 버그 수정 + PR #48 머지. 1.11 신규 — 송원호 UI 폴리시 12건 배치. ★★★★★ 메인화면 호버·기술상 컨텐츠 UI / ★★★★ 거래소 매수매도 MAX 버튼·수량 input 포커스 시 0 사라짐·전량매도→전체매도 (1.10.3 완료) / 정보상 뉴스 갱신 애니메이션·정보상 3종 UI·공용 버튼 톤 통일·각 화면별 설정 추가 / ★★★ 모멘텀펄스 라이너 교체·MACD↔OBV 위치 스왑 / ★★ 거래소 합계 금액 텍스트 좌측 정렬 / ★ 메인화면 설정 모달 UI 개선·KOSPI 차트·TIPS 위로 이동·거래소 배경 교체)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.12 뉴스 시스템 고도화 — news-events.json 85→170개 확장 + gameLogic 기업뉴스 3~5개 보장 + dateIndexMap O(1) 최적화 + nearbyIds 중복 방지 + NewsPanel·InfoMerchantPage detail 가시성 개선 + 테스트 7→14케이스 + PR #54 머지 가능. 이전: 1.10 QA 자동화 PR #48 완료 / 1.11 UI 폴리시 12건 배치)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -40,7 +40,8 @@
 | 1.9 하네스 업그레이드 | 11 | 11 | 100% |
 | 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
 | 1.11 UI 폴리시 (송원호) | 15 | 6 | 40.0% |
-| **전체** | **116** | **98** | **84.5%** |
+| 1.12 뉴스 시스템 고도화 (배영환) | 6 | 6 | 100% |
+| **전체** | **122** | **104** | **85.2%** |
 
 ---
 
@@ -269,6 +270,22 @@
 | 1.10.15 | [Front] StockChart 캔들·거래량 막대 Y축 라벨 겹침 수정 — `StockChart.jsx` `EDGE=8→11`로 좌측 내부 여백 3px 확장. 첫/마지막 캔들과 거래량 막대가 Y축 라벨과 시각적으로 떨어지도록 보정. `toX()`/`candleWidth()`가 EDGE를 공유하므로 단일 상수 변경으로 메인 차트·거래량·MACD 히스토그램·OBV 라인 모두 일관되게 3px 우측 이동 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/components/game/StockChart.jsx | P3 |
 
 ---
+
+---
+
+## 1.12 뉴스 시스템 고도화 (배영환 — 2026-05-17 추가)
+
+> 기간: 2026-05-17 | 담당: 배영환 | PR: #54 (머지 가능)
+> 목적: 라운드당 기업뉴스 0~3개 → 3~5개 보장, 국제뉴스 detail 가시성 개선
+
+| WBS | 태스크 | 담당자 | 상태 | 진척도 | 계획 시작 | 계획 종료 | 기간(일) | 산출물 | 우선순위 |
+|-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
+| 1.12.1 | [데이터] news-events.json 85→170개 확장 — 기업뉴스 n86~n170 추가(날짜별 ≥3개 보장), 국제뉴스 14개 detail 30~60자 → 100~150자 리라이팅 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/data/news-events.json | P0 |
+| 1.12.2 | [로직] gameLogic.js 기업뉴스 3~5개 보장 로직 — 날짜 매칭 → ±4턴 윈도우 → 전체 pool 3단계 보충, dateIndexMap Map O(1) 최적화(indexOf 반복 제거), nearbyIds Set 중복 방지, mulberry32 시드 RNG 결정적 셔플 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.5 | src/lib/gameLogic.js | P0 |
+| 1.12.3 | [QA] gameLogic.test.js 보강 — 7케이스→14케이스: 기업뉴스 3~5개 보장·라운드 내 ID 중복 없음·결정성·날짜 매칭 우선, globalNews 모든 턴 null 아님·sector=전체 검증 추가 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/__tests__/lib/gameLogic.test.js | P1 |
+| 1.12.4 | [UI] NewsPanel.jsx 뉴스 detail 가시성 개선 — 국제/기업뉴스 detail text-xs text-gray-400 → text-sm text-gray-200 + leading-relaxed + 구분선(border-t) + TODO 주석 제거 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/components/game/NewsPanel.jsx | P1 |
+| 1.12.5 | [UI] InfoMerchantPage.jsx CompanyNewsView detail 가시성 개선 — text-xs text-cyan-100/80 → text-sm text-cyan-100/90 + border-t border-cyan-500/25 + pt-2 mt-2 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.1 | src/pages/InfoMerchantPage.jsx | P1 |
+| 1.12.6 | [QA] PR #54 생성 + 2차 코드 리뷰 완료 — filler 중복 버그 수정, dateIndexMap 성능 개선, 테스트 보강, 리뷰 결론: 필수 수정 없음 머지 가능 | 배영환 | 완료 | 100% | 05/17 | 05/17 | 0.2 | GitHub PR #54 | P1 |
 
 ## 브랜치 전략
 
