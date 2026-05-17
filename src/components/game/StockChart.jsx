@@ -152,6 +152,16 @@ function LegendLine({ color, dashed, label }) {
   )
 }
 
+// KODEX 200 ETF 캔들 생성 — KOSPI close를 ETF 시작가 기준으로 스케일링
+// ETF 원본 캔들의 high/low 비율을 그대로 적용해 실제 변동폭 반영
+function buildEtfCandle(k, prevK, etfCandle, scale, date) {
+  const c = Math.round(k * scale)
+  const o = Math.round((prevK ?? k) * scale)
+  const highRatio = etfCandle?.close > 0 ? (etfCandle.high ?? etfCandle.close) / etfCandle.close : 1.003
+  const lowRatio  = etfCandle?.close > 0 ? (etfCandle.low  ?? etfCandle.close) / etfCandle.close : 0.997
+  return { open: o, high: Math.round(c * highRatio), low: Math.round(c * lowRatio), close: c, volume: etfCandle?.volume ?? 0, date: date ?? '' }
+}
+
 // 패널 프레임 — 각 차트 섹션을 감싸는 네온 보더 + 좌상단 라벨 칩
 const TONE = {
   violet: {
@@ -216,23 +226,18 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
     if (stockEntry.id === 'stock_etf') {
       const pregameKospi = stockData.pregame_kospi_closes ?? []
       const gameKospi    = (stockData.kospi_closes ?? []).slice(0, turn)
-      const baseKospi    = pregameKospi[0] || 1
-      const baseEtf      = stockEntry.pregame_prices[0]?.close || 36000
-      const scale        = baseEtf / baseKospi
-      const etfPre       = stockEntry.pregame_prices ?? []
-      const etfGame      = stockEntry.prices ?? []
-
-      const toCandle = (k, prevK, vol, date) => {
-        const c = Math.round(k * scale)
-        const o = Math.round((prevK ?? k) * scale)
-        return { open: o, high: Math.round(Math.max(o, c) * 1.003), low: Math.round(Math.min(o, c) * 0.997), close: c, volume: vol ?? 0, date: date ?? '' }
-      }
+      const baseKospi    = pregameKospi[0]
+      const baseEtf      = stockEntry.pregame_prices[0]?.close
+      if (!baseEtf || !baseKospi) return null
+      const scale = baseEtf / baseKospi
+      const etfPre  = stockEntry.pregame_prices ?? []
+      const etfGame = stockEntry.prices ?? []
 
       pregame    = pregameKospi.map((k, i) =>
-        toCandle(k, pregameKospi[i - 1], etfPre[i]?.volume, stockData.meta.pregame_dates?.[i])
+        buildEtfCandle(k, pregameKospi[i - 1], etfPre[i], scale, stockData.meta.pregame_dates?.[i])
       )
       gamePrices = gameKospi.map((k, i) =>
-        toCandle(k, i === 0 ? pregameKospi[pregameKospi.length - 1] : gameKospi[i - 1], etfGame[i]?.volume, stockData.meta.dates?.[i])
+        buildEtfCandle(k, i === 0 ? pregameKospi[pregameKospi.length - 1] : gameKospi[i - 1], etfGame[i], scale, stockData.meta.dates?.[i])
       )
     } else {
       pregame    = stockEntry.pregame_prices ?? []

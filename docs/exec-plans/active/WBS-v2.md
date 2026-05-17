@@ -328,9 +328,9 @@
 | 1.14.1 | [QA] 50라운드 완주 플레이테스트 — 뉴스 기반 매수/매도 전략, 매 턴 매수·매도 5회 이상, 최종 자산 31,008,439원 (+210.1%, KOSPI 대비 +32.1%p), 등급: 슈퍼개미 달성 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.5 | 플레이 기록 | P1 |
 | 1.14.2 | [QA] 게임 내 버그 3건 발견 및 기록 — BUG-001 (Critical), BUG-002 (Major), BUG-003 (Minor) 식별 및 재현 경로 문서화 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.2 | 버그 리포트 | P0 |
 | 1.14.3 | [산출물] 플레이테스트 대시보드 report.html 생성 — 사이버펑크 다크 테마, KPI 4종(최종자산·수익률·KOSPI대비·등급), Chart.js 자산변동 라인차트(점선:R1~R34 / 실선:R35~R50) + 전략별 성과 바차트, 16턴 전략 테이블, 버그 리포트 카드 3건, 기능 테스트 현황 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.5 | report.html | P2 |
-| 1.14.4 | [버그] report.html 바차트 오른쪽 잘림 수정 — 전략별 성과 바차트에서 "관망" 막대+레이블이 캔버스 밖으로 잘리는 현상. Chart.js layout.padding 또는 x축 max 값 조정으로 해결 | 배영환 | 대기 | 0% | 05/18 | 05/18 | 0.1 | report.html | P2 |
-| 1.14.5 | [버그] report.html 배지 줄바꿈 수정 — 기능 테스트 현황 "OK 정상" 배지가 두 줄로 줄바꿈되는 현상. CSS white-space: nowrap 추가로 해결 | 배영환 | 대기 | 0% | 05/18 | 05/18 | 0.05 | report.html | P3 |
-| 1.14.6 | [버그] report.html Y축 단위 수정 — 자산변동 라인차트 Y축 레이블이 "Xk만" 형식으로 표시되는 어색한 단위를 "X천만" 또는 "X,000만" 형식으로 변경 | 배영환 | 대기 | 0% | 05/18 | 05/18 | 0.05 | report.html | P3 |
+| 1.14.4 | [버그] report.html 바차트 오른쪽 잘림 수정 — 전략별 성과 바차트에서 "관망" 막대+레이블이 캔버스 밖으로 잘리는 현상. Chart.js layout.padding 또는 x축 max 값 조정으로 해결 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.1 | report.html | P2 |
+| 1.14.5 | [버그] report.html 배지 줄바꿈 수정 — 기능 테스트 현황 "OK 정상" 배지가 두 줄로 줄바꿈되는 현상. CSS white-space: nowrap 추가로 해결 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.05 | report.html | P3 |
+| 1.14.6 | [버그] report.html Y축 단위 수정 — 자산변동 라인차트 Y축 레이블이 "Xk만" 형식으로 표시되는 어색한 단위를 "X천만" 또는 "X,000만" 형식으로 변경 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.05 | report.html | P3 |
 | 1.14.7 | [Fix] KODEX 200 StockChart KOSPI 추종 수정 — `stock_etf`(KODEX 200) StockChart가 ETF 실제 가격 대신 `pregame_kospi_closes` + `kospi_closes`를 ETF 시작가 기준 스케일링해 KospiChart와 동일한 모양으로 추종하도록 수정. 거래량은 실제 ETF 데이터 재사용 | 배영환 | 완료 | 100% | 05/18 | 05/18 | 0.2 | src/components/game/StockChart.jsx | P1 |
 | 1.14.8 | [Fix] leaderboardStore.js submitted 버그 수정 — Supabase insert 실패 시 `submitted`가 `false`로 유지되어 "랭킹 등록" 버튼을 반복 클릭할 수 있던 버그. `handleSubmit`이 `setShowLeaderboard(true)`를 항상 호출해 오버레이는 열리는데 버튼 상태가 되돌아오는 UX 불일치. 에러 분기(`if (error)`)에 `submitted: true` 추가 → 저장 실패해도 버튼이 "랭킹 확인"으로 전환됨(중복 등록 방지). `error` 상태는 유지되어 후속 에러 표시 가능 | 송원호 | 완료 | 100% | 05/18 | 05/18 | 0.05 | src/store/leaderboardStore.js | P1 |
 
