@@ -47,8 +47,8 @@ function generatePackage(hiddenStocks, prices) {
     ;[pool[i], pool[j]] = [pool[j], pool[i]]
   }
 
-  // 1~3개 무작위 선택
-  const count = Math.min(pool.length, Math.floor(Math.random() * 3) + 1)
+  // 3~5개 무작위 선택
+  const count = Math.min(pool.length, Math.floor(Math.random() * 3) + 3)
   const selected = pool.slice(0, count)
 
   // 각 종목: 목표 가치 100만~200만원 → 주수 계산 → ±10% 적용 = 구매가
