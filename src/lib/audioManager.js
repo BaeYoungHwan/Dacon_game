@@ -63,7 +63,9 @@ export function play(trackName) {
 
   const startNew = () => {
     currentTrack = trackName
-    currentAudio = new Audio(src)
+    currentAudio = new Audio()
+    currentAudio.preload = "none"
+    currentAudio.src = src
     currentAudio.loop = true
     fadeIn(currentAudio, isMuted ? 0 : targetVolume)
   }
