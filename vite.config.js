@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    target: ['chrome90', 'edge79', 'firefox88', 'safari14'],
+  },
   test: {
     globals: true,
     environment: 'jsdom',
