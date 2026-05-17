@@ -438,7 +438,7 @@ function SellHelpOverlay({ onClose }) {
 
           <HelpSection tone="rose" icon="⚡" title="빠른 단축 액션">
             <p>
-              <strong className="text-rose-200">전량 매도</strong>: 보유 종목 전부를 보유 수량만큼 자동 설정.
+              <strong className="text-rose-200">전체 매도</strong>: 보유 종목 전부를 보유 수량만큼 자동 설정.
             </p>
             <p>
               <strong className="text-rose-200">전체 해제</strong>: 모든 종목 수량을 0으로 리셋.
@@ -834,6 +834,7 @@ function MiniSparkline({ closes, width = 64, height = 20, tone = 'flat' }) {
 function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
   const turn = useGameStore((s) => s.turn)
   const [quantities, setQuantities] = useState({}) // { stockId: number }
+  const [focusedId, setFocusedId] = useState(null) // 포커스 중인 input의 stock.id — qty=0일 때 빈 칸으로 표시
 
   const getQty = (id) => quantities[id] || 0
   const setQty = (id, qty) => {
@@ -994,8 +995,10 @@ function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
                 <input
                   type="number"
                   min="0"
-                  value={qty}
+                  value={focusedId === stock.id && qty === 0 ? '' : qty}
                   onChange={(e) => setQty(stock.id, parseInt(e.target.value) || 0)}
+                  onFocus={(e) => { setFocusedId(stock.id); e.target.select() }}
+                  onBlur={() => setFocusedId(null)}
                   className={
                     'w-14 px-1 py-1 rounded bg-transparent border text-center text-base font-mono tabular-nums focus:outline-none transition-all ' +
                     (isActive
@@ -1009,6 +1012,20 @@ function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
                   className="w-8 h-8 rounded border border-cyan-500/30 text-cyan-300 hover:text-cyan-100 hover:border-cyan-400 hover:shadow-[0_0_6px_rgba(34,211,238,0.3)] transition-all focus:outline-none font-bold text-base"
                 >
                   ＋
+                </button>
+                {/* MAX — 다른 종목 매수 금액을 제외한 잔액으로 살 수 있는 최대 수량 */}
+                <button
+                  onClick={() => {
+                    const available = cash - totalCost + subTotal
+                    const maxQty = stockPrice > 0 ? Math.max(0, Math.floor(available / stockPrice)) : 0
+                    setQty(stock.id, maxQty)
+                  }}
+                  disabled={stockPrice <= 0 || (cash - totalCost + subTotal) < stockPrice}
+                  style={{ outline: 'none' }}
+                  className="px-2 h-8 rounded border border-cyan-500/30 text-cyan-300 hover:text-cyan-100 hover:border-cyan-400 hover:shadow-[0_0_6px_rgba(34,211,238,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-cyan-500/30 disabled:hover:shadow-none transition-all focus:outline-none font-bold text-xs font-mono tracking-wider"
+                  title="가능한 최대 수량으로 설정"
+                >
+                  MAX
                 </button>
               </div>
               {/* 매수 대상일 때만 소계 표시 */}
@@ -1090,6 +1107,7 @@ function BulkBuyPanel({ stocks, prices, portfolio, cash, onBuy }) {
 function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
   const turn = useGameStore((s) => s.turn)
   const [quantities, setQuantities] = useState({}) // { stockId: number }
+  const [focusedId, setFocusedId] = useState(null) // 포커스 중인 input의 stock.id — qty=0일 때 빈 칸으로 표시
 
   // 보유 종목만 노출
   const heldStocks = stocks.filter((s) => (portfolio[s.id] || 0) > 0)
@@ -1103,7 +1121,7 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
   const incQty = (id) => setQty(id, getQty(id) + 1)
   const decQty = (id) => setQty(id, getQty(id) - 1)
 
-  // 전체 매도: 보유 종목 전부 전량 매도 / 전체 해제: 0
+  // 전체 매도: 보유 종목 전부를 보유 수량만큼 / 전체 해제: 0
   const sellAll = () => {
     const next = {}
     heldStocks.forEach((s) => { next[s.id] = portfolio[s.id] || 0 })
@@ -1160,7 +1178,7 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
             style={{ outline: 'none' }}
             className="text-rose-300/70 hover:text-rose-100 disabled:opacity-30 disabled:hover:text-rose-300/70 transition-colors focus:outline-none"
           >
-            전량 매도
+            전체 매도
           </button>
           <span className="text-rose-500/30">|</span>
           <button
@@ -1258,8 +1276,10 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
                     type="number"
                     min="0"
                     max={stockHeld}
-                    value={qty}
+                    value={focusedId === stock.id && qty === 0 ? '' : qty}
                     onChange={(e) => setQty(stock.id, parseInt(e.target.value) || 0)}
+                    onFocus={(e) => { setFocusedId(stock.id); e.target.select() }}
+                    onBlur={() => setFocusedId(null)}
                     className={
                       'w-14 px-1 py-1 rounded bg-transparent border text-center text-base font-mono tabular-nums focus:outline-none transition-all ' +
                       (isActive
@@ -1274,6 +1294,16 @@ function BulkSellPanel({ stocks, prices, portfolio, cash, onSell }) {
                     className="w-8 h-8 rounded border border-rose-500/30 text-rose-300 hover:text-rose-100 hover:border-rose-400 hover:shadow-[0_0_6px_rgba(244,63,94,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-rose-500/30 disabled:hover:shadow-none transition-all focus:outline-none font-bold text-base"
                   >
                     ＋
+                  </button>
+                  {/* MAX — 보유 수량 전체 매도 */}
+                  <button
+                    onClick={() => setQty(stock.id, stockHeld)}
+                    disabled={qty >= stockHeld}
+                    style={{ outline: 'none' }}
+                    className="px-2 h-8 rounded border border-rose-500/30 text-rose-300 hover:text-rose-100 hover:border-rose-400 hover:shadow-[0_0_6px_rgba(244,63,94,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-rose-500/30 disabled:hover:shadow-none transition-all focus:outline-none font-bold text-xs font-mono tracking-wider"
+                    title="보유 전부 매도"
+                  >
+                    MAX
                   </button>
                 </div>
                 {/* 매도 대상일 때만 매도 금액 표시 */}
