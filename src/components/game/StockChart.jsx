@@ -382,64 +382,6 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
         </div>
       </PanelFrame>
 
-      {/* === 모멘텀 펄스 (MACD) — 유효 히스토그램만 X축 전 폭으로 펼침 === */}
-      <PanelFrame label="모멘텀 펄스 (MACD)" tone="violet" locked={!macdPurchased}>
-        {macdPurchased ? (() => {
-          // MACD 워밍업(35주) 이전엔 null이라 그대로 두면 우측에 쏠림 — 유효 인덱스만 추출해 X축 재구성
-          const validHist = histLine
-            .map((h, i) => ({ h, originalIdx: i }))
-            .filter(({ h }) => h !== null && h !== undefined)
-          if (validHist.length === 0) {
-            return (
-              <div className="flex items-center justify-center py-6 text-cyan-300/40 text-xs font-mono tracking-wider">
-                MACD 데이터 준비 중... (35주 이상 필요)
-              </div>
-            )
-          }
-          const histVals = validHist.map(({ h }) => h)
-          const absMax = Math.max(...histVals.map(Math.abs), 0.001)
-          const minM = -absMax
-          const maxM = absMax
-          const zeroY = toY(0, minM, maxM, SUB_H)
-          const macdTotal = validHist.length
-          const macdDates = validHist.map(({ originalIdx }) => dates[originalIdx])
-          const histBarW = Math.max(1.5, candleWidth(macdTotal) * 0.7)
-          return (
-            <div className="w-full" style={{ aspectRatio: `${SVG_W} / ${SUB_H}` }}>
-              <svg
-                viewBox={`0 0 ${SVG_W} ${SUB_H}`}
-                width="100%"
-                height="100%"
-                preserveAspectRatio="none"
-                style={{ display: "block" }}
-              >
-                <NeonGlowDefs id="macdGlow" stdDeviation={1} />
-                <SubYAxis minV={minM} maxV={maxM} svgH={SUB_H} steps={3}
-                  formatter={(v) => v.toFixed(2)} extraGap={4} />
-                <XAxisLabels dates={macdDates} total={macdTotal} svgH={SUB_H} />
-                {/* 0 기준선 */}
-                <line x1={PAD.left} x2={SVG_W - PAD.right} y1={zeroY} y2={zeroY}
-                  stroke="rgba(34,211,238,0.4)" strokeDasharray="3 3" strokeWidth={1} />
-                {/* 히스토그램 막대 — 한국 증시 컨벤션: 양수(올라간) 빨강, 음수(내려간) 파랑 */}
-                <g filter="url(#macdGlow)">
-                  {validHist.map(({ h }, newIdx) => {
-                    const hy = toY(h, minM, maxM, SUB_H)
-                    const x = toX(newIdx, macdTotal) - histBarW / 2
-                    const top = Math.min(hy, zeroY)
-                    const height = Math.max(Math.abs(hy - zeroY), 0.5)
-                    return (
-                      <rect key={newIdx} x={x} y={top} width={histBarW} height={height}
-                        fill={h >= 0 ? '#ef4444' : '#3b82f6'}
-                        fillOpacity={0.85} />
-                    )
-                  })}
-                </g>
-              </svg>
-            </div>
-          )
-        })() : <LockedHint />}
-      </PanelFrame>
-
       {/* === 머니 플로우 (OBV) — 강한 시안 글로우 === */}
       <PanelFrame label="머니 플로우 (OBV)" tone="emerald" locked={!obvPurchased}>
         {obvPurchased && obv.length > 0 ? (() => {
@@ -469,6 +411,75 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
                   <polyline points={buildPolylinePoints(obv, total, safeMin, safeMax, SUB_H)}
                     fill="none" stroke="#22d3ee" strokeWidth={2.8}
                     strokeLinecap="round" strokeLinejoin="round" />
+                </g>
+              </svg>
+            </div>
+          )
+        })() : <LockedHint />}
+      </PanelFrame>
+
+      {/* === 모멘텀 펄스 (MACD) — 유효 히스토그램만 X축 전 폭으로 펼침 === */}
+      <PanelFrame label="모멘텀 펄스 (MACD)" tone="violet" locked={!macdPurchased}>
+        {macdPurchased ? (() => {
+          // MACD 워밍업(35주) 이전엔 null이라 그대로 두면 우측에 쏠림 — 유효 인덱스만 추출해 X축 재구성
+          const validHist = histLine
+            .map((h, i) => ({ h, originalIdx: i }))
+            .filter(({ h }) => h !== null && h !== undefined)
+          if (validHist.length === 0) {
+            return (
+              <div className="flex items-center justify-center py-6 text-cyan-300/40 text-xs font-mono tracking-wider">
+                MACD 데이터 준비 중... (35주 이상 필요)
+              </div>
+            )
+          }
+          const histVals = validHist.map(({ h }) => h)
+          const absMax = Math.max(...histVals.map(Math.abs), 0.001)
+          const minM = -absMax
+          const maxM = absMax
+          const zeroY = toY(0, minM, maxM, SUB_H)
+          const macdTotal = validHist.length
+          const macdDates = validHist.map(({ originalIdx }) => dates[originalIdx])
+          // 라인 포인트 — 유효 히스토그램 값을 단일 폴리라인으로 연결
+          const linePoints = validHist
+            .map(({ h }, newIdx) => `${toX(newIdx, macdTotal)},${toY(h, minM, maxM, SUB_H)}`)
+            .join(' ')
+          // 0선 기준으로 위(상승 빨강)·아래(하락 파랑) 영역을 분리해 두 색을 한 라인에 표현
+          const aboveClipId = 'macdAboveClip'
+          const belowClipId = 'macdBelowClip'
+          return (
+            <div className="w-full" style={{ aspectRatio: `${SVG_W} / ${SUB_H}` }}>
+              <svg
+                viewBox={`0 0 ${SVG_W} ${SUB_H}`}
+                width="100%"
+                height="100%"
+                preserveAspectRatio="none"
+                style={{ display: "block" }}
+              >
+                <NeonGlowDefs id="macdGlow" stdDeviation={1} />
+                <defs>
+                  {/* 0선 위 영역만 노출 → 빨강 라인용 */}
+                  <clipPath id={aboveClipId}>
+                    <rect x={0} y={0} width={SVG_W} height={zeroY} />
+                  </clipPath>
+                  {/* 0선 아래 영역만 노출 → 파랑 라인용 */}
+                  <clipPath id={belowClipId}>
+                    <rect x={0} y={zeroY} width={SVG_W} height={SUB_H - zeroY} />
+                  </clipPath>
+                </defs>
+                <SubYAxis minV={minM} maxV={maxM} svgH={SUB_H} steps={3}
+                  formatter={(v) => v.toFixed(2)} extraGap={4} />
+                <XAxisLabels dates={macdDates} total={macdTotal} svgH={SUB_H} />
+                {/* 0 기준선 */}
+                <line x1={PAD.left} x2={SVG_W - PAD.right} y1={zeroY} y2={zeroY}
+                  stroke="rgba(34,211,238,0.4)" strokeDasharray="3 3" strokeWidth={1} />
+                {/* 히스토그램 라인 — 한국 증시 컨벤션: 0선 위(양수) 빨강, 아래(음수) 파랑 */}
+                <g filter="url(#macdGlow)">
+                  <polyline points={linePoints} fill="none" stroke="#ef4444"
+                    strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+                    clipPath={`url(#${aboveClipId})`} />
+                  <polyline points={linePoints} fill="none" stroke="#3b82f6"
+                    strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+                    clipPath={`url(#${belowClipId})`} />
                 </g>
               </svg>
             </div>

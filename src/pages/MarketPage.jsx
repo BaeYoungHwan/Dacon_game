@@ -327,14 +327,14 @@ function AnalysisHelpOverlay({ onClose }) {
 
           <HelpSection icon="⚡" title="모멘텀 펄스 (MACD)" badge="기술상 구매">
             <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-4 bg-[#ef4444] rounded-sm" />
-              <span><strong className="text-rise">빨강 막대</strong> (양수): 상승 모멘텀 — 매수세 우위</span>
+              <span className="inline-block w-6 h-0.5 bg-[#ef4444] shadow-[0_0_4px_rgba(239,68,68,0.7)]" />
+              <span><strong className="text-rise">빨강 라인</strong> (0선 위): 상승 모멘텀 — 매수세 우위</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-4 bg-[#3b82f6] rounded-sm" />
-              <span><strong className="text-fall">파랑 막대</strong> (음수): 하락 모멘텀 — 매도세 우위</span>
+              <span className="inline-block w-6 h-0.5 bg-[#3b82f6] shadow-[0_0_4px_rgba(59,130,246,0.7)]" />
+              <span><strong className="text-fall">파랑 라인</strong> (0선 아래): 하락 모멘텀 — 매도세 우위</span>
             </div>
-            <p className="text-cyan-300/70 text-xs">막대가 0선을 가로지르며 색이 바뀌면 추세 전환 신호일 수 있어요.</p>
+            <p className="text-cyan-300/70 text-xs">라인이 0선을 가로지르며 색이 바뀌면 추세 전환 신호일 수 있어요.</p>
           </HelpSection>
 
           <HelpSection icon="💧" title="머니 플로우 (OBV)" badge="기술상 구매">
