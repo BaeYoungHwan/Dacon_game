@@ -1,6 +1,6 @@
 # k-stock-merchant WBS v2.0
 
-> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 QA 자동화 — Vitest 단위·통합 테스트 66개 + getBollingerSignal NaN 버그 수정 + PR #48 머지. 1.11 신규 — 송원호 UI 폴리시 12건 배치. ★★★★★ 메인화면 호버·기술상 컨텐츠 UI / ★★★★ 거래소 매수매도 max버튼·정보상 뉴스 갱신 애니메이션·정보상 3종 UI·공용 버튼 톤 통일·각 화면별 설정 추가 / ★★★ 모멘텀펄스 라이너 교체·MACD↔OBV 위치 스왑 / ★★ 거래소 합계 금액 텍스트 좌측 정렬 / ★ 메인화면 설정 모달 UI 개선·KOSPI 차트·TIPS 위로 이동·거래소 배경 교체)
+> 프로젝트: k-stock-merchant | 작성자: 배영환 | 작성일: 2026-05-13 | 최종 업데이트: 2026-05-17 (1.10 QA 자동화 — Vitest 단위·통합 테스트 66개 + getBollingerSignal NaN 버그 수정 + PR #48 머지. 1.11 신규 — 송원호 UI 폴리시 12건 배치. ★★★★★ 메인화면 호버·기술상 컨텐츠 UI / ★★★★ 거래소 매수매도 MAX 버튼·수량 input 포커스 시 0 사라짐·전량매도→전체매도 (1.10.3 완료) / 정보상 뉴스 갱신 애니메이션·정보상 3종 UI·공용 버튼 톤 통일·각 화면별 설정 추가 / ★★★ 모멘텀펄스 라이너 교체·MACD↔OBV 위치 스왑 / ★★ 거래소 합계 금액 텍스트 좌측 정렬 / ★ 메인화면 설정 모달 UI 개선·KOSPI 차트·TIPS 위로 이동·거래소 배경 교체)
 > 전체 기간: 2026-05-13 ~ 2026-05-18 (5일)
 > 팀: 배영환 (3년차 + Claude Code) / 송원호 (초급 React)
 > 협업: PR 기반 코드 리뷰 | 브랜치: feature/* → master
@@ -39,8 +39,8 @@
 | 1.8 추가 작업 | 7 | 5 | 71.4% |
 | 1.9 하네스 업그레이드 | 11 | 11 | 100% |
 | 1.10 QA 자동화 (배영환) | 9 | 9 | 100% |
-| 1.11 UI 폴리시 (송원호) | 12 | 0 | 0% |
-| **전체** | **113** | **92** | **81.4%** |
+| 1.11 UI 폴리시 (송원호) | 15 | 6 | 40.0% |
+| **전체** | **116** | **98** | **84.5%** |
 
 ---
 
@@ -254,7 +254,7 @@
 |-----|--------|--------|------|--------|-----------|-----------|----------|--------|----------|
 | 1.10.1 | [Front] ★★★★★ 메인화면 호버 작업 — GamePage NPC 3인 / 좌측 자산 카드 / KOSPI 차트 / 우상단 IconButton / 다음 주 버튼 / TIPS Marquee 호버 인터랙션 보강 (현재 22건 group-hover 존재하나 시안 글로우 톤·라벨 풍선·커서·트랜지션 일관성 점검 + 부족한 영역 호버 피드백 추가) | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.5 | src/pages/GamePage.jsx | P0 |
 | 1.10.2 | [Front] ★★★★★ 기술상 컨텐츠 UI 개선 — TechMerchantPage PopupOverlay 3종(indicators/hiddenStocks/locked)을 추천종목.webp 배경(4:3) + 3-zone 레이아웃(topFrame / midFrame / button)으로 리뉴얼. 기존 max-w-2xl 모달 사이즈 유지(`width: min(72vw, calc(78vh*4/3))`, `maxWidth: 46rem`). HOTSPOT.popup 상수(close/topFrame/midFrame/button) 추가, LockedView/IndicatorsView/HiddenStocksView 재구성: LED 인디케이터 도트 + StatusDot 컴포넌트(cyan/emerald/slate 색상별 상태) + scrollbar-cyan 적용. 한글 문구 유지(보유 현금/구매/구매완료/잠김/닫기/10턴 이후 사용 가능) + 폰트 크기 확대(text-sm→text-base, text-[10px]→text-xs). 하단 그린 버튼 닫기 ✕(에메랄드 글로우). | 송원호 | 완료 | 100% | 05/17 | 05/17 | 1 | src/pages/TechMerchantPage.jsx | P0 |
-| 1.10.3 | [Front] ★★★★ 거래소 매수/매도 max 버튼 추가 — `BulkBuyPanel` 종목 행의 수량 컨트롤에 `MAX` 버튼 신설(현재 보유 현금으로 살 수 있는 최대 주수 자동 계산: `Math.floor(cash / price)`). `BulkSellPanel`은 보유 수량(`stockHeld`)을 자동 입력. 기존 `+ / -` 컨트롤 옆에 시안/로즈 톤 작은 버튼으로 배치 | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx | P1 |
+| 1.10.3 | [Front] ★★★★ 거래소 매수/매도 MAX 버튼 + 수량 input UX 보완 + 매도 문구 정리 — ① `BulkBuyPanel` 종목 행 `＋` 옆에 `MAX` 버튼 신설: 다른 종목에 입력 중인 매수액을 제외한 사용 가능 잔액으로 살 수 있는 최대 주수 자동 계산(`Math.floor((cash - totalCost + subTotal) / stockPrice)`), 1주도 못 사면 비활성. ② `BulkSellPanel` 종목 행 `＋` 옆에 `MAX` 버튼 신설: 보유 수량(`stockHeld`) 자동 입력, 이미 전량 입력(`qty >= stockHeld`) 시 비활성. ③ 수량 input UX 보완 — 패널별 `focusedId` state 도입 + `value={focusedId === stock.id && qty === 0 ? '' : qty}` → 첫 진입 시 `0` 그대로 표시, 클릭(포커스) 시 입력칸 빈 칸으로 전환되어 초기 0이 안 사라지던 문제 해결. `onFocus={(e) => { setFocusedId(stock.id); e.target.select() }}`로 비-0 값일 때도 클릭 즉시 selectAll되어 다음 키 입력에 자연 대체. `onBlur` 시 다시 0 표시로 복귀. ④ 단축 액션 `전량 매도` → `전체 매도`로 문구 변경 (매도 모달 단축 버튼 + 매도 헬프 섹션 strong 라벨 + 내부 주석). 시안/로즈 톤 작은 MAX 버튼(`px-2 h-8`) 배치 | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx | P1 |
 | 1.10.4 | [Front] ★★★★ 정보상 3종 팝업 UI 개선 + 뉴스 갱신 애니메이션 — 국제뉴스/기업뉴스/추천종목 팝업 배경을 각각 국제뉴스.webp(16:9, 2560×1440) / 기업뉴스.webp(16:9, 2560×1440) / 추천종목.webp(4:3, 1408×1056) 시안 이미지로 교체. 그려진 X 버튼 위치에 투명 클릭 영역 + hover 시안 글로우. 콘텐츠 디자인: ① 국제뉴스 BREAKING 카드(시안 모서리 deco + 배지 라인 + 헤드라인 + 그라데이션 구분선 + 디테일) ② 기업뉴스 섹터별 그리드(개수 적응 1/2/3/4+ — 1개 max-w-2xl, 2개 2열, 3개 3열, 4+개 2x2 / 3열, 정보 없는 섹터는 숨김) ③ 추천종목 3-zone(잠금: LOCKED 상태바+자물쇠 본문+안내 footer / 공개: UNLOCKED · 다음 주 최고 상승 예상 상태바 + 종목명·현재가/등락률 비공개 2단 카드 + RECEIPT 영수증 라인). HOTSPOT.{globalPopup/companyPopup/recommendPopup} 상수에 close + content/topFrame/midFrame/button 좌표 모음. **새 라운드 뉴스 슬라이드 인 애니메이션은 1.10.4-anim 분리 추후 작업** | 송원호 | 완료 | 100% | 05/17 | 05/17 | 0.7 | src/pages/InfoMerchantPage.jsx, public/images/info-global-news-bg.webp, public/images/info-company-news-bg.webp, public/images/info-recommendation-bg.webp | P1 |
 | 1.10.5 | [Front] ★★★★ 공용 버튼 UI 통일 — 현재 페이지마다 산재한 버튼 스타일을 `bg-transparent + border-cyan-500/* + hover:border-cyan-300` 패턴(배경 없는 라인 버튼)으로 통일. `src/components/ui/Button.jsx` 변형 추가하거나 새 컴포넌트(예: `LineButton`) 도입 후 GamePage / MarketPage / InfoMerchantPage / TechMerchantPage / SettingsModal / ExitConfirmModal 일괄 교체 | 송원호 | 대기 | 0% | 05/17 | 05/18 | 0.5 | src/components/ui/Button.jsx, 5개 페이지·모달 | P1 |
 | 1.10.6 | [Front] ★★★★ 각 화면별 설정 버튼 추가 — 현재 GamePage 우상단에만 있는 설정 모달을 MarketPage / InfoMerchantPage / TechMerchantPage에도 추가(우상단 핫스팟 옆 또는 공통 슬롯). `SettingsModal` 재사용 + `audioStore` 그대로 사용 | 송원호 | 대기 | 0% | 05/17 | 05/17 | 0.3 | src/pages/MarketPage.jsx, InfoMerchantPage.jsx, TechMerchantPage.jsx | P1 |
