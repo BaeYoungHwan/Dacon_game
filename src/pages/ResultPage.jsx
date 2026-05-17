@@ -349,14 +349,21 @@ export default function ResultPage() {
 
       {/* 리더보드 오버레이 */}
       {showLeaderboard && (
-        <div className='absolute inset-0 flex items-center justify-center bg-slate-950/90 z-50 px-8'>
-          <div className='w-full max-w-lg'>
+        <div className='absolute inset-0 flex items-center justify-center bg-slate-950/90 z-50 p-8'>
+          <div className='w-full max-w-2xl'>
             <Leaderboard />
             <button
               onClick={() => setShowLeaderboard(false)}
-              className='mt-4 w-full py-3 rounded-xl font-black font-mono tracking-wide border-2 border-slate-600 text-slate-300 transition-all duration-150 hover:bg-slate-700/40'
+              className='mt-3 w-full py-3 rounded-xl text-base font-black font-mono tracking-wide transition-all duration-150 hover:opacity-90 active:scale-95'
+              style={{
+                background: 'linear-gradient(135deg, #334155, #1e293b)',
+                color: '#CBD5E1',
+                border: '1px solid rgba(148,163,184,0.4)',
+                boxShadow: '0 0 20px rgba(148,163,184,0.2), inset 0 0 12px rgba(148,163,184,0.05)',
+                textShadow: '0 0 10px rgba(148,163,184,0.7)',
+              }}
             >
-              닫기
+              ✕ 닫기
             </button>
           </div>
         </div>

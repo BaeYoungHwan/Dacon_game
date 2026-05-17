@@ -20,7 +20,8 @@ export const useLeaderboardStore = create((set, get) => ({
       .from('rankings')
       .insert({ nickname, final_asset: finalAsset, grade })
     if (error) {
-      set({ error: error.message, loading: false })
+      // 저장 실패해도 submitted: true → 중복 등록 버튼 방지
+      set({ error: error.message, loading: false, submitted: true })
       return
     }
     set({ submitted: true })

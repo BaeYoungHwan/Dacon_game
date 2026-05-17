@@ -211,8 +211,34 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
   const chartData = useMemo(() => {
     if (!stockEntry) return null
 
-    const pregame   = stockEntry.pregame_prices ?? []
-    const gamePrices = (stockEntry.prices ?? []).slice(0, turn)
+    // KODEX 200 ETF — KospiChart와 동일한 kospi_closes 데이터를 ETF 시작가 기준으로 스케일링
+    let pregame, gamePrices
+    if (stockEntry.id === 'stock_etf') {
+      const pregameKospi = stockData.pregame_kospi_closes ?? []
+      const gameKospi    = (stockData.kospi_closes ?? []).slice(0, turn)
+      const baseKospi    = pregameKospi[0] || 1
+      const baseEtf      = stockEntry.pregame_prices[0]?.close || 36000
+      const scale        = baseEtf / baseKospi
+      const etfPre       = stockEntry.pregame_prices ?? []
+      const etfGame      = stockEntry.prices ?? []
+
+      const toCandle = (k, prevK, vol, date) => {
+        const c = Math.round(k * scale)
+        const o = Math.round((prevK ?? k) * scale)
+        return { open: o, high: Math.round(Math.max(o, c) * 1.003), low: Math.round(Math.min(o, c) * 0.997), close: c, volume: vol ?? 0, date: date ?? '' }
+      }
+
+      pregame    = pregameKospi.map((k, i) =>
+        toCandle(k, pregameKospi[i - 1], etfPre[i]?.volume, stockData.meta.pregame_dates?.[i])
+      )
+      gamePrices = gameKospi.map((k, i) =>
+        toCandle(k, i === 0 ? pregameKospi[pregameKospi.length - 1] : gameKospi[i - 1], etfGame[i]?.volume, stockData.meta.dates?.[i])
+      )
+    } else {
+      pregame    = stockEntry.pregame_prices ?? []
+      gamePrices = (stockEntry.prices ?? []).slice(0, turn)
+    }
+
     const allCandles = [...pregame, ...gamePrices]
     const total = allCandles.length
 
