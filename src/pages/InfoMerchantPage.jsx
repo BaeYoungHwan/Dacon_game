@@ -389,7 +389,7 @@ function CompanyNewsView({ sectors, currentNews }) {
                 <p className="font-bold text-base md:text-lg text-cyan-50 mb-2 leading-snug drop-shadow-[0_0_6px_rgba(34,211,238,0.3)]">
                   📰 {n.headline}
                 </p>
-                <p className="text-xs md:text-sm text-cyan-100/80 leading-relaxed">{n.detail}</p>
+                <p className="text-sm text-cyan-100/90 leading-relaxed border-t border-cyan-500/25 pt-2 mt-2">{n.detail}</p>
               </div>
             ))}
           </div>
