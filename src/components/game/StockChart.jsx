@@ -159,7 +159,9 @@ function buildEtfCandle(k, prevK, etfCandle, scale, date) {
   const o = Math.round((prevK ?? k) * scale)
   const highRatio = etfCandle?.close > 0 ? (etfCandle.high ?? etfCandle.close) / etfCandle.close : 1.003
   const lowRatio  = etfCandle?.close > 0 ? (etfCandle.low  ?? etfCandle.close) / etfCandle.close : 0.997
-  return { open: o, high: Math.round(c * highRatio), low: Math.round(c * lowRatio), close: c, volume: etfCandle?.volume ?? 0, date: date ?? '' }
+  const high = Math.max(Math.round(c * highRatio), o, c)
+  const low  = Math.min(Math.round(c * lowRatio),  o, c)
+  return { open: o, high, low, close: c, volume: etfCandle?.volume ?? 0, date: date ?? '' }
 }
 
 // 패널 프레임 — 각 차트 섹션을 감싸는 네온 보더 + 좌상단 라벨 칩
@@ -520,3 +522,5 @@ export default function StockChart({ stockId, maPurchased, bollingerPurchased, m
     </div>
   )
 }
+
+export { buildEtfCandle }
