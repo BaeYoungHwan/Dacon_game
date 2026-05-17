@@ -467,7 +467,9 @@ function RecommendationView({ insiderTip, insiderFee, isLastTurn, alreadyBought,
                 <div className="shrink-0 w-36 md:w-44 lg:w-56 flex flex-col items-stretch justify-center py-1.5 px-2 gap-3 md:gap-4">
                   {/* 종목명 + 현재가 (이전 자물쇠 자리) */}
                   <div className="flex flex-col items-center text-center gap-2 md:gap-2.5">
-                    <p className="text-xl md:text-2xl lg:text-3xl font-bold text-emerald-50 drop-shadow-[0_0_12px_rgba(52,211,153,0.7)] leading-tight break-keep">
+                    {/* break-words: 긴 한글 종목명("삼성바이오로직스" 등)도 우측 컨테이너 폭 안에서 자동 줄바꿈
+                        leading-tight: 줄바꿈 시 줄간격 보정 / min-w-0: flex 자식이 부모 폭 초과 방지 */}
+                    <p className="min-w-0 max-w-full text-lg md:text-xl lg:text-2xl font-bold text-emerald-50 drop-shadow-[0_0_12px_rgba(52,211,153,0.7)] leading-tight break-words">
                       {insiderTip.name}
                     </p>
                     <span aria-hidden="true" className="w-2/3 h-px bg-gradient-to-r from-emerald-500/0 via-emerald-400/65 to-emerald-500/0" />
