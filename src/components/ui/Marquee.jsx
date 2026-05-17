@@ -4,13 +4,13 @@
 //   leftLabel : 좌측 고정 라벨 (예: '📢 TIPS')
 //
 // 동작:
-//   - setInterval(18s)마다 idx 증가 → key 변경 → 새 React 요소 마운트 → animation 재시작
-//   - CSS @keyframes marquee-single (index.css): 18s linear forwards
+//   - setInterval(12s)마다 idx 증가 → key 변경 → 새 React 요소 마운트 → animation 재시작
+//   - CSS @keyframes marquee-single (index.css): 12s linear forwards
 //   - hover 시 일시정지
 
 import { useState, useEffect } from 'react'
 
-const CYCLE_MS = 18000 // index.css의 animation duration과 일치 (18s)
+const CYCLE_MS = 12000 // index.css의 animation duration과 일치 (12s)
 
 export default function Marquee({ items, leftLabel = '📢 TIPS' }) {
   const [idx, setIdx] = useState(0)
@@ -28,7 +28,7 @@ export default function Marquee({ items, leftLabel = '📢 TIPS' }) {
   if (!items || items.length === 0) return null
 
   return (
-    <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur border-2 border-cyan-500/60 rounded-lg shadow-[0_0_20px_rgba(34,211,238,0.2)] overflow-hidden flex items-center h-7 animate-marquee-pause">
+    <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur border-2 border-cyan-500/60 rounded-xl shadow-[0_0_40px_rgba(34,211,238,0.2)] overflow-hidden flex items-center h-7 animate-marquee-pause">
       {/* 좌측 고정 라벨 — cyan-500/80 + border로 살짝 톤다운, 식별성은 유지 */}
       <span className="flex-shrink-0 px-2 py-0.5 bg-cyan-500/80 text-slate-950 text-[10px] font-bold tracking-wider font-mono border-r border-cyan-300/40 shadow-[2px_0_8px_rgba(34,211,238,0.4)] z-10">
         {leftLabel}

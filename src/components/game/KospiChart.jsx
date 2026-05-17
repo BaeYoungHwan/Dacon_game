@@ -15,9 +15,10 @@ const SVG_H = 110
 export default function KospiChart({ compact = false }) {
   // compact일 땐 격자·라벨이 없으니 padding을 좁혀 라인을 넓게 펼침
   // full 모드 PAD.left는 Y축 라벨 텍스트 폭 + 약간의 간격만 확보 (라벨 좌측 정렬과 함께)
+  // full 모드 PAD.right는 마커 글로우 잘림 방지용 최소 여백만 (차트가 우측 끝까지 펼쳐짐)
   const PAD = compact
     ? { top: 6, right: 8, bottom: 6, left: 8 }
-    : { top: 10, right: 8, bottom: 22, left: 34 }
+    : { top: 10, right: 10, bottom: 22, left: 34 }
 
   const toX = (i, total) => {
     const drawW = SVG_W - PAD.left - PAD.right
@@ -87,14 +88,23 @@ export default function KospiChart({ compact = false }) {
     y: toY(v, minV, maxV),
   }))
 
-  // X축 라벨 — pregame 시작 + 게임 시작 + 마지막
+  // X축 라벨 — PREGAME 시작 + 게임 시작 + 현재 3개 (각 align 다름)
   const xLabels = []
-  if (allDates[pregameCount]) {
-    xLabels.push({ idx: pregameCount, label: allDates[pregameCount].slice(2, 7) })
+  if (pregameCount > 0 && allDates[0]) {
+    xLabels.push({ idx: 0, label: allDates[0].slice(2, 7), align: 'start' })
   }
-  if (total > 1 && total - 1 !== pregameCount) {
-    xLabels.push({ idx: total - 1, label: allDates[total - 1]?.slice(2, 7) ?? "" })
+  if (allDates[pregameCount] && pregameCount > 0) {
+    xLabels.push({ idx: pregameCount, label: allDates[pregameCount].slice(2, 7), align: 'middle' })
   }
+  if (total > 1 && total - 1 !== pregameCount && total - 1 !== 0) {
+    xLabels.push({ idx: total - 1, label: allDates[total - 1]?.slice(2, 7) ?? "", align: 'end' })
+  }
+
+  // GAME 기간 통계 — pregame 제외, 게임 입장 이후 종가만 기준
+  // (HIGH/LOW/RANGE는 footer 통계 셀에 표시)
+  const gameHigh = gameCloses.length > 0 ? Math.max(...gameCloses) : null
+  const gameLow  = gameCloses.length > 0 ? Math.min(...gameCloses) : null
+  const gameRange = gameHigh !== null && gameLow !== null ? gameHigh - gameLow : null
 
   // 게임 라인 area fill용 polygon — 라인 시작점(pregame 마지막 or game 첫 점)부터 마지막까지 영역
   const areaStartX = pregameCloses.length > 0
@@ -107,46 +117,73 @@ export default function KospiChart({ compact = false }) {
   const upColor = "#f87171"   // 상승 빨강 (한국 주식 표준)
   const downColor = "#60a5fa" // 하락 파랑
 
+  // 헤더(LED + KOSPI + 가격 + 변동률 배지) — 두 모드 공통
+  // compact일 땐 디바이더 제거 (아래 차트가 없으므로 줄 분리 불필요)
+  // non-compact는 모달에서 가독성 위해 LED·라벨·가격·배지 모두 한 단계 크게
+  const header = (
+    <div className={`flex items-center justify-between gap-2 ${!compact ? 'pb-2 mb-2 border-b border-cyan-500/20' : ''}`}>
+      {/* 좌: LED + KOSPI */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className={`${compact ? 'w-2 h-2' : 'w-3 h-3'} bg-cyan-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.9)]`} />
+        <span className={`${compact ? 'text-xs' : 'text-xl'} text-cyan-300 font-bold tracking-[0.3em] font-mono`}>KOSPI</span>
+      </div>
+
+      {/* 우: 가격 + 변동률 배지 */}
+      <div className="flex items-baseline gap-2 min-w-0">
+        <span
+          className={`${compact ? 'text-xl' : 'text-3xl'} font-bold text-cyan-100 font-mono tabular-nums leading-none`}
+          style={{ textShadow: '0 0 14px rgba(34,211,238,0.55)' }}
+        >
+          <AnimatedNumber value={currentClose} />
+        </span>
+        {/* 변동률 배지 — 색상 박스로 강조 (compact 모드의 유일한 트렌드 시각 단서) */}
+        <span
+          className={`${compact ? 'text-xs px-2 py-0.5' : 'text-sm px-2.5 py-1'} font-bold font-mono tabular-nums rounded border whitespace-nowrap flex-shrink-0 ${
+            isUp
+              ? 'bg-red-500/15 text-red-300 border-red-400/50 shadow-[0_0_10px_rgba(248,113,113,0.3)]'
+              : 'bg-blue-500/15 text-blue-300 border-blue-400/50 shadow-[0_0_10px_rgba(96,165,250,0.3)]'
+          }`}
+        >
+          {isUp ? '▲' : '▼'} {isUp ? '+' : ''}<AnimatedNumber value={changePct} decimals={2} />%
+        </span>
+      </div>
+    </div>
+  )
+
+  // ─────────────────────────────────────────────────────────
+  // compact 모드 — 단일 행 ticker (차트·footer·모서리 deco 모두 제거)
+  // KOSPI 수치와 변동률만 표시, TIPS 전광판과 자매 톤
+  // ─────────────────────────────────────────────────────────
+  if (compact) {
+    return (
+      <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur rounded-xl px-4 py-2 border-2 border-cyan-500/60 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+        {header}
+      </div>
+    )
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // non-compact 모드 (ChartExpandModal) — 헤더 + SVG 차트 + footer + 모서리 deco
+  // 컨테이너 padding은 px-4 pt-3 pb-4 (하단 통계 아래로 여유 확보)
+  // ─────────────────────────────────────────────────────────
   return (
-    <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur rounded-xl px-3 pt-2 pb-1 border-2 border-cyan-500/60 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
-      {/* 좌상단 모서리 deco — GamePage 시그니처(다음 주 버튼/popover와 통일) */}
+    <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 backdrop-blur rounded-xl px-4 pt-3 pb-4 border-2 border-cyan-500/60 shadow-[0_0_40px_rgba(34,211,238,0.2)]">
+      {/* 모서리 deco — GamePage 시그니처(다음 주 버튼/popover와 통일) */}
       <span className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400 rounded-tl-xl pointer-events-none" />
       <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-400 rounded-tr-xl pointer-events-none" />
       <span className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-400 rounded-bl-xl pointer-events-none" />
       <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400 rounded-br-xl pointer-events-none" />
 
-      {/* 헤더: KOSPI INDEX 라벨 + 라이브 인디케이터 + LED 가격 + 화살표 변동률 */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm text-cyan-300 font-bold tracking-[0.25em]">KOSPI</span>
-          <span className="text-[10px] text-cyan-500/70 tracking-wider font-mono">INDEX</span>
-          <span className="flex items-center gap-1 ml-1">
-            <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-            <span className="text-[10px] text-cyan-400/80 font-mono tracking-wider">LIVE</span>
-          </span>
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span
-            className="text-xl font-bold text-cyan-100 font-mono tabular-nums leading-none"
-            style={{ textShadow: '0 0 8px rgba(34,211,238,0.4)' }}
-          >
-            <AnimatedNumber value={currentClose} />
-          </span>
-          <span className={`text-sm font-bold flex items-center gap-0.5 tabular-nums font-mono ${isUp ? 'text-red-400' : 'text-blue-400'}`}>
-            <span className="text-xs">{isUp ? '▲' : '▼'}</span>
-            {isUp ? '+' : ''}<AnimatedNumber value={changePct} decimals={2} />%
-          </span>
-        </div>
-      </div>
+      {header}
 
-      {/* SVG 차트 — 컨테이너 px-3을 무효화하기 위해 inline style로 음수 margin + 확장 width */}
+      {/* SVG 차트 — 컨테이너 px-4(16px)를 무효화하기 위해 inline style로 음수 margin + 확장 width */}
       <svg
         viewBox={`0 0 ${SVG_W} ${SVG_H}`}
         style={{
           display: 'block',
-          width: 'calc(100% + 24px)',
-          marginLeft: '-12px',
-          marginRight: '-12px',
+          width: 'calc(100% + 32px)',
+          marginLeft: '-16px',
+          marginRight: '-16px',
         }}
       >
         <defs>
@@ -187,19 +224,17 @@ export default function KospiChart({ compact = false }) {
           </g>
         ))}
 
-        {/* X축 라벨 — compact에선 숨김 */}
-        {!compact && xLabels.map(({ idx, label }) => {
-          const isLast = idx === total - 1
-          return (
-            <text key={idx} x={toX(idx, total)} y={SVG_H - PAD.bottom + 14}
-              textAnchor={isLast ? 'end' : 'middle'} fill="#67e8f9" fontSize={9}
-              fontFamily="monospace" opacity="0.85">
-              {label}
-            </text>
-          )
-        })}
+        {/* X축 라벨 — PREGAME 시작·게임 시작·현재 3개 (align 별로 textAnchor) */}
+        {xLabels.map(({ idx, label, align }) => (
+          <text key={idx} x={toX(idx, total)} y={SVG_H - PAD.bottom + 14}
+            textAnchor={align === 'end' ? 'end' : align === 'start' ? 'start' : 'middle'}
+            fill="#67e8f9" fontSize={9}
+            fontFamily="monospace" opacity="0.85">
+            {label}
+          </text>
+        ))}
 
-        {/* pregame 영역 어두운 배경 (좌측) */}
+        {/* pregame 영역 어두운 배경 (좌측) — 회색 톤으로 게임 진입 이전 시각적 구분 */}
         {pregameCount > 0 && pregameCount < total && (
           <rect
             x={PAD.left}
@@ -285,15 +320,31 @@ export default function KospiChart({ compact = false }) {
             />
           </>
         )}
+
       </svg>
 
-      {/* 푸터: OPEN 가격 + 기간 표시 — compact에선 숨김 */}
-      {!compact && (
-        <div className="flex items-center justify-between text-sm mt-1.5 text-cyan-400/80 font-mono tracking-wider">
-          <span>OPEN <span className="text-cyan-200 font-bold">{Math.round(startClose).toLocaleString()}</span></span>
-          <span className="text-cyan-200 font-bold">W{turn}/{totalTurns}</span>
-        </div>
-      )}
+      {/* 푸터 통계 — 4셀 한 줄, justify-between으로 차트 좌→우 전체 폭에 균등 배치
+          첫 셀 좌측 고정 · 마지막 셀 우측 고정 · 중간 2셀 균등 간격 → 데이터 대시보드 톤 */}
+      <div className="flex items-baseline justify-between gap-4 mt-3 pt-3 border-t border-cyan-500/25">
+        <StatCell label="OPEN"  value={Math.round(startClose).toLocaleString()} />
+        <StatCell label="HIGH"  value={gameHigh !== null ? Math.round(gameHigh).toLocaleString() : '—'} color="up" />
+        <StatCell label="LOW"   value={gameLow  !== null ? Math.round(gameLow ).toLocaleString() : '—'} color="down" />
+        <StatCell label="RANGE" value={gameRange !== null ? Math.round(gameRange).toLocaleString() : '—'} />
+      </div>
+    </div>
+  )
+}
+
+// 통계 셀 — 라벨 + 값 한 줄 inline (color로 상승/하락 톤 차이)
+// 사이즈: 라벨 text-base(16px), 값 text-2xl(24px) — baseline 정렬로 시각적 균형
+function StatCell({ label, value, color }) {
+  const valueColor = color === 'up'   ? 'text-red-300'
+                   : color === 'down' ? 'text-blue-300'
+                   : 'text-cyan-100'
+  return (
+    <div className="flex items-baseline gap-2.5 flex-shrink-0">
+      <span className="text-cyan-400/70 text-base font-mono tracking-[0.2em]">{label}</span>
+      <span className={`${valueColor} font-bold font-mono tabular-nums text-2xl leading-none`}>{value}</span>
     </div>
   )
 }
