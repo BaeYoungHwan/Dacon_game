@@ -8,8 +8,8 @@ import { KOSPI_CHART_RETURN } from '../lib/grade'
 const PAGE_TRACK = {
   start:        'intro',
   main:         'main',
-  infoMerchant: 'main',
-  techMerchant: 'main',
+  infoMerchant: 'infoMerchant',
+  techMerchant: 'techMerchant',
   market:       'market',
 }
 
