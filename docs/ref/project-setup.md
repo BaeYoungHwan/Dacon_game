@@ -17,8 +17,8 @@ git init
 
 ```bash
 # PC 토스트 알림 등 전역 훅 설치
-cd global-setup/
-# 설치 방법은 global-setup/README.md 참조
+cd scripts/global-setup/
+# 설치 방법은 scripts/global-setup/README.md 참조
 ```
 
 ## 3. /init-project 실행
@@ -78,7 +78,7 @@ Claude가 양식을 출력합니다. **양식을 직접 작성해서 붙여넣�
 ## 체크리스트
 
 - [ ] 템플릿 복사 완료
-- [ ] `global-setup/` 설치 완료
+- [ ] `scripts/global-setup/` 설치 완료
 - [ ] `/init-project` 실행 및 양식 작성
 - [ ] PRD 초안 확인 (`docs/product-specs/PRD-v1.md`)
 - [ ] 실행 계획 생성 (`docs/exec-plans/active/`)
