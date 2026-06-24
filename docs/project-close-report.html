@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>k-stock-merchant — 프로젝트 종료 보고서</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 24px 80px; }
+  header { text-align: center; margin-bottom: 40px; }
+  header h1 { font-size: 28px; margin: 0 0 8px; }
+  header p { color: var(--muted); margin: 4px 0; }
+  .badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: #ecfdf5;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 14px;
+    border: 1px solid #a7f3d0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin: 32px 0;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+  .kpi .num { font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+  .kpi .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi.blue .num { color: var(--blue); }
+  .kpi.green .num { color: var(--green); }
+  .kpi.amber .num { color: var(--amber); }
+  .kpi.red .num { color: var(--red); }
+
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  section h2 {
+    font-size: 16px;
+    margin: 0 0 16px;
+    color: var(--blue);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  td.num, th.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+  .bar-track { background: #f1f5f9; border-radius: 6px; height: 8px; overflow: hidden; }
+  .bar-fill { background: var(--green); height: 100%; }
+  .pill { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+  .pill.red { background: #fef2f2; color: var(--red); }
+  .pill.amber { background: #fffbeb; color: var(--amber); }
+  .pill.green { background: #ecfdf5; color: var(--green); }
+  .note { color: var(--muted); font-size: 13px; margin-top: 10px; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .screenshot { width: 100%; border-radius: 10px; border: 1px solid var(--line); margin-top: 12px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>떡상러쉬 (k-stock-merchant) — 프로젝트 종료 보고서</h1>
+    <p>DACON Daker 웹 미니게임 챌린지 제출작</p>
+    <p>종료일: 2026-06-25</p>
+    <div class="badge">✅ 프로젝트 종료 — 대회 최종 19위 / 336명</div>
+  </header>
+
+  <div class="grid">
+    <div class="kpi green">
+      <div class="num">19위</div>
+      <div class="label">대회 최종 순위 (336명 중)</div>
+    </div>
+    <div class="kpi green">
+      <div class="num">150/150</div>
+      <div class="label">WBS 태스크 완료 (100%)</div>
+    </div>
+    <div class="kpi red">
+      <div class="num">13/100</div>
+      <div class="label">AI-Readiness 점수 (AI-Hostile)</div>
+    </div>
+    <div class="kpi blue">
+      <div class="num">0</div>
+      <div class="label">미완료 TODO</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>대회 결과</h2>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>최종 순위</td><td><strong>336명 중 19위</strong> (개인 225명 + 팀 50팀)</td></tr>
+      <tr><td>참가 팀</td><td>떡상연구소 (팀장: DarkSky, 2인)</td></tr>
+      <tr><td>평가 단계</td><td>1차 대중 투표 리더보드 기준 순위 — 상위 10팀 대상 2차 내부 심사위원 평가에는 진출하지 못함</td></tr>
+      <tr><td>기획서 제출</td><td>완료 (마감 2026-05-26)</td></tr>
+      <tr><td>최종산출물 제출</td><td>완료 (마감 2026-06-08)</td></tr>
+      <tr><td>배포 URL</td><td><a href="https://dacongame.vercel.app/" target="_blank">https://dacongame.vercel.app/</a></td></tr>
+    </table>
+    <img class="screenshot" src="ref/assets/competition-final-leaderboard-20260625.png" alt="최종 리더보드 스크린샷">
+  </section>
+
+  <section>
+    <h2>WBS 완료 현황 (전체 100%)</h2>
+    <table>
+      <tr><th>구분</th><th class="num">태스크</th><th>진척도</th></tr>
+      <tr><td>1.1 분석/기획</td><td class="num">3/3</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.2 설계</td><td class="num">3/3</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.3 P0 기반 구축</td><td class="num">7/7</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.4 P1 핵심 기능</td><td class="num">45/45</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.5 P1 통합</td><td class="num">8/8</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.6 P2 QA + 배포</td><td class="num">6/6</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.7 버퍼</td><td class="num">2/2</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.8 추가 작업</td><td class="num">7/7</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.9 하네스 업그레이드</td><td class="num">11/11</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.10 QA 자동화</td><td class="num">9/9</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.11 UI 폴리시</td><td class="num">31/31</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.12 뉴스 시스템 고도화</td><td class="num">6/6</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.13 뉴스 실제이벤트 + 브라우저 호환</td><td class="num">4/4</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td>1.14 플레이테스트 & 대시보드</td><td class="num">8/8</td><td><span class="pill green">100%</span></td></tr>
+      <tr><td><strong>전체</strong></td><td class="num"><strong>150/150</strong></td><td><span class="pill green">100%</span></td></tr>
+    </table>
+    <p class="note">상세 내용: <a href="exec-plans/completed/WBS-v2.md">docs/exec-plans/completed/WBS-v2.md</a></p>
+  </section>
+
+  <section>
+    <h2>AI-Readiness 점수 (종료 시점 기록)</h2>
+    <table>
+      <tr><th>카테고리</th><th class="num">점수</th></tr>
+      <tr><td>A. AI Navigation & Coverage</td><td class="num">0 / 15</td></tr>
+      <tr><td>B. Context Document Quality</td><td class="num">6 / 20</td></tr>
+      <tr><td>C. Tribal Knowledge Externalization</td><td class="num">0 / 20</td></tr>
+      <tr><td>D. Cross-Module Dependency Mapping</td><td class="num">0 / 15</td></tr>
+      <tr><td>E. Verification & Quality Gates</td><td class="num">7 / 15</td></tr>
+      <tr><td>F. Freshness & Self-Maintenance</td><td class="num">0 / 10</td></tr>
+      <tr><td>G. Agent Performance Outcomes</td><td class="num">0 / 5</td></tr>
+      <tr><td><strong>총점</strong></td><td class="num"><strong>13 / 100 (AI-Hostile)</strong></td></tr>
+    </table>
+    <p class="note">프로젝트 종료에 따라 개선 작업은 진행하지 않음. 상세 JSON: <a href="exec-plans/completed/ai-readiness-final.json">docs/exec-plans/completed/ai-readiness-final.json</a></p>
+  </section>
+
+  <section>
+    <h2>기술 스택 & 품질 지표</h2>
+    <table>
+      <tr><td>프레임워크</td><td>React 18 + Vite 5 + Tailwind CSS 3 + Zustand 5</td></tr>
+      <tr><td>백엔드</td><td>Supabase (랭킹 테이블 전용)</td></tr>
+      <tr><td>테스트</td><td>Vitest 단위·통합 테스트 65개+</td></tr>
+      <tr><td>브라우저 호환</td><td>Chrome / Safari / Firefox / Edge 확인 완료</td></tr>
+      <tr><td>플레이테스트</td><td>50라운드 완주 5회 이상 + 버그 수정 완료</td></tr>
+      <tr><td>배포</td><td>Vercel (GitHub develop/master 자동 배포)</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>팀</h2>
+    <table>
+      <tr><td>게임 로직 / 상태 관리 / 배포</td><td>배영환</td></tr>
+      <tr><td>UI 컴포넌트 구현</td><td>송원호</td></tr>
+      <tr><td>AI 협업</td><td>Claude Code (Sonnet 4.6)</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    생성: /close-project 스킬 · 2026-06-25 · k-stock-merchant
+  </footer>
+
+</div>
+</body>
+</html>
