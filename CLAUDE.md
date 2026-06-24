@@ -1,5 +1,7 @@
 # k-stock-merchant — Claude 지침
 
+> **프로젝트 상태: 종료 (2026-06-25) — 최종 결과 336명 중 19위**
+
 > 대회: Daker 웹 미니게임 챌린지 | 배포: https://dacongame.vercel.app/
 > 기획서 마감: 2026-05-26 | 최종 제출: 2026-06-08
 
@@ -62,7 +64,7 @@
 
 | 상황 | 참조 문서 |
 |------|-----------|
-| 현재 작업 목록 | [`docs/exec-plans/active/WBS-v2.md`](docs/exec-plans/active/WBS-v2.md) |
+| 최종 작업 목록 (종료, 100% 완료) | [`docs/exec-plans/completed/WBS-v2.md`](docs/exec-plans/completed/WBS-v2.md) |
 | 커밋 작성 | [`docs/ref/commit-convention.md`](docs/ref/commit-convention.md) |
 | 협업 규칙 | [`docs/ref/collaboration-rules.md`](docs/ref/collaboration-rules.md) |
 | 테스트 전략 | [`docs/ref/testing-patterns.md`](docs/ref/testing-patterns.md) |
@@ -72,7 +74,9 @@
 
 ## 컨텍스트 재시작 시 ("다음 작업 하자")
 
-1. `docs/exec-plans/active/WBS-v2.md` 읽기 (단일 진실 공급원)
+> 프로젝트는 2026-06-25 종료됨 (대회 최종 19위/336). WBS-v2.md는 `docs/exec-plans/completed/`로 이동됨 — 신규 작업 요청이 없으면 이 섹션은 더 이상 적용되지 않음.
+
+1. `docs/exec-plans/completed/WBS-v2.md` 읽기 (단일 진실 공급원, 종료 시점 100% 완료 상태로 보관됨)
 2. `[🔄]` 항목부터 이어서 진행 / 없으면 `[ ]` 첫 번째 항목 시작
 
 ---
@@ -90,7 +94,7 @@ k-stock-merchant/
 ├── docs/
 │   ├── ref/                   # 참조 문서 (필요할 때만 로드)
 │   ├── design-docs/           # 아키텍처·Props 명세
-│   ├── exec-plans/active/     # WBS-v2.md (단일 진실 공급원)
+│   ├── exec-plans/completed/  # WBS-v2.md (종료, 100% 완료 보관)
 │   └── product-specs/         # PRD / 기획 문서
 ├── scripts/                   # pykrx 데이터 수집 등 스크립트
 ├── src/
