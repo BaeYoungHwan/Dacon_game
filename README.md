@@ -2,6 +2,8 @@
 
 > 한국 주식 시장을 배경으로 한 1년(50주) 주봉 투자 시뮬레이션 미니게임
 
+> 🏆 **DACON Daker 웹 미니게임 챌린지 최종 결과: 336명 중 19위** (떡상연구소, 2026-06-25 발표)
+
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)](https://vitejs.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwindcss)](https://tailwindcss.com)
